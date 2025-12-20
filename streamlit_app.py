@@ -11,6 +11,37 @@ st.set_page_config(
     layout="wide"
 )
 
+# 自定义CSS调整侧边栏宽度
+st.markdown("""
+<style>
+    /* 调整侧边栏宽度 */
+    section[data-testid="stSidebar"] {
+        width: 400px !important;
+        min-width: 400px !important;
+        max-width: 400px !important;
+    }
+    
+    /* 调整主内容区域宽度 */
+    .main .block-container {
+        padding-left: 420px;
+        padding-right: 2rem;
+    }
+    
+    /* 调整小屏幕下的布局 */
+    @media (max-width: 768px) {
+        section[data-testid="stSidebar"] {
+            width: 300px !important;
+            min-width: 300px !important;
+            max-width: 300px !important;
+        }
+        
+        .main .block-container {
+            padding-left: 320px;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # 初始化session state
 if "concepts" not in st.session_state:
     with open("concepts.json", "r", encoding="utf-8") as f:
