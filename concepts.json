@@ -1,0 +1,64 @@
+{
+  "concepts": [
+    {
+      "name": "projection",
+      "prompt": "在语言学中，projection指短语或句法结构从中心词向上扩展的过程。请识别文本中的projection现象，并用**标注内容**的格式标记出来。",
+      "examples": [
+        {
+          "text": "The big red apple fell from the tree.",
+          "annotation": "名词短语**big red apple**是apple的projection"
+        },
+        {
+          "text": "She will quickly finish her homework.",
+          "annotation": "动词短语**will quickly finish**是finish的projection"
+        },
+        {
+          "text": "The very tall building in the city center.",
+          "annotation": "名词短语**very tall building**是building的projection"
+        }
+      ],
+      "category": "syntax",
+      "is_default": true
+    },
+    {
+      "name": "agreement",
+      "prompt": "语法一致性，指句子成分在性、数、格等方面的一致关系。请识别文本中的agreement现象，并用**标注内容**的格式标记出来。",
+      "examples": [
+        {
+          "text": "The cats are sleeping.",
+          "annotation": "主语**cats**（复数）与动词**are**（复数）在数上一致"
+        },
+        {
+          "text": "Cette pomme est rouge.",
+          "annotation": "限定词**Cette**（阴性）与名词**pomme**（阴性）在性上一致"
+        },
+        {
+          "text": "He runs fast every morning.",
+          "annotation": "主语**He**（第三人称单数）与动词**runs**（第三人称单数）在数上一致"
+        }
+      ],
+      "category": "morphology",
+      "is_default": true
+    },
+    {
+      "name": "case marking",
+      "prompt": "格标记，指名词或代词在句子中承担的语法功能所对应的形态标记。请识别文本中的case marking现象，并用**标注内容**的格式标记出来。",
+      "examples": [
+        {
+          "text": "She gave him a book.",
+          "annotation": "代词**him**带有宾格标记，表示间接宾语"
+        },
+        {
+          "text": "The teacher's book is on the desk.",
+          "annotation": "名词**teacher's**带有属格标记's"
+        },
+        {
+          "text": "Ich helfe dem Mann.",
+          "annotation": "名词**dem Mann**带有与格标记dem"
+        }
+      ],
+      "category": "morphology",
+      "is_default": true
+    }
+  ]
+}
