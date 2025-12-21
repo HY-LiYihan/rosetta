@@ -4,7 +4,6 @@
 **Author / 作者**: Yihan Li (来自中大外院 / Sun Yat-sen University, School of Foreign Languages)  
 **Project URL / 项目地址**: https://github.com/HY-LiYihan/rosetta  
 **Online Demo / 在线演示**: https://rosetta-git.streamlit.app/  
-**Paper Submission / 论文提交**: CVPR 2025 (Conference on Computer Vision and Pattern Recognition)  
 
 ---
 
@@ -200,18 +199,115 @@ streamlit run chatbot_app.py
 
 访问 https://rosetta-git.streamlit.app/ 即可使用在线版本。
 
-### 7.3 API配置
+### 7.3 多平台模型支持
 
-1. 获取Kimi API Key: https://platform.moonshot.cn/console/api-keys
-2. 在应用侧边栏输入API Key
-3. 开始标注任务
+Rosetta v2.0 支持多个AI平台和模型：
 
-### 7.4 自定义概念
+#### 7.3.1 Kimi平台 (月之暗面)
+- **支持的模型系列**:
+  - **Moonshot系列**: `moonshot-v1-8k`, `moonshot-v1-32k`, `moonshot-v1-128k`
+  - **K2系列**: 
+    - `kimi-k2-0905-preview` - 上下文长度256k，增强的Agentic Coding能力
+    - `kimi-k2-0711-preview` - 上下文长度128k，MoE架构基础模型
+    - `kimi-k2-turbo-preview` - K2高速版本，输出速度60-100 tokens/秒
+    - `kimi-k2-thinking` - 长思考模型，支持多步工具调用与思考
+    - `kimi-k2-thinking-turbo` - 长思考模型的高速版本
+- **API端点**: `https://api.moonshot.cn/v1`
+- **获取API Key**: https://platform.moonshot.cn/console/api-keys
+
+#### 7.3.2 DeepSeek平台
+- **可用模型**:
+  - `deepseek-reasoner` (默认) - 推理专用模型
+  - `deepseek-chat` - 通用对话模型
+  - `deepseek-coder` - 代码专用模型
+- **API端点**: `https://api.deepseek.com`
+- **获取API Key**: 访问DeepSeek官网
+
+#### 7.3.3 动态模型列表
+Rosetta v2.1 新增动态模型列表功能：
+- **自动获取**: 系统会自动从API获取可用的模型列表
+- **智能缓存**: 使用缓存机制避免重复API调用
+- **优雅降级**: 当API调用失败时，使用默认模型列表
+- **实时更新**: 更换API密钥后自动刷新模型列表
+
+#### 7.3.4 使用方法
+1. 在侧边栏选择AI平台 (Kimi 或 DeepSeek)
+2. 系统自动获取该平台的可用模型列表
+3. 从动态列表中选择模型版本
+4. 配置相应的API密钥
+5. 开始标注任务
+
+### 7.4 API密钥配置
+
+1. **Kimi API Key**: https://platform.moonshot.cn/console/api-keys
+2. **DeepSeek API Key**: 访问DeepSeek官网获取
+3. 在应用侧边栏输入或通过secrets.toml配置API Key
+4. 开始标注任务
+
+### 7.6 自定义概念
 
 系统支持添加自定义语言学概念：
 1. 在侧边栏点击"添加新概念"
 2. 填写概念名称、提示词和示例
 3. 保存后即可使用新概念进行标注
+
+### 7.7 API密钥安全管理 (Secrets Management)
+
+#### 7.7.1 本地开发环境
+
+1. **创建secrets.toml文件**：
+   ```bash
+   mkdir -p .streamlit
+   touch .streamlit/secrets.toml
+   ```
+
+2. **编辑secrets.toml文件**：
+   ```toml
+   # Streamlit Secrets Configuration
+   # This file contains sensitive information like API keys
+   # DO NOT commit this file to version control
+   
+   # Kimi API Configuration
+   kimi_api_key = "your_actual_kimi_api_key_here"
+   
+   # DeepSeek API Configuration (if needed)
+   deepseek_api_key = "your_actual_deepseek_api_key_here"
+   ```
+
+3. **确保.gitignore包含**：
+   ```
+   .streamlit/secrets.toml
+   ```
+
+#### 7.7.2 Streamlit Community Cloud部署
+
+在Streamlit Community Cloud上部署时，通过以下方式设置secrets：
+
+1. **在线设置**：在应用的"Settings" → "Secrets"页面添加
+2. **格式**：
+   ```toml
+   kimi_api_key = "your_actual_kimi_api_key_here"
+   deepseek_api_key = "your_actual_deepseek_api_key_here"
+   ```
+
+#### 7.7.3 代码中使用Secrets
+
+应用代码会自动优先使用secrets中的API密钥：
+```python
+# 优先使用secrets中的API密钥
+if "kimi_api_key" in st.secrets:
+    st.session_state.kimi_api_key = st.secrets["kimi_api_key"]
+else:
+    st.session_state.kimi_api_key = ""  # 等待用户输入
+```
+
+#### 7.7.4 安全最佳实践
+
+- ✅ **永远不要**将API密钥硬编码在代码中
+- ✅ **永远不要**将secrets.toml提交到版本控制
+- ✅ 使用环境变量或secrets管理工具
+- ✅ 定期轮换API密钥
+- ✅ 为不同环境使用不同的API密钥
 
 ---
 
