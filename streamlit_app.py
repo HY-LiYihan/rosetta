@@ -27,7 +27,7 @@ st.markdown("""
         --color-accent: #00B4CB;
         
         /* 4. 背景色 - 深灰色 */
-        --color-bg: #0c1414;
+        --color-bg: #161b22;
         
         /* 5. 卡片背景色 - 中灰色 */
         --color-card: #2B474B;
@@ -36,57 +36,16 @@ st.markdown("""
         --color-text: #D9E8F3;
     }
     
-    /* 确保侧边栏收回按钮一直显示 - 更强大的规则 */
-    section[data-testid="stSidebar"] > div:first-child,
-    section[data-testid="stSidebar"] > div:nth-child(1),
-    section[data-testid="stSidebar"] > div[data-testid="stSidebarHeader"] {
+    /* 确保侧边栏收回按钮一直显示 */
+    section[data-testid="stSidebar"] > div:first-child {
+        display: block !important;
+    }
+    
+    /* 侧边栏收回按钮样式 */
+    button[data-testid="baseButton-header"] {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
-        position: relative !important;
-        z-index: 9999 !important;
-    }
-    
-    /* 侧边栏收回按钮样式 - 覆盖所有可能的隐藏 */
-    button[data-testid="baseButton-header"],
-    button[data-testid="stSidebarHeader"],
-    button[title="Close sidebar"],
-    button[aria-label="Close sidebar"],
-    .stSidebarCollapseControl,
-    .stSidebarHeader button {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        position: relative !important;
-        z-index: 9999 !important;
-        background-color: var(--color-primary) !important;
-        color: white !important;
-        border-radius: 4px !important;
-        padding: 4px 8px !important;
-        margin: 4px !important;
-        border: none !important;
-        cursor: pointer !important;
-        font-size: 14px !important;
-    }
-    
-    /* 确保按钮在悬停时有反馈 */
-    button[data-testid="baseButton-header"]:hover,
-    button[data-testid="stSidebarHeader"]:hover,
-    button[title="Close sidebar"]:hover,
-    button[aria-label="Close sidebar"]:hover {
-        background-color: var(--color-secondary) !important;
-        transform: scale(1.05) !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    /* 防止任何父元素隐藏按钮 */
-    section[data-testid="stSidebar"] * {
-        overflow: visible !important;
-    }
-    
-    /* 确保侧边栏容器不会隐藏内容 */
-    section[data-testid="stSidebar"] {
-        overflow: visible !important;
     }
     
     /* 页面主体背景 */
