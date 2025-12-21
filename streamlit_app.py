@@ -15,63 +15,94 @@ st.set_page_config(
 # 自定义CSS - 简洁清新的界面设计
 st.markdown("""
 <style>
-    /* 颜色变量定义 - 所有颜色都在这里集中管理 */
+    /* 颜色变量定义 - 控制在6个核心颜色 */
     :root {
-        /* 主色调 */
-        --primary-color: #D2E4F1;      /* 主色：青色 */
-        --secondary-color: #8FACC0;    /* 辅助色：黑色 */
-        --accent-color: #ABEDD8;       /* 强调色：浅绿色 */
+        /* 1. 主色 - 青色 */
+        --color-primary: #88D4E1;
         
-        /* 背景色 */
-        --page-bg: #2F3132;            /* 页面背景色 */
-        --sidebar-bg: #17191A;         /* 侧边栏背景色 */
-        --card-bg: #818D97;            /* 卡片背景色 */
-        --light-bg: #2F3132;           /* 浅色背景（与页面背景相同） */
-        --dark-bg: #17191A;            /* 深色背景（与侧边栏相同） */
+        /* 2. 辅助色 - 青蓝色 */
+        --color-secondary: #B9E2F8;
         
-        /* 文字颜色 */
-        --text-light: #D9E8F3;         /* 浅色文字（用于深色背景） */
-        --text-dark: #A1B9CA;          /* 深色文字（用于浅色背景） */
-        --text-card: #495057;          /* 卡片文字颜色 */
-        --text-footer: #6c757d;        /* 页脚文字颜色 */
+        /* 3. 强调色 - 浅绿色 */
+        --color-accent: #00B4CB;
         
-        /* 边框和阴影 */
-        --border-color: #dee2e6;       /* 边框颜色 */
-        --border-light: rgba(255, 255, 255, 0.2);  /* 浅色边框（用于侧边栏） */
-        --border-dark: #dfe6e9;        /* 深色边框 */
+        /* 4. 背景色 - 深灰色 */
+        --color-bg: #0c1414;
         
-        /* 按钮和交互 */
-        --button-hover: #05c592;       /* 按钮悬停色 */
-        --button-primary-hover: #43a047; /* 主要按钮悬停色 */
-        --shadow-primary: rgba(6, 214, 160, 0.3);  /* 主色阴影 */
-        --shadow-accent: rgba(76, 175, 80, 0.3);   /* 强调色阴影 */
+        /* 5. 卡片背景色 - 中灰色 */
+        --color-card: #2B474B;
         
-        /* 状态颜色 */
-        --success-color: #C5D4CD;      /* 成功色（使用强调色） */
-        --warning-color: #ffb74d;      /* 警告色 */
-        --error-color: #ef5350;        /* 错误色 */
-        --info-color: #e8f1ed;         /* 信息色（使用主色） */
-        
-        /* 滚动条 */
-        --scrollbar-track: #f1f1f1;    /* 滚动条轨道 */
-        --scrollbar-thumb: #e8f1ed;    /* 滚动条滑块 */
-        --scrollbar-hover: #000000;    /* 滚动条悬停 */
+        /* 6. 文字色 - 浅灰色 */
+        --color-text: #D9E8F3;
+    }
+    
+    /* 确保侧边栏收回按钮一直显示 - 更强大的规则 */
+    section[data-testid="stSidebar"] > div:first-child,
+    section[data-testid="stSidebar"] > div:nth-child(1),
+    section[data-testid="stSidebar"] > div[data-testid="stSidebarHeader"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 9999 !important;
+    }
+    
+    /* 侧边栏收回按钮样式 - 覆盖所有可能的隐藏 */
+    button[data-testid="baseButton-header"],
+    button[data-testid="stSidebarHeader"],
+    button[title="Close sidebar"],
+    button[aria-label="Close sidebar"],
+    .stSidebarCollapseControl,
+    .stSidebarHeader button {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 9999 !important;
+        background-color: var(--color-primary) !important;
+        color: white !important;
+        border-radius: 4px !important;
+        padding: 4px 8px !important;
+        margin: 4px !important;
+        border: none !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+    }
+    
+    /* 确保按钮在悬停时有反馈 */
+    button[data-testid="baseButton-header"]:hover,
+    button[data-testid="stSidebarHeader"]:hover,
+    button[title="Close sidebar"]:hover,
+    button[aria-label="Close sidebar"]:hover {
+        background-color: var(--color-secondary) !important;
+        transform: scale(1.05) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    /* 防止任何父元素隐藏按钮 */
+    section[data-testid="stSidebar"] * {
+        overflow: visible !important;
+    }
+    
+    /* 确保侧边栏容器不会隐藏内容 */
+    section[data-testid="stSidebar"] {
+        overflow: visible !important;
     }
     
     /* 页面主体背景 */
     .stApp {
-        background-color: var(--page-bg) !important;
+        background-color: var(--color-bg) !important;
     }
     
     /* 主内容区域背景 */
     .main .block-container {
-        background-color: var(--page-bg) !important;
+        background-color: var(--color-bg) !important;
     }
     
-    /* 侧边栏样式 - 简化版本 */
+    /* 侧边栏样式 */
     section[data-testid="stSidebar"] {
-        background-color: var(--sidebar-bg) !important;
-        color: var(--text-light) !important;
+        background-color: var(--color-bg) !important;
+        color: var(--color-text) !important;
     }
     
     /* 侧边栏文本颜色 */
@@ -82,23 +113,23 @@ st.markdown("""
     section[data-testid="stSidebar"] .stTextInput label,
     section[data-testid="stSidebar"] .stSelectbox label,
     section[data-testid="stSidebar"] .stButton button {
-        color: var(--text-light) !important;
+        color: var(--color-text) !important;
     }
     
     /* 侧边栏输入框样式 */
     section[data-testid="stSidebar"] .stTextInput input,
     section[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
         background-color: rgba(255, 255, 255, 0.1) !important;
-        border: 1px solid var(--border-light) !important;
-        color: var(--text-light) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: var(--color-text) !important;
         border-radius: 6px !important;
     }
     
     /* 侧边栏扩展器样式 */
     section[data-testid="stSidebar"] .streamlit-expanderHeader {
         background-color: rgba(255, 255, 255, 0.05) !important;
-        color: var(--text-light) !important;
-        border: 1px solid var(--border-light) !important;
+        color: var(--color-text) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
     
     section[data-testid="stSidebar"] .streamlit-expanderContent {
@@ -115,27 +146,27 @@ st.markdown("""
     
     /* 标题样式 */
     h1 {
-        color: var(--primary-color) !important;
+        color: var(--color-primary) !important;
         font-weight: 700 !important;
         margin-bottom: 1rem !important;
-        border-bottom: 2px solid var(--accent-color);
+        border-bottom: 2px solid var(--color-accent);
         padding-bottom: 0.5rem;
     }
     
     h2 {
-        color: var(--secondary-color) !important;
+        color: var(--color-secondary) !important;
         font-weight: 600 !important;
         margin-top: 1.5rem !important;
     }
     
     h3 {
-        color: var(--accent-color) !important;
+        color: var(--color-accent) !important;
         font-weight: 500 !important;
     }
     
     /* 按钮样式 - 纯色设计 */
     .stButton button {
-        background-color: var(--primary-color) !important;
+        background-color: var(--color-primary) !important;
         color: white !important;
         border: none !important;
         border-radius: 6px !important;
@@ -145,40 +176,40 @@ st.markdown("""
     }
     
     .stButton button:hover {
-        background-color: var(--button-hover) !important;
+        background-color: var(--color-secondary) !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 2px 8px var(--shadow-primary) !important;
+        box-shadow: 0 2px 8px rgba(143, 172, 192, 0.3) !important;
     }
     
     /* 主要按钮样式 */
     div[data-testid="stButton"] button[kind="primary"] {
-        background-color: var(--accent-color) !important;
+        background-color: var(--color-accent) !important;
         font-size: 1rem !important;
         padding: 0.6rem 1.8rem !important;
     }
     
     div[data-testid="stButton"] button[kind="primary"]:hover {
-        background-color: var(--button-primary-hover) !important;
-        box-shadow: 0 2px 8px var(--shadow-accent) !important;
+        background-color: var(--color-primary) !important;
+        box-shadow: 0 2px 8px rgba(210, 228, 241, 0.3) !important;
     }
     
     /* 文本区域样式 */
     .stTextArea textarea {
         border-radius: 6px !important;
-        border: 1px solid var(--border-color) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         transition: border-color 0.2s ease !important;
     }
     
     .stTextArea textarea:focus {
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 1px rgba(6, 214, 160, 0.1) !important;
+        border-color: var(--color-primary) !important;
+        box-shadow: 0 0 0 1px rgba(210, 228, 241, 0.1) !important;
     }
     
     /* 卡片/扩展器样式 */
     .streamlit-expanderHeader {
-        background-color: var(--light-bg) !important;
+        background-color: var(--color-card) !important;
         border-radius: 6px !important;
-        border: 1px solid var(--border-color) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         font-weight: 500 !important;
     }
     
@@ -190,11 +221,11 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         border-radius: 6px !important;
         padding: 8px 16px !important;
-        background-color: var(--light-bg) !important;
+        background-color: var(--color-card) !important;
     }
     
     .stTabs [aria-selected="true"] {
-        background-color: var(--primary-color) !important;
+        background-color: var(--color-primary) !important;
         color: white !important;
     }
     
@@ -205,19 +236,19 @@ st.markdown("""
     }
     
     .stAlert.success {
-        border-left-color: var(--success-color) !important;
+        border-left-color: var(--color-accent) !important;
     }
     
     .stAlert.warning {
-        border-left-color: var(--warning-color) !important;
+        border-left-color: #ffb74d !important;
     }
     
     .stAlert.error {
-        border-left-color: var(--error-color) !important;
+        border-left-color: #ef5350 !important;
     }
     
     .stAlert.info {
-        border-left-color: var(--info-color) !important;
+        border-left-color: var(--color-primary) !important;
     }
     
     /* 分隔线 */
@@ -225,17 +256,17 @@ st.markdown("""
         margin: 1.5rem 0 !important;
         border: none !important;
         height: 1px !important;
-        background-color: var(--border-color) !important;
+        background-color: rgba(255, 255, 255, 0.2) !important;
     }
     
     /* 页脚样式 */
     .stCaption {
         text-align: center !important;
-        color: var(--text-footer) !important;
+        color: var(--color-text) !important;
         font-size: 0.85rem !important;
         margin-top: 1.5rem !important;
         padding-top: 1rem !important;
-        border-top: 1px solid var(--border-color) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
     }
     
     /* 滚动条样式 */
@@ -245,17 +276,17 @@ st.markdown("""
     }
     
     ::-webkit-scrollbar-track {
-        background: var(--scrollbar-track) !important;
+        background: #f1f1f1 !important;
         border-radius: 3px;
     }
     
     ::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb) !important;
+        background: var(--color-primary) !important;
         border-radius: 3px;
     }
     
     ::-webkit-scrollbar-thumb:hover {
-        background: var(--scrollbar-hover) !important;
+        background: var(--color-secondary) !important;
     }
     
     /* 小屏幕响应式调整 */
@@ -276,8 +307,38 @@ st.markdown("""
 
 # 初始化session state
 if "concepts" not in st.session_state:
-    with open("concepts.json", "r", encoding="utf-8") as f:
-        st.session_state.concepts = json.load(f)["concepts"]
+    # 尝试从文件加载概念，如果文件不存在则使用默认概念
+    try:
+        with open("concepts.json", "r", encoding="utf-8") as f:
+            st.session_state.concepts = json.load(f)["concepts"]
+    except FileNotFoundError:
+        # 如果文件不存在，使用默认概念
+        st.session_state.concepts = [
+            {
+                "name": "隐喻",
+                "prompt": "识别文本中的隐喻表达，分析源域和目标域之间的映射关系",
+                "examples": [
+                    {
+                        "text": "时间就是金钱",
+                        "annotation": "这是一个概念隐喻，将抽象的时间概念映射到具体的金钱概念上，强调时间的宝贵性和可计算性。"
+                    }
+                ],
+                "category": "认知语言学",
+                "is_default": True
+            },
+            {
+                "name": "转喻",
+                "prompt": "识别文本中的转喻表达，分析部分与整体或相关概念之间的替代关系",
+                "examples": [
+                    {
+                        "text": "白宫发表声明",
+                        "annotation": "这是转喻表达，用'白宫'（建筑）指代美国政府（机构），属于地点代机构的转喻类型。"
+                    }
+                ],
+                "category": "认知语言学",
+                "is_default": True
+            }
+        ]
 
 if "annotation_history" not in st.session_state:
     st.session_state.annotation_history = []
@@ -304,11 +365,11 @@ if "selected_model" not in st.session_state:
 if "selected_platform" not in st.session_state:
     st.session_state.selected_platform = "deepseek"
 
-# 保存概念到文件
+# 保存概念到缓存（session state）
 def save_concepts():
-    data = {"concepts": st.session_state.concepts}
-    with open("concepts.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    # 只保存到session state，不写入文件
+    # 数据已经存储在st.session_state.concepts中
+    pass
 
 # 获取平台模型列表（带缓存）
 def get_platform_models(platform, api_key):
@@ -433,11 +494,9 @@ with st.sidebar:
         has_kimi_secret = "kimi_api_key" in st.secrets and st.secrets["kimi_api_key"]
         
         if has_kimi_secret:
-            st.info("✅ Kimi API Key已从secrets.toml加载")
-            # 不显示输入框，直接使用secrets中的密钥
+            # 静默加载，不显示信息
             st.session_state.kimi_api_key = st.secrets["kimi_api_key"]
         else:
-            st.warning("⚠️ 未在secrets.toml中找到Kimi API Key")
             api_key = st.text_input(
                 "Kimi API Key",
                 type="password",
@@ -476,11 +535,9 @@ with st.sidebar:
         has_deepseek_secret = "deepseek_api_key" in st.secrets and st.secrets["deepseek_api_key"]
         
         if has_deepseek_secret:
-            st.info("✅ DeepSeek API Key已从secrets.toml加载")
-            # 不显示输入框，直接使用secrets中的密钥
+            # 静默加载，不显示信息
             st.session_state.deepseek_api_key = st.secrets["deepseek_api_key"]
         else:
-            st.warning("⚠️ 未在secrets.toml中找到DeepSeek API Key")
             api_key = st.text_input(
                 "DeepSeek API Key",
                 type="password",
@@ -551,6 +608,114 @@ with st.sidebar:
             st.success("概念已更新！")
             st.rerun()
     
+    # 导入导出功能
+    st.subheader("📁 数据管理")
+    
+    # 检查是否有导入成功的消息需要显示
+    if "import_success" in st.session_state and st.session_state.import_success:
+        st.success("✅ 概念导入成功！")
+        # 重置状态
+        st.session_state.import_success = False
+    
+    with st.expander("导入导出概念", expanded=False):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # 导出功能
+            st.markdown("**导出概念**")
+            st.markdown("将当前所有概念导出为JSON文件")
+            
+            # 准备导出的数据
+            export_data = {"concepts": st.session_state.concepts}
+            export_json = json.dumps(export_data, ensure_ascii=False, indent=2)
+            
+            # 创建下载按钮
+            st.download_button(
+                label="📥 下载概念文件",
+                data=export_json,
+                file_name="concepts_export.json",
+                mime="application/json",
+                help="下载当前所有概念为JSON文件"
+            )
+        
+        with col2:
+            # 导入功能
+            st.markdown("**导入概念**")
+            st.markdown("从JSON文件导入概念")
+            
+            uploaded_file = st.file_uploader(
+                "选择概念文件",
+                type=["json"],
+                help="选择包含概念的JSON文件"
+            )
+            
+            if uploaded_file is not None:
+                try:
+                    # 读取上传的文件
+                    file_content = uploaded_file.getvalue().decode("utf-8")
+                    imported_data = json.loads(file_content)
+                    
+                    # 验证数据格式
+                    if "concepts" in imported_data and isinstance(imported_data["concepts"], list):
+                        st.info(f"检测到 {len(imported_data['concepts'])} 个概念")
+                        
+                        # 显示导入选项
+                        import_option = st.radio(
+                            "导入选项",
+                            ["替换现有概念", "添加到当前所有概念的后面"],
+                            index=0,  # 默认选择"替换现有概念"
+                            help="选择如何导入概念"
+                        )
+                        
+                        if st.button("确认导入", type="primary"):
+                            import_success = False
+                            import_message = ""
+                            
+                            if import_option == "替换现有概念":
+                                # 替换现有概念
+                                st.session_state.concepts = imported_data["concepts"]
+                                import_message = f"✅ 成功替换为 {len(imported_data['concepts'])} 个概念"
+                                import_success = True
+                            else:
+                                # 添加到当前所有概念的后面
+                                existing_names = {c["name"] for c in st.session_state.concepts}
+                                new_concepts = []
+                                duplicate_count = 0
+                                
+                                for concept in imported_data["concepts"]:
+                                    if concept["name"] not in existing_names:
+                                        new_concepts.append(concept)
+                                    else:
+                                        duplicate_count += 1
+                                
+                                # 添加到现有概念后面
+                                st.session_state.concepts.extend(new_concepts)
+                                import_message = f"✅ 成功添加 {len(new_concepts)} 个新概念"
+                                if duplicate_count > 0:
+                                    import_message += f"，跳过了 {duplicate_count} 个重复概念"
+                                import_success = True
+                            
+                            if import_success:
+                                # 数据已自动保存到session state（缓存）
+                                # 设置导入成功状态
+                                st.session_state.import_success = True
+                                st.session_state.import_message = import_message
+                                
+                                # 显示强提醒消息
+                                st.success(import_message)
+                                st.info("💾 数据已保存到缓存（session state）")
+                                st.warning("⚠️ 导入完成！请立即手动关闭此展开器以查看更新后的概念列表。")
+                                st.info("💡 提示：点击展开器标题右侧的箭头即可关闭")
+                                
+                                # 强制刷新页面
+                                st.rerun()
+                    else:
+                        st.error("文件格式错误：缺少 'concepts' 字段或格式不正确")
+                except json.JSONDecodeError:
+                    st.error("文件格式错误：不是有效的JSON文件")
+                except Exception as e:
+                    st.error(f"导入失败：{str(e)}")
+    
     # 添加新概念
     with st.expander("添加新概念", expanded=False):
         new_concept_name = st.text_input("新概念名称")
@@ -574,8 +739,8 @@ with st.sidebar:
                 st.warning("请至少填写概念名称和提示词")
 
 # 主界面 - Rosetta品牌设计
-st.markdown("<h1 style='text-align: center; color: #e8f1ed;'> Rosetta</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; color: #1b9aaa; margin-bottom: 2rem;'>智能语言学概念标注系统</h3>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: var(--color-primary);'> Rosetta</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: var(--color-secondary); margin-bottom: 2rem;'>智能语言学概念标注系统</h3>", unsafe_allow_html=True)
 
 st.divider()
 
@@ -725,35 +890,35 @@ with st.container():
     cols = st.columns(3)
     with cols[0]:
         st.markdown("""
-        <div style='text-align: center; padding: 1.2rem; background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); height: 100%;'>
+        <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
             <div style='font-size: 2rem; margin-bottom: 0.8rem;'>🤖</div>
-            <h4 style='color: var(--primary-color); margin-bottom: 0.5rem; font-size: 1.1rem;'>多模型支持</h4>
-            <p style='color: var(--text-card); line-height: 1.4; font-size: 0.9rem;'>支持Kimi和DeepSeek平台，动态获取可用模型，灵活切换不同AI能力</p>
+            <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem;'>多模型支持</h4>
+            <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持Kimi和DeepSeek平台，动态获取可用模型，灵活切换不同AI能力</p>
         </div>
         """, unsafe_allow_html=True)
     with cols[1]:
         st.markdown("""
-        <div style='text-align: center; padding: 1.2rem; background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); height: 100%;'>
+        <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
             <div style='font-size: 2rem; margin-bottom: 0.8rem;'>📚</div>
-            <h4 style='color: var(--primary-color); margin-bottom: 0.5rem; font-size: 1.1rem;'>概念管理</h4>
-            <p style='color: var(--text-card); line-height: 1.4; font-size: 0.9rem;'>自定义语言学概念，支持编辑和扩展，满足不同研究需求</p>
+            <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem;'>概念管理</h4>
+            <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>自定义语言学概念，支持编辑和扩展，满足不同研究需求</p>
         </div>
         """, unsafe_allow_html=True)
     with cols[2]:
         st.markdown("""
-        <div style='text-align: center; padding: 1.2rem; background-color: var(--card-bg); border-radius: 8px; border: 1px solid var(--border-color); height: 100%;'>
+        <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
             <div style='font-size: 2rem; margin-bottom: 0.8rem;'>🔒</div>
-            <h4 style='color: var(--primary-color); margin-bottom: 0.5rem; font-size: 1.1rem;'>安全可靠</h4>
-            <p style='color: var(--text-card); line-height: 1.4; font-size: 0.9rem;'>API密钥安全管理，支持Streamlit Secrets，保障数据安全</p>
+            <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem;'>安全可靠</h4>
+            <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>API密钥安全管理，支持Streamlit Secrets，保障数据安全</p>
         </div>
         """, unsafe_allow_html=True)
 
 # 页脚
 st.divider()
 st.markdown("""
-<div style='text-align: center; color: var(--text-footer); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color);'>
+<div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
     <p><strong>🔍 Rosetta - 智能语言学概念标注系统 v2.1</strong></p>
-    <p>当前平台: <span style='color: var(--primary-color);'>{}</span> | 当前模型: <span style='color: var(--secondary-color);'>{}</span></p>
+    <p>当前平台: <span style='color: var(--color-primary);'>{}</span> | 当前模型: <span style='color: var(--color-secondary);'>{}</span></p>
     <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a> | 在线演示: <a href='https://rosetta-git.streamlit.app/' target='_blank'>Streamlit Cloud</a></p>
 </div>
 """.format(st.session_state.selected_platform, st.session_state.selected_model), unsafe_allow_html=True)
