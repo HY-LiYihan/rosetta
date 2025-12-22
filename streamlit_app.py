@@ -319,7 +319,7 @@ if "deepseek_api_key" not in st.session_state:
 
 # 模型配置
 if "selected_model" not in st.session_state:
-    st.session_state.selected_model = "deepseek-reasoner"
+    st.session_state.selected_model = "deepseek-chat"
 
 if "selected_platform" not in st.session_state:
     st.session_state.selected_platform = "deepseek"
@@ -714,7 +714,7 @@ selected_concept_name = st.selectbox(
 selected_concept = next(c for c in st.session_state.concepts if c["name"] == selected_concept_name)
 
 # 显示概念信息
-with st.expander("查看概念详情", expanded=True):
+with st.expander("查看概念详情", expanded=False):
     st.markdown(f"**概念**: {selected_concept['name']}")
     st.markdown(f"**分类**: {selected_concept.get('category', '未分类')}")
     st.markdown(f"**提示词**: {selected_concept['prompt']}")
@@ -760,7 +760,7 @@ if st.button("开始标注", type="primary") and input_text:
 现在请标注以下文本：
 文本：\"{input_text}\"
 
-请提供标注结果（使用**加粗**标记标注内容）："""
+请提供标注结果（无需任何多余说明）："""
                 
                 # 根据平台调用相应的API
                 if st.session_state.selected_platform == "kimi":
