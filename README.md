@@ -118,33 +118,15 @@ Rosetta系统架构
 
 ### 4.1 数据集
 
-我们构建了包含三个核心语言学概念的数据集：
+我们构建了包含两个核心语言学概念的数据集：
 1. **Projection (句法投射)**: 15个标注样本
-2. **Agreement (一致关系)**: 15个标注样本  
-3. **Case Marking (格标记)**: 15个标注样本
+2. **Reference (指代称呼)**: 15个标注样本  
 
 ### 4.2 评估指标
 
 - **标注准确率**: 人工评估标注结果的正确性
 - **用户满意度**: 通过用户调查评估系统易用性
 - **响应时间**: 标注任务的平均完成时间
-
-### 4.3 实验结果
-
-| 概念类型 | 准确率 | 用户满意度 | 平均响应时间 |
-|---------|--------|------------|--------------|
-| Projection | 92.3% | 4.7/5.0 | 2.1s |
-| Agreement | 88.7% | 4.5/5.0 | 1.8s |
-| Case Marking | 90.1% | 4.6/5.0 | 2.3s |
-
-### 4.4 消融实验
-
-我们进行了消融实验来验证系统各组件的重要性：
-- **完整系统**: 92.3%准确率
-- **无示例学习**: 85.4%准确率 (-6.9%)
-- **简化提示词**: 79.2%准确率 (-13.1%)
-
-实验结果表明，示例学习和精心设计的提示词对系统性能至关重要。
 
 ---
 
@@ -217,8 +199,8 @@ Rosetta v2.0 支持多个AI平台和模型：
 
 #### 7.3.2 DeepSeek平台
 - **可用模型**:
-  - `deepseek-reasoner` (默认) - 推理专用模型
-  - `deepseek-chat` - 通用对话模型
+  - `deepseek-chat` (默认) - 通用对话模型
+  - `deepseek-reasoner` - 推理专用模型
   - `deepseek-coder` - 代码专用模型
 - **API端点**: `https://api.deepseek.com`
 - **获取API Key**: 访问DeepSeek官网
@@ -328,12 +310,11 @@ else:
 @misc{rosetta2024,
   title={Rosetta: Intelligent Linguistic Concept Annotation System with Large Language Models},
   author={HY-LiYihan},
-  year={2024},
-  howpublished={\url{https://github.com/HY-LiYihan/rosetta}},
-  note={CVPR 2025 Submission}
+  year={2025},
+  howpublished={\url{https://github.com/HY-LiYihan/rosetta}}
 }
 ```
 
 **联系方式**: 通过GitHub Issues提交问题或建议
 
-**最后更新**: 2024年12月21日
+**最后更新**: 2025年12月22日
