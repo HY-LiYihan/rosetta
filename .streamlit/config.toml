@@ -1,0 +1,26 @@
+[theme]
+# 设置基础主题为深色模式
+base = "dark"
+
+# 主色调
+primaryColor = "#88D4E1"
+
+# 背景颜色
+backgroundColor = "#161b22"
+
+# 次要背景颜色
+secondaryBackgroundColor = "#2B474B"
+
+# 文字颜色
+textColor = "#D9E8F3"
+
+# 字体设置
+font = "sans serif"
+
+[server]
+# 服务器设置
+maxUploadSize = 200
+
+[browser]
+# 浏览器设置
+gatherUsageStats = false
