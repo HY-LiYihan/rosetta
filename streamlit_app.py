@@ -6,7 +6,7 @@ from datetime import datetime
 
 # 页面配置
 st.set_page_config(
-    page_title="Rosetta - 智能语言学概念标注系统",
+    page_title="Rosetta - 智能标注系统",
     page_icon="assets/rosetta-icon-whiteback.png",
     layout="wide",
     initial_sidebar_state="expanded"
