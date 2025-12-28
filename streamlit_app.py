@@ -721,8 +721,11 @@ with st.expander("查看概念详情", expanded=False):
     
     st.markdown("**标注样例**:")
     for i, example in enumerate(selected_concept.get("examples", [])):
-        st.markdown(f"{i+1}. 文本: `{example['text']}`")
-        st.markdown(f"   标注: {example['annotation']}")
+        st.markdown(f"{i+1}. **文本**: `{example['text']}`")
+        st.markdown(f"   **标注**: {example['annotation']}")
+        if "explanation" in example and example["explanation"]:
+            st.markdown(f"   **解释**: {example['explanation']}")
+        st.markdown("---")
 
 # 标注界面
 st.divider()
@@ -744,23 +747,44 @@ if st.button("开始标注", type="primary") and input_text:
     else:
         with st.spinner("正在调用大模型进行标注..."):
             try:
-                # 构建提示词
+                # 构建提示词 - 示例以JSON格式提供，要求返回JSON
                 prompt = f"""你是一个语言学标注助手。请根据以下概念进行文本标注：
 
 概念：{selected_concept['name']}
 定义：{selected_concept['prompt']}
 
-标注示例："""
+标注示例（JSON格式）：
+[
+"""
                 
-                for i, example in enumerate(selected_concept.get("examples", [])):
-                    prompt += f"\n{i+1}. 文本：\"{example['text']}\"\n   标注：\"{example['annotation']}\""
+                # 添加示例，每个示例包含text、annotation、explanation
+                examples_json = []
+                for example in selected_concept.get("examples", []):
+                    example_dict = {
+                        "text": example["text"],
+                        "annotation": example["annotation"],
+                        "explanation": example.get("explanation", "")
+                    }
+                    examples_json.append(json.dumps(example_dict, ensure_ascii=False))
                 
+                prompt += ",\n".join(examples_json)
                 prompt += f"""
+]
 
 现在请标注以下文本：
 文本：\"{input_text}\"
 
-请提供标注结果（无需任何多余说明）："""
+请以JSON格式返回标注结果，只包含JSON，不要有其他文本。JSON应包含以下字段：
+- text: 原始文本
+- annotation: 标注分析
+- explanation: 解释说明
+
+返回格式示例：
+{{
+  "text": "{input_text}",
+  "annotation": "标注内容...",
+  "explanation": "解释说明..."
+}}"""
                 
                 # 根据平台调用相应的API
                 if st.session_state.selected_platform == "kimi":
@@ -799,12 +823,40 @@ if st.button("开始标注", type="primary") and input_text:
                 
                 annotation_result = response.choices[0].message.content
                 
+                # 尝试解析JSON响应
+                try:
+                    # 清理响应文本，移除可能的markdown代码块
+                    cleaned_result = annotation_result.strip()
+                    if cleaned_result.startswith("```json"):
+                        cleaned_result = cleaned_result[7:]
+                    if cleaned_result.startswith("```"):
+                        cleaned_result = cleaned_result[3:]
+                    if cleaned_result.endswith("```"):
+                        cleaned_result = cleaned_result[:-3]
+                    cleaned_result = cleaned_result.strip()
+                    
+                    # 解析JSON
+                    parsed_result = json.loads(cleaned_result)
+                    
+                    # 验证必需字段
+                    if "text" not in parsed_result or "annotation" not in parsed_result or "explanation" not in parsed_result:
+                        st.warning("JSON响应缺少必需字段，显示原始响应")
+                        parsed_result = None
+                        
+                except json.JSONDecodeError as e:
+                    st.warning(f"无法解析JSON响应：{str(e)}，显示原始响应")
+                    parsed_result = None
+                except Exception as e:
+                    st.warning(f"处理响应时出错：{str(e)}，显示原始响应")
+                    parsed_result = None
+                
                 # 保存到历史记录
                 history_entry = {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "concept": selected_concept['name'],
                     "text": input_text,
                     "annotation": annotation_result,
+                    "parsed_result": parsed_result,
                     "platform": st.session_state.selected_platform,
                     "model": st.session_state.selected_model
                 }
@@ -813,13 +865,33 @@ if st.button("开始标注", type="primary") and input_text:
                 # 显示结果
                 st.success("标注完成！")
                 st.subheader("标注结果")
-                st.markdown(annotation_result)
+                
+                if parsed_result:
+                    # 显示格式化后的JSON结果
+                    st.json(parsed_result)
+                    
+                    # 显示结构化信息
+                    st.markdown("**结构化信息：**")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("文本", parsed_result.get("text", "")[:50] + "..." if len(parsed_result.get("text", "")) > 50 else parsed_result.get("text", ""))
+                    with col2:
+                        st.metric("标注类型", "已解析")
+                    with col3:
+                        st.metric("解释长度", f"{len(parsed_result.get('explanation', ''))} 字符")
+                    
+                    # 显示详细内容
+                    with st.expander("查看详细内容", expanded=True):
+                        st.markdown(f"**文本：** {parsed_result.get('text', '')}")
+                        st.markdown(f"**标注分析：** {parsed_result.get('annotation', '')}")
+                        st.markdown(f"**解释说明：** {parsed_result.get('explanation', '')}")
+                else:
+                    # 显示原始响应
+                    st.markdown(annotation_result)
+                    st.code(annotation_result, language="markdown")
                 
                 # 显示使用的平台和模型信息
                 st.info(f"使用平台：{st.session_state.selected_platform} | 模型：{st.session_state.selected_model}")
-                
-                # 复制按钮
-                st.code(annotation_result, language="markdown")
                 
             except Exception as e:
                 st.error(f"标注失败：{str(e)}")

@@ -2,47 +2,57 @@
   "concepts": [
     {
       "name": "projection",
-      "prompt": "Throughout the semantic construal of human experience, there is a differentiation between two orders of reality: between the everyday reality of our material existence on the one hand and on the other hand the second-order reality that is brought into existence only by the system of language. One of the paths for realizing second-order reality is Projection, whereby the sequential relation between two figures projects one of them onto the plane of second-order semiotic phenomena, thus enabling it to enter the realm of metaphenomena. Therefore, Projection is defined as relating “phenomena of one order of experience”, which refer to the processes of saying or thinking, to “phenomena order”, which is what people say or think. That is to say, the projected clause indicates a locution or an idea. What’s worth mentioning is Fact as projected which doesn’t rely on certain Sayer or Sener and is usually indicated with embedding.\nIn terms of taxis within clause complexes, which helps understanding Projection forms of types above, Projection can be divided into Quotation, Reporting and Embedding, respectively corresponding to parataxis, hypotaxis and modifiers of nominal groups. Also, there is a special form called Free Indirect Speech that has the characteristics of both Quotation and Reporting. ",
+      "prompt": "Throughout the semantic construal of human experience, there is a differentiation between two orders of reality: between the everyday reality of our material existence on the one hand and on the other hand the second-order reality that is brought into existence only by the system of language. One of the paths for realizing second-order reality is Projection, whereby the sequential relation between two figures projects one of them onto the plane of second-order semiotic phenomena, thus enabling it to enter the realm of metaphenomena. Therefore, Projection is defined as relating \"phenomena of one order of experience\", which refer to the processes of saying or thinking, to \"phenomena order\", which is what people say or think. That is to say, the projected clause indicates a locution or an idea. What's worth mentioning is Fact as projected which doesn't rely on certain Sayer or Sener and is usually indicated with embedding.\nIn terms of taxis within clause complexes, which helps understanding Projection forms of types above, Projection can be divided into Quotation, Reporting and Embedding, respectively corresponding to parataxis, hypotaxis and modifiers of nominal groups. Also, there is a special form called Free Indirect Speech that has the characteristics of both Quotation and Reporting. ",
       "examples": [
         {
           "text": "\"Caesar was ambitious,\" says Brutus.",
-          "annotation": "[\"Caesar was ambitious,\"] (Projected clause) says Brutus (Projecting clause). Type: Direct Locution Projection"
+          "annotation": "[\"Caesar was ambitious,\"] (Projected clause) says Brutus (Projecting clause). Type: Direct Locution Projection",
+          "explanation": "这是一个直接引语投射的例子，展示了言语行为如何被投射到第二级现实。'Caesar was ambitious'是被投射的从句，表示具体的言语内容；'says Brutus'是投射从句，表示言语行为本身。这种结构体现了语言将言语从现实世界投射到符号世界的能力。"
         },
         {
           "text": "\"I'm not sure,\" replied the Fat Controller, \"we can't lift you out with a crane, the ground's not firm enough.\"",
-          "annotation": "[\"I’m not sure,\"] (Projected clause) replied the Fat Controller (Projecting clause), [\"we can’t lift you out with a crane, the ground’s not firm enough.\"] (Projected clauses). Type: Direct Locution Projection"
+          "annotation": "[\"I'm not sure,\"] (Projected clause) replied the Fat Controller (Projecting clause), [\"we can't lift you out with a crane, the ground's not firm enough.\"] (Projected clauses). Type: Direct Locution Projection",
+          "explanation": "这个例子包含两个被投射的从句，展示了复杂言语行为的投射。第一个从句表达不确定性，第二个从句提供解释原因。两个从句都被' replied the Fat Controller'这个投射从句所投射，体现了言语行为的连续性和复杂性。"
         },
         {
           "text": "\"It is a great thing, discretion,\" mused Poirot.",
-          "annotation": "[\"It is a great thing, discretion,\"] (Projected clause) mused Poirot (Projecting clause). Type: Direct Locution Projection"
+          "annotation": "[\"It is a great thing, discretion,\"] (Projected clause) mused Poirot (Projecting clause). Type: Direct Locution Projection",
+          "explanation": "这是一个直接引语投射的例子，展示了内心思考的言语化。'mused'表示沉思的言语行为，将被投射的从句'It is a great thing, discretion'呈现为具体的思考内容。这种结构体现了语言如何将内心活动投射为可分析的符号现象。"
         },
         {
           "text": "Brutus has told you Caesar was ambitious.",
-          "annotation": "Brutus has told you (Projecting clause) [Caesar was ambitious.] (Projected clause). Type: Indirect Locution Projection"
+          "annotation": "Brutus has told you (Projecting clause) [Caesar was ambitious.] (Projected clause). Type: Indirect Locution Projection",
+          "explanation": "这是一个间接引语投射的例子，展示了言语内容的转述。与直接引语不同，间接引语将原言语内容整合到主句的语法结构中，'Caesar was ambitious'作为'told'的宾语从句，体现了言语内容在语法上的从属关系。"
         },
         {
           "text": "Mary thought she would go back there next day.",
-          "annotation": "Mary thought (Projecting clause) [she would go back there next day.] (Projected clause). Type: Indirect Idea Projection"
+          "annotation": "Mary thought (Projecting clause) [she would go back there next day.] (Projected clause). Type: Indirect Idea Projection",
+          "explanation": "这是一个思想投射的例子，展示了内心想法的语言表达。'thought'表示思想行为，将被投射的从句'she would go back there next day'呈现为具体的思考内容。这种结构体现了语言如何将认知过程投射为可分析的语言单位。"
         },
         {
           "text": "She thought, \" I can.\"",
-          "annotation": "She thought, (Projecting clause) [\"I can.\"] (Projected clause). Type: Indirect Idea Projection"
+          "annotation": "She thought, (Projecting clause) [\"I can.\"] (Projected clause). Type: Indirect Idea Projection",
+          "explanation": "这是一个混合投射的例子，结合了间接思想投射和直接引语。'thought'表示思想行为，但被投射的内容以直接引语形式呈现，体现了思想内容的具体性和直接性。这种结构在文学作品中常见，用于增强表现力。"
         },
         {
           "text": "I think so.",
-          "annotation": "I think (Projecting clause) [so.] (Projected clause). Type: Elliptical Idea Projection"
+          "annotation": "I think (Projecting clause) [so.] (Projected clause). Type: Elliptical Idea Projection",
+          "explanation": "这是一个省略投射的例子，展示了投射结构的简化形式。'so'作为替代形式，代表完整的被投射内容。这种省略结构在日常对话中常见，体现了语言的经济性原则，同时保持了投射关系的基本框架。"
         },
         {
           "text": "He threatened to blow up the city.",
-          "annotation": "He threatened (Projecting clause) [to blow up the city.] (Projected clause). Type: Indirect Locution Projection"
+          "annotation": "He threatened (Projecting clause) [to blow up the city.] (Projected clause). Type: Indirect Locution Projection",
+          "explanation": "这是一个间接言语行为投射的例子，展示了威胁性言语的转述。'to blow up the city'作为不定式短语，表示威胁的具体内容。这种结构体现了言语行为与内容之间的投射关系，同时保持了语法的完整性。"
         },
         {
           "text": "Brutus's assertion that Caesar was ambitious.",
-          "annotation": "Brutus’ assertion (Projecting element) [that Caesar was ambitious] (Projected clause). Type: Indirect Locution Projection"
+          "annotation": "Brutus's assertion (Projecting element) [that Caesar was ambitious] (Projected clause). Type: Indirect Locution Projection",
+          "explanation": "这是一个名词化投射的例子，展示了言语行为的静态表达。'assertion'作为名词化的投射元素，'that Caesar was ambitious'作为同位语从句表示断言的具体内容。这种结构体现了投射关系的语法化过程。"
         },
         {
           "text": "Mark Antony regretted the fact that Caesar was dead.",
-          "annotation": "Mark Antony regretted the fact (Projecting clause) [that Caesar was dead.] (Projected clause). Type: Indirect Idea Projection"
+          "annotation": "Mark Antony regretted the fact (Projecting clause) [that Caesar was dead.] (Projected clause). Type: Indirect Idea Projection",
+          "explanation": "这是一个事实投射的例子，展示了认知状态与事实内容之间的关系。'regretted the fact'表示情感态度，'that Caesar was dead'作为事实内容。这种结构体现了语言如何将客观事实投射为主观认知的对象。"
         }
       ],
       "category": "syntax",
@@ -50,47 +60,57 @@
     },
     {
       "name": "reference",
-      "prompt": "Reference is a cohesive device that allow the speaker to indicate whether something is being repeated from somewhere earlier in the text or whether it has not yet appeared in the text. It has two main categories One is Exophoric Reference, which means that the identity presumed by the reference item can be recovered from the external context. The other is Endophoric Reference, where the identity presumed by the reference item is recovered in the internal context. Endophoric Reference has two sub-categories. If the reference is referring backwards to the previous contexts, it is an Anaphoric Reference; if the reference is referring forwards to the messages developed later, it is a Cataphoric Reference. There are three main types of cohesive reference. The first type, Personal Reference, includes the third-person personal pronouns (his, her, it). The second type Demonstrative Reference includes demonstratives like this/that, these/those, here/there, and now/then, the, etc. The third type Comparative Reference signals something by reference to which the speaker is talking about is the same or different, like or unlike, equal or unequal, more or less. Some prompts words in the third type include “another”, “different”, “the same” “similarly” and ordinal numbers, etc. ",
+      "prompt": "Reference is a cohesive device that allow the speaker to indicate whether something is being repeated from somewhere earlier in the text or whether it has not yet appeared in the text. It has two main categories One is Exophoric Reference, which means that the identity presumed by the reference item can be recovered from the external context. The other is Endophoric Reference, where the identity presumed by the reference item is recovered in the internal context. Endophoric Reference has two sub-categories. If the reference is referring backwards to the previous contexts, it is an Anaphoric Reference; if the reference is referring forwards to the messages developed later, it is a Cataphoric Reference. There are three main types of cohesive reference. The first type, Personal Reference, includes the third-person personal pronouns (his, her, it). The second type Demonstrative Reference includes demonstratives like this/that, these/those, here/there, and now/then, the, etc. The third type Comparative Reference signals something by reference to which the speaker is talking about is the same or different, like or unlike, equal or unequal, more or less. Some prompts words in the third type include \"another\", \"different\", \"the same\" \"similarly\" and ordinal numbers, etc. ",
       "examples": [
         {
-          "text": "Who’s he? (speaker pointing at photograph).",
-          "annotation": "Who's [he] (Reference)? Type: Exophoric Reference Reference: he Referent: the man in the photograph (outside the context)"
+          "text": "Who's he? (speaker pointing at photograph).",
+          "annotation": "Who's [he] (Reference)? Type: Exophoric Reference Reference: he Referent: the man in the photograph (outside the context)",
+          "explanation": "这是一个外指照应的例子，'he'的指称对象不在文本内部，而在外部语境中（照片中的人）。这种照应依赖于交际双方共享的外部知识，体现了语言与外部世界的直接联系。"
         },
         {
           "text": "She appealed to Philip. He turned the main tap.",
-          "annotation": "She appealed to Philip (Referent). [He] (Reference) turned the main tap. Type: Endophoric Reference: Anaphoric Reference Reference: He (Personal Reference) Referent: Philip (inside the context) Orientation: referring backwards"
+          "annotation": "She appealed to Philip (Referent). [He] (Reference) turned the main tap. Type: Endophoric Reference: Anaphoric Reference Reference: He (Personal Reference) Referent: Philip (inside the context) Orientation: referring backwards",
+          "explanation": "这是一个内指-回指照应的例子，'He'指向前文提到的'Philip'。这种照应建立了文本内部的连贯性，通过人称代词'He'将两个句子连接起来，体现了文本的衔接机制。"
         },
         {
           "text": "But Pat and another kid had a different idea. Here is Pat's paper.",
-          "annotation": "But Pat and another kid had a different idea. [Here](Reference) is Pat’s paper (Referent). Type: Endophoric Reference: Cataphoric Reference Reference: Here (Demonstrative Reference) Referent: Pat’s paper Orientation: referring forwards to the message unfolded later."
+          "annotation": "But Pat and another kid had a different idea. [Here](Reference) is Pat's paper (Referent). Type: Endophoric Reference: Cataphoric Reference Reference: Here (Demonstrative Reference) Referent: Pat's paper Orientation: referring forwards to the message unfolded later.",
+          "explanation": "这是一个内指-下指照应的例子，'Here'指向后文即将出现的'Pat's paper'。这种照应创造了悬念和期待，引导读者关注后续信息，体现了文本的信息组织策略。"
         },
         {
           "text": "Cholera first struck England in 1832. It came from the East.",
-          "annotation": "Cholera (Referent) first struck England in 1832. [It] (Reference) came from the East. Type: Endophoric Reference: Anaphoric Reference Reference: It (Personal Reference) Referent: Cholera (inside the context) Orientation: referring backwards"
+          "annotation": "Cholera (Referent) first struck England in 1832. [It] (Reference) came from the East. Type: Endophoric Reference: Anaphoric Reference Reference: It (Personal Reference) Referent: Cholera (inside the context) Orientation: referring backwards",
+          "explanation": "这是一个回指照应的例子，'It'指向前文提到的'Cholera'。通过使用中性代词'It'，文本保持了话题的连续性，同时避免了名词的重复，体现了语言的经济性原则。"
         },
         {
           "text": "He merely laughed and said that she was imagining things. This typical male reaction resulted in a row.",
-          "annotation": "He merely laughed and said that she was imagining things (Referent). [This] (Reference) typical male reaction resulted in a row. Type: Endophoric Reference: Anaphoric Reference Reference: This (Demonstrative Reference) Referent: He merely laughed and said that she was imaging things. (inside the context) Orientation: referring backward to a stretch of text."
+          "annotation": "He merely laughed and said that she was imagining things (Referent). [This] (Reference) typical male reaction resulted in a row. Type: Endophoric Reference: Anaphoric Reference Reference: This (Demonstrative Reference) Referent: He merely laughed and said that she was imaging things. (inside the context) Orientation: referring backward to a stretch of text.",
+          "explanation": "这是一个指示照应的例子，'This'指向前文的整个事件'He merely laughed and said that she was imagining things'。这种照应不仅连接名词短语，还连接更大的语篇单位，体现了照应在语篇组织中的重要作用。"
         },
         {
           "text": "I went to take the shot again. But by then, it was too late.",
-          "annotation": "I went to take the shot again (Referent). But by [then] (Reference), it was too late. Type: Endophoric Reference: Anaphoric Reference Reference: then (Demonstrative Reference) Referent: I went to take the shot again. (inside the context) Orientation: referring backward to the moment when I went to take the shot again."
+          "annotation": "I went to take the shot again (Referent). But by [then] (Reference), it was too late. Type: Endophoric Reference: Anaphoric Reference Reference: then (Demonstrative Reference) Referent: I went to take the shot again. (inside the context) Orientation: referring backward to the moment when I went to take the shot again.",
+          "explanation": "这是一个时间照应的例子，'then'指向前文描述的时间点'I went to take the shot again'。这种时间照应建立了事件的时间顺序关系，体现了语言在时间维度上的衔接能力。"
         },
         {
           "text": "I asked my wife, \"Are you taking the car?\"",
-          "annotation": "I asked my wife, “Are you taking [the](Reference) car?” Type: Exophoric Reference: Homophora Reference: the (Demonstrative Reference) Referent: the car that the speaker and the hearer both know based on their own knowledge. (outside the context)"
+          "annotation": "I asked my wife, \"Are you taking [the](Reference) car?\" Type: Exophoric Reference: Homophora Reference: the (Demonstrative Reference) Referent: the car that the speaker and the hearer both know based on their own knowledge. (outside the context)",
+          "explanation": "这是一个同指照应的例子，定冠词'the'指向交际双方共享知识中的特定车辆。这种照应依赖于交际双方共同的外部知识，体现了语言交际中的预设和共享认知。"
         },
         {
           "text": "Do you want some more wrapping paper?",
-          "annotation": "Do you want some [more] (Reference)wrapping paper? (= I can see that you already have some paper.) Type: Exophoric Reference Reference: more (Comparative Reference) Referent: some wrapping paper that you already have (outside the context)"
+          "annotation": "Do you want some [more] (Reference)wrapping paper? (= I can see that you already have some paper.) Type: Exophoric Reference Reference: more (Comparative Reference) Referent: some wrapping paper that you already have (outside the context)",
+          "explanation": "这是一个比较照应的例子，'more'指向听话人已经拥有的包装纸。这种照应通过比较关系建立指称，'more'暗示了现有数量的存在，体现了语言中的比较和量化表达。"
         },
         {
           "text": "There are many other stories about her staunch individuality.",
-          "annotation": "There are many [other] (Reference) stories about her staunch individuality. Type: Endophoric Reference: Anaphoric Reference Reference: other (Comparative Reference) Referent: some stories about her staunch individuality mentioned previously (inside the context) Orientation: referring backwards"
+          "annotation": "There are many [other] (Reference) stories about her staunch individuality. Type: Endophoric Reference: Anaphoric Reference Reference: other (Comparative Reference) Referent: some stories about her staunch individuality mentioned previously (inside the context) Orientation: referring backwards",
+          "explanation": "这是一个比较回指的例子，'other'指向前文已经提到的关于她坚定个性的故事。通过比较词'other'，文本建立了新旧信息之间的联系，体现了信息结构的组织方式。"
         },
         {
           "text": "Otherwise, his story is the same as Katharine's.",
-          "annotation": "Otherwise, [his] (Reference) story is the same as Katharine's (Referent). Type: Endophoric Reference: Anaphoric Reference Reference: his (Personal Reference) Referent: a person mentioned previously (inside the context) Orientation: referring backwards; [Katharine's] (Reference) Type: Endophoric Reference: Anaphoric Reference Reference: Katharine's (Possessive Reference) Referent: Katharine's story (inside the context) Orientation: referring backwards"
+          "annotation": "Otherwise, [his] (Reference) story is the same as Katharine's (Referent). Type: Endophoric Reference: Anaphoric Reference Reference: his (Personal Reference) Referent: a person mentioned previously (inside the context) Orientation: referring backwards; [Katharine's] (Reference) Type: Endophoric Reference: Anaphoric Reference Reference: Katharine's (Possessive Reference) Referent: Katharine's story (inside the context) Orientation: referring backwards",
+          "explanation": "这是一个多重照应的例子，包含两个照应关系：'his'指向前文提到的某个人，'Katharine's'指向前文提到的Katharine的故事。通过比较结构'the same as'，文本建立了两个故事之间的等同关系，体现了照应在比较结构中的作用。"
         }
       ],
       "category": "morphology",
