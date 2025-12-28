@@ -46,7 +46,7 @@
         }
       ],
       "category": "syntax",
-      "is_default": true
+      "is_default":true
     },
     {
       "name": "reference",
@@ -95,6 +95,68 @@
       ],
       "category": "morphology",
       "is_default": true
-    }
-  ]
+    },
+    {
+      "name": "nominalization",
+      "prompt": "Nominalization is the key phenomenon in ideational metaphors and core realization form of grammatical metaphors. Grammatical metaphor refers to a shift in the congruent lexical-grammatical form for the same meaning. The congruent form, which is the direct expression of meaning, matches the one-to-one mapping between semantic processes and their corresponding lexical-grammatical structures. In contrast, grammatical metaphor represents a non-congruent form of expression. And nominalization refers to the use of a nominal form to express a process meaning. To elaborate, it transforms grammatical units originally functioning as verbs or adjectives into noun phrases. For example, “they did a dance” nominalize the action of dance, while “the dance amazes the audience” isn’t nominalization. Also, with functions of packaging information, enhancing logical cohesion and creating objectivization, it serves as a crucial device for constructing formal registers like academic and scientific discourses. ",
+      "examples": [
+        {
+          "text": "The guests’ supper of ice cream was followed by a gentle swim.",
+          "annotation": "The guests[’ supper](Nominalization) of ice cream was followed by [a gentle swim](Nominalization). Congruent paraphrase: The guest ate the ice cream and then gently swam."
+        },
+        {
+          "text": "They did a Hungarian dance.",
+          "annotation": "They did [a Hungarian dance](Nominalization). Congruent paraphrase: They Danced in Hungarian style. "
+        },
+        {
+          "text": "Cooperation of the team was efficient.",
+          "annotation": "[Cooperation](Nominalization) of the team was efficient. Congruent paraphrase: The team cooperated efficiently."
+        },        
+        {
+          "text": "Advances in technology are speeding up the writing of business programs.",
+          "annotation": "[Advances](Nominalization) in technology are speeding up the [writing](Nominalization) of business programs. Congruent paraphrase: Because technology is getting better, people can write business programs faster."
+        },
+        {
+          "text": "The tracks offer a range of walks of varying length.",
+          "annotation": "The tracks offer [a range of walks](Nominalization) of [varying length](Nominalization). Congruent paraphrase: One can walk along different tracks, some shorter, some longer."
+        },
+        {
+          "text": "Alcohol impairment can lead to cancers.",
+          "annotation": "[Alcohol impairment](Nominalization) can lead to cancers. Congruent paraphrase: Alcohol impairs people and makes some of them diagnosed with cancers."
+        },
+        {
+          "text": "These difficulties within tasks necessitated the allocation of one extra packer.",
+          "annotation": "These [difficulties](Nominalization) necessitated the [allocation](Nominalization) of one extra packer. Congruent paraphrase: Because these tasks were difficult they needed to allocate one extra packer."
+        },
+        {
+          "text": "His denial of the accusation was unconvincing.",
+          "annotation": "His [denial](Nominalization) of the accusation was unconvincing. Congruent paraphrase: He denied the accusation but few people believed him."
+        },
+        {
+          "text": "Proposals have been made for the adoption of critical perspectives on the teaching of literature.",
+          "annotation": "[Proposals](Nominalization) have been made for the [adoption](Nominalization) of critical perspectives on the teaching of literature. Congruent paraphrase: People have proposed that people should adopt perspectives on the teaching of literature."
+        },
+        {
+          "text": "Fears mount for ailing King.",
+          "annotation": "[Fears](Nominalization) mount for ailing King. Congruent paraphrase:People fear most strongly because the King is ailing."
+        },
+        {
+          "text": "The tracks offer a range of walks of varying length.",
+          "annotation": "The tracks offer [a range of walks](Nominalization) of [varying length](Nominalization). Congruent paraphrase: One can walk along different tracks, some shorter, some longer."
+        },
+        {
+          "text": "The tracks offer a range of walks of varying length.",
+          "annotation": "The tracks offer [a range of walks](Nominalization) of [varying length](Nominalization). Congruent paraphrase: One can walk along different tracks, some shorter, some longer."
+        },
+        {
+          "text": "The tracks offer a range of walks of varying length.",
+          "annotation": "The tracks offer [a range of walks](Nominalization) of [varying length](Nominalization). Congruent paraphrase: One can walk along different tracks, some shorter, some longer."
+        },
+        {
+          "text": "The tracks offer a range of walks of varying length.",
+          "annotation": "The tracks offer [a range of walks](Nominalization) of [varying length](Nominalization). Congruent paraphrase: One can walk along different tracks, some shorter, some longer."
+      ],
+      "category": "grammatical metaphor",
+      "is_default":true
+      ]
 }
