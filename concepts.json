@@ -223,6 +223,74 @@
       ],
       "category": "morphology",
       "is_default": true
+    },
+    {
+      "name": "terminology",
+      "prompt": "术语（terminology）指在特定专业领域（如法律、政府、医学、技术、金融等）中具有固定含义或约定译法的专门词汇。这类词汇在翻译时通常有唯一对应表达，需要在目标文本中保持一致性。术语管理是专业翻译的核心环节，要求译者优先参考权威术语库、官方译名或行业标准，必要时在首次出现时提供注释或定义以确保准确传达。",
+      "examples": [
+        {
+          "text": "The plaintiff filed a lawsuit against the defendant.",
+          "annotation": "The [plaintiff] filed a lawsuit against the defendant."
+        },
+        {
+          "text": "The court issued a subpoena for the witness to appear.",
+          "annotation": "The court issued a [subpoena] for the witness to appear."
+        },
+        {
+          "text": "Force majeure clauses are common in international contracts.",
+          "annotation": "[Force majeure] clauses are common in international contracts."
+        },
+        {
+          "text": "The notary public certified the document.",
+          "annotation": "The [notary public] certified the document."
+        },
+        {
+          "text": "Cloud computing has revolutionized data storage.",
+          "annotation": "[Cloud computing] has revolutionized data storage."
+        },
+        {
+          "text": "Hypertension is a major risk factor for heart disease.",
+          "annotation": "[Hypertension] is a major risk factor for heart disease."
+        },
+        {
+          "text": "The company secured a mortgage for the new building.",
+          "annotation": "The company secured a [mortgage] for the new building."
+        },
+        {
+          "text": "The arbitration process resolved the dispute efficiently.",
+          "annotation": "The [arbitration] process resolved the dispute efficiently."
+        },
+        {
+          "text": "The software uses machine learning algorithms.",
+          "annotation": "The software uses [machine learning] algorithms."
+        },
+        {
+          "text": "The patent application was submitted to the office.",
+          "annotation": "The [patent] application was submitted to the office."
+        },
+        {
+          "text": "原告向法院提起了诉讼。",
+          "annotation": "[原告]向法院提起了诉讼。"
+        },
+        {
+          "text": "不可抗力条款适用于自然灾害情况。",
+          "annotation": "[不可抗力]条款适用于自然灾害情况。"
+        },
+        {
+          "text": "云计算服务需要获得相关认证。",
+          "annotation": "[云计算]服务需要获得相关认证。"
+        },
+        {
+          "text": "高血压患者需要定期监测血压。",
+          "annotation": "[高血压]患者需要定期监测血压。"
+        },
+        {
+          "text": "抵押贷款需要提供财产证明。",
+          "annotation": "[抵押贷款]需要提供财产证明。"
+        }
+      ],
+      "category": "translation",
+      "is_default": true
     }
   ]
 }
