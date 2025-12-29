@@ -1,320 +1,263 @@
-# Rosetta: Intelligent Linguistic Concept Annotation System with Large Language Models
-# Rosetta: 基于大语言模型的智能语言学概念标注系统
+# Rosetta: 智能语言学概念标注系统
 
-**Author / 作者**: Yihan Li (来自中大外院 / Sun Yat-sen University, School of Foreign Languages)  
-**Project URL / 项目地址**: https://github.com/HY-LiYihan/rosetta  
-**Online Demo / 在线演示**: https://rosetta-git.streamlit.app/  
+[![GitHub](https://img.shields.io/github/stars/HY-LiYihan/rosetta?style=social)](https://github.com/HY-LiYihan/rosetta)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/Docker-支持-blue)](https://www.docker.com/)
 
----
+**Rosetta** 是一个基于大语言模型的智能语言学概念标注系统，为语言学研究者和教育工作者提供高效的概念标注工具。
 
-## 📋 Abstract / 摘要
+## ✨ 核心功能
 
-**English**: This paper presents Rosetta, an intelligent linguistic concept annotation system based on large language models. The system utilizes the advanced Kimi large language model to achieve automated annotation of complex linguistic concepts, including core concepts such as syntactic projection, agreement, and case marking. Rosetta provides an intuitive Streamlit interactive interface that supports concept management, intelligent annotation, and historical record functions, offering an efficient tool for linguistics researchers and educators. Experiments show that the system performs excellently in various linguistic concept annotation tasks, with accuracy significantly higher than traditional rule-based methods.
+- **多平台模型支持**：支持 Kimi、DeepSeek 等多个 AI 平台，动态获取可用模型列表
+- **智能概念标注**：利用大语言模型自动标注复杂的语言学概念
+- **交互式概念管理**：支持自定义概念定义、示例管理和分类
+- **数据持久化**：支持概念数据的导入导出和历史记录
+- **现代化界面**：基于 Streamlit 的响应式设计，支持深色主题
 
-**中文**: 本文提出了Rosetta，一个基于大语言模型的智能语言学概念标注系统。该系统利用先进的Kimi大语言模型，实现了对复杂语言学概念的自动化标注，包括句法投射（projection）、一致关系（agreement）和格标记（case marking）等核心语言学概念。Rosetta提供了一个直观的Streamlit交互界面，支持概念管理、智能标注和历史记录功能，为语言学研究者和教育工作者提供了一个高效的工具。实验表明，该系统在多种语言学概念标注任务中表现出色，准确率显著高于传统规则方法。
+## 🚀 快速开始
 
-**Keywords / 关键词**: Computational Linguistics, Large Language Models, Concept Annotation, Syntactic Analysis, Streamlit Application / 计算语言学，大语言模型，概念标注，句法分析，Streamlit应用
+### 环境要求
+- Python 3.8+
+- 2GB+ 可用内存（1G 比较极限）
 
----
+### 一键部署（推荐）
 
-## 1️⃣ Introduction / 引言
+无需 Docker，直接运行以下命令即可快速启动：
 
-**English**: Linguistic concept annotation is a fundamental task in computational linguistics. Traditional methods rely on handcrafted rules and limited feature engineering, making it difficult to handle complex linguistic phenomena. In recent years, large language models (LLMs) have made significant progress in natural language processing tasks, providing new possibilities for linguistic annotation.
+```bash
+# 克隆项目
+git clone https://github.com/HY-LiYihan/rosetta.git
+cd rosetta
 
-The Rosetta system aims to address the following challenges:
-1. **Concept Diversity**: The wide variety of linguistic concepts makes it difficult for traditional systems to cover them all
-2. **Annotation Consistency**: Manual annotation suffers from subjectivity and inconsistency issues
-3. **Scalability**: Existing systems struggle to quickly adapt to new linguistic concepts
+# 安装依赖
+pip install -r requirements.txt
 
-The main contributions of this paper include:
-- Proposing a general LLM-based linguistic concept annotation framework
-- Implementing an interactive concept management and annotation interface
-- Providing an extensible concept definition and example system
-- Open-sourcing the complete implementation code and online demo
-
-**中文**: 语言学概念标注是计算语言学中的基础任务，传统方法依赖于手工规则和有限的特征工程，难以处理复杂的语言现象。近年来，大语言模型（LLMs）在自然语言处理任务中取得了显著进展，为语言学标注提供了新的可能性。
-
-Rosetta系统旨在解决以下挑战：
-1. **概念多样性**: 语言学概念种类繁多，传统系统难以覆盖
-2. **标注一致性**: 人工标注存在主观性和不一致性问题
-3. **可扩展性**: 现有系统难以快速适应新的语言学概念
-
-本文的主要贡献包括：
-- 提出了一个基于LLM的通用语言学概念标注框架
-- 实现了交互式的概念管理和标注界面
-- 提供了可扩展的概念定义和示例系统
-- 开源了完整的实现代码和在线演示
-
----
-
-## 2️⃣ 相关工作
-
-### 2.1 传统语言学标注工具
-传统的语言学标注工具如[1] Stanford Parser和[2] spaCy主要基于规则和统计模型，在特定领域表现良好但泛化能力有限。
-
-### 2.2 大语言模型在语言学中的应用
-最近的研究[3,4]表明，LLMs在句法分析和语义理解任务中表现出色。然而，专门针对语言学概念标注的系统仍然缺乏。
-
-### 2.3 交互式标注系统
-现有的交互式标注系统如[5] BRAT和[6] WebAnno主要面向人工标注，缺乏智能辅助功能。
-
-Rosetta系统结合了LLM的智能标注能力和交互式系统的易用性，填补了这一研究空白。
-
----
-
-## 3️⃣ 方法
-
-### 3.1 系统架构
-
-Rosetta系统采用模块化设计，包含以下核心组件：
-
-```
-Rosetta系统架构
-├── 前端界面 (Streamlit)
-│   ├── 概念管理模块
-│   ├── 智能标注模块
-│   └── 历史记录模块
-├── 大语言模型接口 (Kimi API)
-│   ├── 提示词工程
-│   ├── 上下文管理
-│   └── 结果解析
-└── 数据存储层
-    ├── 概念定义 (JSON)
-    └── 标注历史 (内存存储)
+# 启动应用
+streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 ```
 
-### 3.2 概念表示
+访问应用：http://localhost:8501
 
-每个语言学概念定义为三元组：
-```json
-{
-  "name": "概念名称",
-  "prompt": "标注提示词",
-  "examples": [
-    {"text": "示例文本", "annotation": "标注结果"}
-  ]
-}
+## 📋 详细部署指南
+
+### 完整部署步骤
+
+以下是在新设备上从零开始配置 Rosetta 的完整步骤：
+
+```bash
+# 1. 创建工作目录并进入
+sudo mkdir -p /opt/streamlit
+cd /opt/streamlit
+
+# 2. 克隆仓库
+git clone https://github.com/HY-LiYihan/rosetta.git
+cd rosetta
+
+# 3. 构建 Docker 镜像（使用 --network=host 解决网络问题）
+docker build --network=host -t rosetta-app .
+
+# 4. 使用 Docker Compose 启动服务
+docker-compose up -d
+
+# 5. 验证服务运行
+docker ps
+curl http://localhost:8501/_stcore/health
+
+# 6. 访问应用
+# 打开浏览器访问 http://localhost:8501
 ```
 
-### 3.3 标注算法
+**注意事项**：
+- 步骤3使用 `--network=host` 参数可以解决某些网络环境下 pip 安装失败的问题
+- docker-compose.yml 已配置为只读挂载 `/opt/streamlit/rosetta:/app:ro`
+- 如果之前构建过，Docker 会使用缓存加速构建过程
 
-标注过程遵循以下步骤：
-1. **概念选择**: 用户从预定义概念库中选择目标概念
-2. **提示词构建**: 结合概念定义和示例构建LLM提示词
-3. **模型调用**: 通过Kimi API调用大语言模型
-4. **结果解析**: 解析并格式化标注结果
-5. **历史记录**: 保存标注记录供后续参考
+### Docker Compose 配置
 
-### 3.4 实现细节
+项目已包含优化后的 `docker-compose.yml`：
 
-- **前端框架**: Streamlit 1.28.0
-- **大语言模型**: Kimi moonshot-v1-8k
-- **数据格式**: JSON
-- **部署平台**: Streamlit Cloud
+```yaml
+version: '3.8'
 
----
+services:
+  rosetta:
+    build: .
+    container_name: rosetta-app
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+    volumes:
+      - /opt/streamlit/rosetta:/app:ro
+```
 
-## 4️⃣ 实验
+### 管理命令
 
-### 4.1 数据集
+```bash
+# 查看服务状态
+docker-compose ps
 
-我们构建了包含两个核心语言学概念的数据集：
-1. **Projection (句法投射)**: 15个标注样本
-2. **Reference (指代称呼)**: 15个标注样本  
+# 查看日志
+docker-compose logs -f
 
-### 4.2 评估指标
+# 停止服务
+docker-compose down
 
-- **标注准确率**: 人工评估标注结果的正确性
-- **用户满意度**: 通过用户调查评估系统易用性
-- **响应时间**: 标注任务的平均完成时间
+# 重启服务
+docker-compose up -d
 
----
+# 更新服务（重新构建）
+docker-compose up --build -d
+```
 
-## 5️⃣ 结论
+## 🎯 使用指南
 
-本文提出了Rosetta，一个基于大语言模型的智能语言学概念标注系统。通过结合先进的LLM技术和交互式界面设计，Rosetta在语言学概念标注任务中表现出色，为语言学研究提供了有力的工具支持。
+### 首次使用配置
 
-未来的工作方向包括：
-1. 扩展支持更多语言学概念
-2. 集成多语言支持
-3. 开发离线部署版本
-4. 引入主动学习机制
+1. **访问应用**：打开 http://localhost:8501
+2. **配置 API 密钥**：
+   - 在侧边栏选择 AI 平台（Kimi 或 DeepSeek）
+   - 输入对应的 API 密钥
+   - 系统会自动获取可用模型列表
 
----
+### 核心功能使用
 
-## 6️⃣ 参考文献
+#### 1. 概念管理
+- **查看现有概念**：在侧边栏选择概念查看详情
+- **添加新概念**：点击"添加新概念"，填写名称、提示词和示例
+- **编辑概念**：选择概念后点击"编辑概念"进行修改
+- **导入导出**：支持 JSON 格式的概念数据导入导出
 
-[1] Manning, C. D., et al. "The Stanford CoreNLP natural language processing toolkit." ACL 2014.
+#### 2. 文本标注
+1. 选择要标注的概念
+2. 输入需要标注的文本
+3. 点击"开始标注"按钮
+4. 查看 AI 生成的标注结果
 
-[2] Honnibal, M., & Montani, I. "spaCy: Industrial-strength Natural Language Processing in Python." 2017.
+#### 3. 历史记录
+- 查看最近的标注历史
+- 支持删除历史记录
 
-[3] Brown, T. B., et al. "Language models are few-shot learners." NeurIPS 2020.
+### API 密钥配置
 
-[4] OpenAI. "GPT-4 Technical Report." 2023.
+#### 获取 API 密钥
+- **DeepSeek 平台**：访问 DeepSeek 官网获取 API 密钥
+- **Kimi (Moonshot) 平台**：访问 https://platform.moonshot.cn/console/api-keys
+- **Qwen (DashScope) 平台**：访问阿里云 DashScope 控制台获取
+- **Zhipu AI (GLM) 平台**：访问智谱 AI 开放平台获取
 
-[5] Stenetorp, P., et al. "BRAT: a web-based tool for NLP-assisted text annotation." EACL 2012.
+#### 配置方式
+1. **在线配置**：在应用侧边栏直接输入 API 密钥
+2. **文件配置**（高级，支持多平台）：
+   ```bash
+   # 创建配置文件
+   mkdir -p .streamlit
+   cat > .streamlit/secrets.toml << EOF
+   # DeepSeek API 配置
+   deepseek_api_key = "your_actual_deepseek_api_key_here"
+   
+   # Kimi API 配置
+   kimi_api_key = "your_actual_kimi_api_key_here"
+   
+   # Qwen API 配置
+   qwen_api_key = "your_actual_qwen_api_key_here"
+   
+   # Zhipu AI API 配置
+   zhipuai_api_key = "your_actual_zhipuai_api_key_here"
+   EOF
+   ```
+   
+   系统会自动探测配置文件中可用的平台。
 
-[6] Yimam, S. M., et al. "WebAnno: A flexible, web-based and visually supported system for distributed annotations." ACL 2013.
+## 🔧 本地开发
 
----
-
-## 7️⃣ 使用指南
-
-### 7.1 本地部署
+### 不使用 Docker 的本地部署
 
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/HY-LiYihan/rosetta.git
 cd rosetta
 
-# 2. 安装依赖
+# 2. 创建虚拟环境（推荐）
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或 venv\Scripts\activate  # Windows
+
+# 3. 安装依赖
 pip install -r requirements.txt
 
-# 3. 运行主应用
+# 4. 运行应用
 streamlit run streamlit_app.py
-
-# 4. 运行聊天机器人（可选）
-streamlit run chatbot_app.py
 ```
 
-### 7.2 在线使用
+### 项目结构
 
-访问 https://rosetta-git.streamlit.app/ 即可使用在线版本。
-
-### 7.3 多平台模型支持
-
-Rosetta v2.0 支持多个AI平台和模型：
-
-#### 7.3.1 Kimi平台 (月之暗面)
-- **支持的模型系列**:
-  - **Moonshot系列**: `moonshot-v1-8k`, `moonshot-v1-32k`, `moonshot-v1-128k`
-  - **K2系列**: 
-    - `kimi-k2-0905-preview` - 上下文长度256k，增强的Agentic Coding能力
-    - `kimi-k2-0711-preview` - 上下文长度128k，MoE架构基础模型
-    - `kimi-k2-turbo-preview` - K2高速版本，输出速度60-100 tokens/秒
-    - `kimi-k2-thinking` - 长思考模型，支持多步工具调用与思考
-    - `kimi-k2-thinking-turbo` - 长思考模型的高速版本
-- **API端点**: `https://api.moonshot.cn/v1`
-- **获取API Key**: https://platform.moonshot.cn/console/api-keys
-
-#### 7.3.2 DeepSeek平台
-- **可用模型**:
-  - `deepseek-chat` (默认) - 通用对话模型
-  - `deepseek-reasoner` - 推理专用模型
-  - `deepseek-coder` - 代码专用模型
-- **API端点**: `https://api.deepseek.com`
-- **获取API Key**: 访问DeepSeek官网
-
-#### 7.3.3 动态模型列表
-Rosetta v2.1 新增动态模型列表功能：
-- **自动获取**: 系统会自动从API获取可用的模型列表
-- **智能缓存**: 使用缓存机制避免重复API调用
-- **优雅降级**: 当API调用失败时，使用默认模型列表
-- **实时更新**: 更换API密钥后自动刷新模型列表
-
-#### 7.3.4 使用方法
-1. 在侧边栏选择AI平台 (Kimi 或 DeepSeek)
-2. 系统自动获取该平台的可用模型列表
-3. 从动态列表中选择模型版本
-4. 配置相应的API密钥
-5. 开始标注任务
-
-### 7.4 API密钥配置
-
-1. **Kimi API Key**: https://platform.moonshot.cn/console/api-keys
-2. **DeepSeek API Key**: 访问DeepSeek官网获取
-3. 在应用侧边栏输入或通过secrets.toml配置API Key
-4. 开始标注任务
-
-### 7.6 自定义概念
-
-系统支持添加自定义语言学概念：
-1. 在侧边栏点击"添加新概念"
-2. 填写概念名称、提示词和示例
-3. 保存后即可使用新概念进行标注
-
-### 7.7 API密钥安全管理 (Secrets Management)
-
-#### 7.7.1 本地开发环境
-
-1. **创建secrets.toml文件**：
-   ```bash
-   mkdir -p .streamlit
-   touch .streamlit/secrets.toml
-   ```
-
-2. **编辑secrets.toml文件**：
-   ```toml
-   # Streamlit Secrets Configuration
-   # This file contains sensitive information like API keys
-   # DO NOT commit this file to version control
-   
-   # Kimi API Configuration
-   kimi_api_key = "your_actual_kimi_api_key_here"
-   
-   # DeepSeek API Configuration (if needed)
-   deepseek_api_key = "your_actual_deepseek_api_key_here"
-   ```
-
-3. **确保.gitignore包含**：
-   ```
-   .streamlit/secrets.toml
-   ```
-
-#### 7.7.2 Streamlit Community Cloud部署
-
-在Streamlit Community Cloud上部署时，通过以下方式设置secrets：
-
-1. **在线设置**：在应用的"Settings" → "Secrets"页面添加
-2. **格式**：
-   ```toml
-   kimi_api_key = "your_actual_kimi_api_key_here"
-   deepseek_api_key = "your_actual_deepseek_api_key_here"
-   ```
-
-#### 7.7.3 代码中使用Secrets
-
-应用代码会自动优先使用secrets中的API密钥：
-```python
-# 优先使用secrets中的API密钥
-if "kimi_api_key" in st.secrets:
-    st.session_state.kimi_api_key = st.secrets["kimi_api_key"]
-else:
-    st.session_state.kimi_api_key = ""  # 等待用户输入
+```
+rosetta/
+├── streamlit_app.py          # 主应用文件
+├── api_utils.py             # API 工具函数
+├── concepts.json            # 默认概念数据
+├── requirements.txt         # Python 依赖
+├── Dockerfile              # Docker 构建文件
+├── docker-compose.yml      # Docker Compose 配置
+├── README.md              # 项目文档
+└── assets/                # 静态资源
+    ├── rosetta-icon.png
+    └── rosetta-icon-whiteback.png
 ```
 
-#### 7.7.4 安全最佳实践
+## ❓ 常见问题
 
-- ✅ **永远不要**将API密钥硬编码在代码中
-- ✅ **永远不要**将secrets.toml提交到版本控制
-- ✅ 使用环境变量或secrets管理工具
-- ✅ 定期轮换API密钥
-- ✅ 为不同环境使用不同的API密钥
+### Q1: 构建时 pip 安装失败怎么办？
+A: 使用 `--network=host` 参数构建：
+```bash
+docker build --network=host -t rosetta-app .
+```
+
+### Q2: 如何修改挂载目录？
+A: 编辑 `docker-compose.yml` 中的 volumes 配置：
+```yaml
+volumes:
+  - /your/custom/path:/app:ro
+```
+
+### Q3: 如何备份概念数据？
+A: 使用侧边栏的导出功能，或直接备份挂载目录中的数据。
+
+### Q4: 支持哪些 AI 平台和模型？
+A: 目前支持以下 AI 平台：
+- **DeepSeek**：支持 deepseek-chat、deepseek-reasoner、deepseek-coder 等模型
+- **Kimi (Moonshot)**：支持 moonshot 和 kimi 系列模型，包括 kimi-k2-thinking 等
+- **Qwen (DashScope)**：支持 qwen-plus、qwen-max 等模型
+- **Zhipu AI (GLM)**：支持 glm-4.7 等模型
+
+系统会自动探测在 secrets.toml 中配置的可用平台，并动态获取该平台的模型列表。
+
+## 📄 许可证
+
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 📞 联系方式
+
+- 项目地址：https://github.com/HY-LiYihan/rosetta
+- 问题反馈：通过 GitHub Issues 提交
+
+## 🙏 致谢
+
+感谢以下开源项目和技术：
+- [Streamlit](https://streamlit.io/) - 优秀的交互式应用框架
+- [Kimi](https://www.moonshot.cn/) - 月之暗面大语言模型
+- [DeepSeek](https://www.deepseek.com/) - DeepSeek 大语言模型
 
 ---
 
-## 8️⃣ 致谢
-
-感谢Kimi大模型提供的API支持，以及Streamlit社区提供的优秀框架。本工作受到计算语言学社区的开源精神启发。
-
----
-
-## 9️⃣ 许可证
-
-本项目采用MIT许可证。详见 [LICENSE](LICENSE) 文件。
-
----
-
-**引用本文**:
-```
-@misc{rosetta2024,
-  title={Rosetta: Intelligent Linguistic Concept Annotation System with Large Language Models},
-  author={HY-LiYihan},
-  year={2025},
-  howpublished={\url{https://github.com/HY-LiYihan/rosetta}}
-}
-```
-
-**联系方式**: 通过GitHub Issues提交问题或建议
-
-**最后更新**: 2025年12月22日
+**最后更新**: 2025年12月30日
