@@ -56,7 +56,7 @@ cd rosetta
 # 3. 构建 Docker 镜像（使用 --network=host 解决网络问题）
 docker build --network=host -t rosetta-app .
 
-# 4. 使用 Docker Compose 启动服务
+# 4. 使用 Docker Compose 启动服务（使用已构建的镜像）
 docker-compose up -d
 
 # 5. 验证服务运行
@@ -69,7 +69,8 @@ curl http://localhost:8501/_stcore/health
 
 **注意事项**：
 - 步骤3使用 `--network=host` 参数可以解决某些网络环境下 pip 安装失败的问题
-- docker-compose.yml 已配置为只读挂载 `/opt/streamlit/rosetta:/app:ro`
+- docker-compose.yml 已配置为使用已构建的镜像 (`image: rosetta-app`) 和只读挂载 (`/opt/streamlit/rosetta:/app:ro`)
+- 如果端口 8501 已被占用，请先停止占用该端口的服务或修改 docker-compose.yml 中的端口映射
 - 如果之前构建过，Docker 会使用缓存加速构建过程
 
 ### Docker Compose 配置
@@ -81,7 +82,7 @@ version: '3.8'
 
 services:
   rosetta:
-    build: .
+    image: rosetta-app
     container_name: rosetta-app
     ports:
       - "8501:8501"

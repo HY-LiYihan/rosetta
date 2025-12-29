@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   rosetta:
-    build: .
+    image: rosetta-app:latest
     container_name: rosetta-app
     ports:
       - "8501:8501"
