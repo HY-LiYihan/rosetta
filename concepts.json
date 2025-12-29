@@ -1,8 +1,91 @@
 {
   "concepts": [
     {
+        "name": "nominalization",
+        "prompt": "Nominalization is the key phenomenon in ideational metaphors and core realization form of grammatical metaphors. Grammatical metaphor refers to a shift in the congruent lexical-grammatical form for the same meaning. The congruent form, which is the direct expression of meaning, matches the one-to-one mapping between semantic processes and their corresponding lexical-grammatical structures. In contrast, grammatical metaphor represents a non-congruent form of expression. And nominalization refers to the use of a nominal form to express a process meaning. To elaborate, it transforms grammatical units originally functioning as verbs or adjectives into noun phrases. For example, \"they did a dance\" nominalize the action of dance, while \"the dance amazes the audience\" isn’t nominalization. Also, with functions of packaging information, enhancing logical cohesion and creating objectivization, it serves as a crucial device for constructing formal registers like academic and scientific discourses.名词化是生成语法隐喻的唯一强有力的资源。而语法隐喻指的是表达同一意义时，词汇-语法的一致式发生偏移的现象。一致式是意义的直接表达方式，其语义过程与对应的词汇-语法结构呈一一对应的映射关系，例如\"你多多练习，才能提高口语\"；而语法隐喻则属于非一致式的表达形式，如\"口语水平的提高需要勤奋的练习\"，这句话通过名词化\"练习\"和\"提高口语\"两个具有动作含义的词汇破坏了词汇与语法的对应关系，实现语法隐喻。即通过将过程（一致式为动词）和属性（一致式为形容词）重新措辞为名词，名词化让小句中过程或属性变成名词词组中的事物角色，从而实现语法隐喻。例如，\"他们证明了决策的合理性，但理由仍不清晰\"是与现实经验的动作直接对应的过程，是一致式表达形式；而换个说法，\"这项决策合理性的证明仍不清晰\"则将\"证明\"这一动作名词化，使其偏离了与现实经验对应的动词表达。名词化常见于学术语篇等正式语体，具有信息打包、逻辑衔接、客观化表达等功能。 ",
+        "examples": [
+          {
+            "text": "The guests’ supper of ice cream was followed by a gentle swim.",
+            "annotation": "The guests[’ supper](Nominalization) of ice cream was followed by [a gentle swim](Nominalization). Congruent paraphrase: The guest ate the ice cream and then gently swam.",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"吃晚餐\"和\"游泳\"两个动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "They did a Hungarian dance.",
+            "annotation": "They did [a Hungarian dance](Nominalization). Congruent paraphrase: They Danced in Hungarian style. ",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"跳舞\"这个动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "Cooperation of the team was efficient.",
+            "annotation": "[Cooperation](Nominalization) of the team was efficient. Congruent paraphrase: The team cooperated efficiently.",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"合作\"这一动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "Advances in technology are speeding up the writing of business programs.",
+            "annotation": "[Advances](Nominalization) in technology are speeding up the [writing](Nominalization) of business programs. Congruent paraphrase: Because technology is getting better, people can write business programs faster.",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"进步\"和\"写作\"这两个动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "Alcohol impairment can lead to cancers.",
+            "annotation": "[Alcohol impairment](Nominalization) can lead to cancers. Congruent paraphrase: Alcohol impairs people and makes some of them diagnosed with cancers.",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"损害\"这一动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "These difficulties within tasks necessitated the allocation of one extra packer.",
+            "annotation": "These [difficulties](Nominalization) necessitated the [allocation](Nominalization) of one extra packer. Congruent paraphrase: Because these tasks were difficult they needed to allocate one extra packer.",
+            "explanation": "这是一个体现两种途径的名词化的例子。第一种是将形容词性属性转化为名词表达，第二种是将动词性过程转化为名词表达。通过用名词形式表达\"困难的\"这一属性、用名词形式表达\"分配\"这一动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "His denial of the accusation was unconvincing.",
+            "annotation": "His [denial](Nominalization) of the accusation was unconvincing. Congruent paraphrase: He denied the accusation but few people believed him.",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"否认\"这一动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "Proposals have been made for the adoption of critical perspectives on the teaching of literature.",
+            "annotation": "[Proposals](Nominalization) have been made for the [adoption](Nominalization) of critical perspectives on the teaching of literature. Congruent paraphrase: People have proposed that people should adopt perspectives on the teaching of literature.",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"提议\"和\"采用\"两个动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "Fears mount for ailing King.",
+            "annotation": "[Fears](Nominalization) mount for ailing King. Congruent paraphrase:People fear most strongly because the King is ailing.",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"害怕\"这个心理过程，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "The tracks offer a range of walks of varying length.",
+            "annotation": "The tracks offer a range of walks of [varying length](Nominalization). Congruent paraphrase: One can walk along different tracks, some shorter, some longer.",
+            "explanation": "这是一个将形容词性属性转化为名词表达的例子。通过用名词形式\"长度\"表达步道\"长的\"和\"短的\"属性，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "对这个理论内涵的彻底理解需要仔细的钻研。",
+            "annotation": "[对这个理论内涵的彻底理解](名词化)需要[仔细的钻研](名词化)。一致式：我们通过仔细钻研，终于理解了这个理论的内涵。",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"理解\"和\"钻研\"两个动作，名词化实现了词汇与语法表达的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "这个实验结果的精准度远超预期。",
+            "annotation": "这个实验结果的[精准度](名词化)远超预期。一致式：这个实验的结果非常精准。",
+            "explanation": "这是一个将形容词性属性转化为名词表达的例子。通过用名词形式表达\"精确的\"这一属性，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "与小说主角的共鸣引发了广泛讨论。",
+            "annotation": "[与小说主角的共鸣](名词化)引发了广泛讨论。一致式：许多读者与这部小说的主角共鸣。",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"共鸣\"这一动词性过程，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "结果的不确定性让他踌躇不安。",
+            "annotation": "结果的[不确定性](名词化)让他踌躇不安。一致式：结果是不确定的，所以他踌躇不安。",
+            "explanation": "这是一个将形容词性属性转化为名词表达的例子。通过用名词形式表达\"不确定的\"这一属性，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          },
+          {
+            "text": "她对责任的勇于承担赢得了尊重。",
+            "annotation": "她[对责任的勇于承担](名词化)赢得了尊重。一致式：她勇于承担责任，赢得了大家的尊重。",
+            "explanation": "这是一个将动词性过程转化为名词表达的例子。通过用名词形式表达\"承担\"这一动作，名词化实现了词汇-语法一致式的偏移，从而实现与语法隐喻。"
+          }
+        ],
+        "category": "grammatical metaphor",
+        "is_default": true
+    },
+    {
       "name": "projection",
-      "prompt": "Throughout the semantic construal of human experience, there is a differentiation between two orders of reality: between the everyday reality of our material existence on the one hand and on the other hand the second-order reality that is brought into existence only by the system of language. One of the paths for realizing second-order reality is Projection, whereby the sequential relation between two figures projects one of them onto the plane of second-order semiotic phenomena, thus enabling it to enter the realm of metaphenomena. Therefore, Projection is defined as relating \"phenomena of one order of experience\", which refer to the processes of saying or thinking, to \"phenomena order\", which is what people say or think. That is to say, the projected clause indicates a locution or an idea. What's worth mentioning is Fact as projected which doesn't rely on certain Sayer or Sener and is usually indicated with embedding.\nIn terms of taxis within clause complexes, which helps understanding Projection forms of types above, Projection can be divided into Quotation, Reporting and Embedding, respectively corresponding to parataxis, hypotaxis and modifiers of nominal groups. Also, there is a special form called Free Indirect Speech that has the characteristics of both Quotation and Reporting. ",
+      "prompt": "Throughout the semantic construal of human experience, there is a differentiation between two orders of reality: between the everyday reality of our material existence on the one hand and on the other hand the second-order reality that is brought into existence only by the system of language. One of the paths for realizing second-order reality is Projection, whereby the sequential relation between two figures projects one of them onto the plane of second-order semiotic phenomena, thus enabling it to enter the realm of metaphenomena. Therefore, Projection is defined as relating \"phenomena of one order of experience\", which refer to the processes of saying or thinking, to \"phenomena order\", which is what people say or think. That is to say, the projected clause indicates a locution or an idea. What's worth mentioning is Fact as projected which doesn't rely on certain Sayer or Sener and is usually indicated with embedding.\nIn terms of taxis within clause complexes, which helps understanding Projection forms of types above, Projection can be divided into Quotation, Reporting and Embedding, respectively corresponding to parataxis, hypotaxis and modifiers of nominal groups. Also, there is a special form called Free Indirect Speech that has the characteristics of both Quotation and Reporting.在人类经验的语义建构过程中，存在着两种现实秩序的区分：一种是我们客观物质世界现实，另一种则是只能通过语言系统建构的、可称为意义世界的二阶现实。实现二阶现实的核心机制是投射。通过投射，两个小句之间的逻辑语义关系会将其中一个小句投射至二阶现实的层面，使其进入元现象的范畴。因此，投射被定义为将一类“一阶经验现象”（即言说或思维的动作与另一类 “二阶现象层级”（即人们所言说或思考的内容）建立关联。也就是说，被投射小句表征的一般是一段话语或一种观念。例如，妈妈喊道：\"快回家吃饭!\"，这句话中\"快回家吃饭！\"是通过两个小句的关系被投射到二阶现实的小句，其内容是话语。又如\"我看这篇论文的逻辑很清晰\"，这句话中\"这篇论文的逻辑很清晰\"是被投射的小句，表征观点。值得注意的是，事实投射并不依赖特定的言说者或感知者。此外，为了更好地认识投射，在从句复合体的配列关系方面，投射的呈现形式可分为引述、报道和嵌入投射三类，分别对应并列关系、主从关系以及名词词组的修饰成分。此外，还有一种特殊形式，名为自由间接引语，兼具引述与报道的特征。",
       "examples": [
         {
           "text": "\"Caesar was ambitious,\" says Brutus.",
@@ -42,17 +125,42 @@
         {
           "text": "He threatened to blow up the city.",
           "annotation": "He threatened (Projecting clause) [to blow up the city.] (Projected clause). Type: Indirect Locution Projection",
-          "explanation": "这是一个间接言语行为投射的例子，展示了威胁性言语的转述。'to blow up the city'作为不定式短语，表示威胁的具体内容。这种结构体现了言语行为与内容之间的投射关系，同时保持了语法的完整性。"
+          "explanation": "这是一个间接言语投射的例子，展示了威胁性言语的转述。'to blow up the city'作为不定式短语，表示威胁的具体内容。这种结构体现了言语行为与内容之间的投射关系，同时保持了语法的完整性。"
         },
         {
           "text": "Brutus's assertion that Caesar was ambitious.",
           "annotation": "Brutus's assertion (Projecting element) [that Caesar was ambitious] (Projected clause). Type: Indirect Locution Projection",
-          "explanation": "这是一个名词化投射的例子，展示了言语行为的静态表达。'assertion'作为名词化的投射元素，'that Caesar was ambitious'作为同位语从句表示断言的具体内容。这种结构体现了投射关系的语法化过程。"
+          "explanation": "这是一个通过嵌入小句实现投射的例子。'that Caesar was ambitious'作为同位语从句表示断言的具体内容。这种结构体现了投射关系的语法化过程。"
         },
         {
           "text": "Mark Antony regretted the fact that Caesar was dead.",
-          "annotation": "Mark Antony regretted the fact (Projecting clause) [that Caesar was dead.] (Projected clause). Type: Indirect Idea Projection",
+          "annotation": "Mark Antony regretted the fact (PrCojecting clause) [that Caesar was dead.] (Projected clause). Type: Indirect Idea Projection",
           "explanation": "这是一个事实投射的例子，展示了认知状态与事实内容之间的关系。'regretted the fact'表示情感态度，'that Caesar was dead'作为事实内容。这种结构体现了语言如何将客观事实投射为主观认知的对象。"
+        },
+        {
+          "text": "裁判发令：\"预备——跑！\"",
+          "annotation": "裁判发令：(投射小句)[\"预备——跑！\"](被投射小句)类型：直接言语投射",
+          "explanation": "这是一个直接言语投射的例子，展示了言语行为如何被投射到第二级现实。\"预备——跑！\"是被投射的从句，表示具体的言语内容；\"裁判发令\"是投射从句，表示言语行为本身。这种结构体现了语言将言语从现实世界投射到符号世界的能力。"
+        },
+        {
+          "text": "他心里嘀咕：\"这么多任务怎么做得完啊？\"",
+          "annotation": "他心里嘀咕：(投射小句)[\"这么多任务怎么做得完啊？\"](被投射小句)类型：直接思想投射",
+          "explanation": "这是一个直接思想投射的例子。\"这么多任务怎么做得完啊？\"是被投射的小句，呈现具体的言语内容；\"裁判发令\"是他心里嘀咕，表示思想行为本身。这种结构体现了语言用直接引述将思想从现实世界投射到符号世界的能力。"
+        },
+        {
+          "text": "老师说下周要进行期末考试。",
+          "annotation": "老师说(投射小句)[下周要进行期中考试](被投射小句)。类型：间接言语投射",
+          "explanation": "这是一个间接言语投射的例子，展示了通知类言语的转述，这种结构体现了言语行为与内容之间的投射关系，同时保持了语法的完整性。"
+        },
+        {
+          "text": "她怀疑这件事背后另有隐情。",
+          "annotation": "她怀疑(投射小句)[这件事背后另有隐情](被投射小句)。类型：间接思想投射",
+          "explanation": "这是一个间接思想投射的例子，展示了思维思考的行为如何被投射到第二级现实。\"这件事背后另有隐情\"是被投射的小句，表示具体的思想内容；\"她怀疑\"是投射小句，表示思想行为本身。这种结构体现了语言将思想从现实世界投射到符号世界的能力。"
+        },
+        {
+          "text": "研究证实：地球是围绕太阳公转的。",
+          "annotation": "研究证实：(投射小句)[地球是围绕太阳公转的](被投射小句)。类型：间接事实投射",
+          "explanation": "这是一个间接事实投射的例子，展示了认知状态与事实内容之间的关系。\"研究证实\"暗示认知主体，\"地球是围绕太阳公转的\"则作为事实内容被投社。这种结构体现了语言如何将客观事实投射为主观认知的对象。"
         }
       ],
       "category": "syntax",
