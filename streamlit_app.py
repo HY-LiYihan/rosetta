@@ -1,8 +1,8 @@
 import streamlit as st
 import json
 import os
-from openai import OpenAI
 from datetime import datetime
+import api_utils
 
 # 页面配置
 st.set_page_config(
@@ -302,109 +302,32 @@ if "concepts" not in st.session_state:
 if "annotation_history" not in st.session_state:
     st.session_state.annotation_history = []
 
-# 从secrets或session state初始化API密钥和模型配置
-if "kimi_api_key" not in st.session_state:
-    # 优先使用secrets中的API密钥
-    if "kimi_api_key" in st.secrets:
-        st.session_state.kimi_api_key = st.secrets["kimi_api_key"]
-    else:
-        st.session_state.kimi_api_key = ""
+# 自动探测可用平台
+if "available_config" not in st.session_state:
+    with st.spinner("正在探测可用 AI 平台..."):
+        st.session_state.available_config = api_utils.probe_available_platforms()
 
-if "deepseek_api_key" not in st.session_state:
-    # 优先使用secrets中的DeepSeek API密钥
-    if "deepseek_api_key" in st.secrets:
-        st.session_state.deepseek_api_key = st.secrets["deepseek_api_key"]
-    else:
-        st.session_state.deepseek_api_key = ""
-
-# 模型配置
-if "selected_model" not in st.session_state:
-    st.session_state.selected_model = "deepseek-chat"
-
+# 初始化默认平台和模型
 if "selected_platform" not in st.session_state:
-    st.session_state.selected_platform = "deepseek"
+    if "deepseek" in st.session_state.available_config:
+        st.session_state.selected_platform = "deepseek"
+    elif st.session_state.available_config:
+        st.session_state.selected_platform = list(st.session_state.available_config.keys())[0]
+    else:
+        st.session_state.selected_platform = None
+
+if "selected_model" not in st.session_state:
+    if st.session_state.selected_platform:
+        config = st.session_state.available_config[st.session_state.selected_platform]
+        st.session_state.selected_model = config["default_model"]
+    else:
+        st.session_state.selected_model = None
 
 # 保存概念到缓存（session state）
 def save_concepts():
     # 只保存到session state，不写入文件
     # 数据已经存储在st.session_state.concepts中
     pass
-
-# 获取平台模型列表（带缓存）
-def get_platform_models(platform, api_key):
-    """动态获取指定平台的可用模型列表，带缓存机制"""
-    
-    # 创建缓存键
-    cache_key = f"{platform}_models_{api_key[:10] if api_key else 'no_key'}"
-    
-    # 检查缓存
-    if cache_key in st.session_state:
-        return st.session_state[cache_key]
-    
-    # 默认模型列表（当API调用失败时使用）
-    default_models = {
-        "kimi": [
-            "moonshot-v1-8k", 
-            "moonshot-v1-32k", 
-            "moonshot-v1-128k",
-            "kimi-k2-0905-preview",
-            "kimi-k2-0711-preview", 
-            "kimi-k2-turbo-preview",
-            "kimi-k2-thinking",
-            "kimi-k2-thinking-turbo"
-        ],
-        "deepseek": ["deepseek-reasoner", "deepseek-chat", "deepseek-coder"]
-    }
-    
-    if not api_key:
-        # 缓存默认列表
-        st.session_state[cache_key] = default_models.get(platform, [])
-        return st.session_state[cache_key]
-    
-    try:
-        if platform == "kimi":
-            client = OpenAI(
-                api_key=api_key,
-                base_url="https://api.moonshot.cn/v1"
-            )
-        elif platform == "deepseek":
-            client = OpenAI(
-                api_key=api_key,
-                base_url="https://api.deepseek.com"
-            )
-        else:
-            st.session_state[cache_key] = default_models.get(platform, [])
-            return st.session_state[cache_key]
-        
-        # 获取模型列表
-        model_list = client.models.list()
-        model_ids = [model.id for model in model_list.data]
-        
-        # 过滤和排序模型ID
-        filtered_models = []
-        for model_id in model_ids:
-            if platform == "kimi" and ("moonshot" in model_id or "kimi-k2" in model_id):
-                filtered_models.append(model_id)
-            elif platform == "deepseek" and "deepseek" in model_id:
-                filtered_models.append(model_id)
-        
-        # 如果没有获取到模型，使用默认列表
-        if not filtered_models:
-            st.session_state[cache_key] = default_models.get(platform, [])
-            return st.session_state[cache_key]
-        
-        # 按字母顺序排序
-        filtered_models.sort()
-        
-        # 缓存结果
-        st.session_state[cache_key] = filtered_models
-        return filtered_models
-        
-    except Exception as e:
-        # 记录错误但不显示警告（在UI中处理）
-        print(f"无法获取{platform}模型列表: {str(e)}")
-        st.session_state[cache_key] = default_models.get(platform, [])
-        return st.session_state[cache_key]
 
 # 侧边栏 - API设置和概念管理
 with st.sidebar:
@@ -413,98 +336,55 @@ with st.sidebar:
     # API设置
     st.subheader("API配置")
     
-    # 平台选择
-    platform_options = ["kimi", "deepseek"]
-    selected_platform = st.selectbox(
-        "选择AI平台",
-        platform_options,
-        index=platform_options.index(st.session_state.selected_platform) if st.session_state.selected_platform in platform_options else 0,
-        help="选择要使用的AI平台"
-    )
-    st.session_state.selected_platform = selected_platform
-    
-    # 模型选择 - 动态获取模型列表
-    if selected_platform == "kimi":
-        # 获取当前平台的API密钥
-        current_api_key = st.session_state.kimi_api_key
+    if not st.session_state.available_config:
+        st.warning("⚠️ 未探测到可用平台，请在 `secrets.toml` 中配置 API Key")
+        selected_platform = None
+        selected_model = None
+    else:
+        # 平台选择
+        platform_options = list(st.session_state.available_config.keys())
         
-        # 动态获取模型列表
-        with st.spinner("正在获取Kimi模型列表..."):
-            model_options = get_platform_models("kimi", current_api_key)
-        
-        if model_options:
-            # 确保当前选择的模型在可用模型中
-            if st.session_state.selected_model not in model_options:
-                st.session_state.selected_model = model_options[0]
+        # 查找默认索引（优先 DeepSeek）
+        default_index = 0
+        if "deepseek" in platform_options:
+            default_index = platform_options.index("deepseek")
             
-            selected_model = st.selectbox(
-                "选择Kimi模型",
-                model_options,
-                index=model_options.index(st.session_state.selected_model) if st.session_state.selected_model in model_options else 0,
-                help="动态获取的Kimi模型列表"
-            )
-            st.session_state.selected_model = selected_model
-        else:
-            st.error("无法获取Kimi模型列表，请检查API密钥")
-            # 使用默认模型
-            st.session_state.selected_model = "moonshot-v1-8k"
+        # 平台切换回调：自动切换到该平台的默认模型
+        def on_platform_change():
+            new_platform = st.session_state.platform_selector
+            if new_platform in st.session_state.available_config:
+                config = st.session_state.available_config[new_platform]
+                st.session_state.selected_platform = new_platform
+                st.session_state.selected_model = config["default_model"]
+
+        selected_platform = st.selectbox(
+            "选择AI平台",
+            platform_options,
+            index=default_index if st.session_state.selected_platform not in platform_options else platform_options.index(st.session_state.selected_platform),
+            format_func=lambda x: st.session_state.available_config[x]["name"],
+            key="platform_selector",
+            on_change=on_platform_change,
+            help="仅显示在 secrets.toml 中配置且验证成功的平台"
+        )
+        # 确保同步
+        st.session_state.selected_platform = selected_platform
         
-        # Kimi API密钥配置
-        has_kimi_secret = "kimi_api_key" in st.secrets and st.secrets["kimi_api_key"]
+        # 模型选择
+        config = st.session_state.available_config[selected_platform]
+        model_options = config["models"]
         
-        if has_kimi_secret:
-            # 静默加载，不显示信息
-            st.session_state.kimi_api_key = st.secrets["kimi_api_key"]
-        else:
-            api_key = st.text_input(
-                "Kimi API Key",
-                type="password",
-                value=st.session_state.kimi_api_key,
-                help="请输入Kimi API密钥，可从 https://platform.moonshot.cn/console/api-keys 获取"
-            )
-            if api_key:
-                st.session_state.kimi_api_key = api_key
-    
-    elif selected_platform == "deepseek":
-        # 获取当前平台的API密钥
-        current_api_key = st.session_state.deepseek_api_key
-        
-        # 动态获取模型列表
-        with st.spinner("正在获取DeepSeek模型列表..."):
-            model_options = get_platform_models("deepseek", current_api_key)
-        
-        if model_options:
-            # 确保当前选择的模型在可用模型中
-            if st.session_state.selected_model not in model_options:
-                st.session_state.selected_model = model_options[0]
-            
-            selected_model = st.selectbox(
-                "选择DeepSeek模型",
-                model_options,
-                index=model_options.index(st.session_state.selected_model) if st.session_state.selected_model in model_options else 0,
-                help="动态获取的DeepSeek模型列表"
-            )
-            st.session_state.selected_model = selected_model
-        else:
-            st.error("无法获取DeepSeek模型列表，请检查API密钥")
-            # 使用默认模型
-            st.session_state.selected_model = "deepseek-reasoner"
-        
-        # DeepSeek API密钥配置
-        has_deepseek_secret = "deepseek_api_key" in st.secrets and st.secrets["deepseek_api_key"]
-        
-        if has_deepseek_secret:
-            # 静默加载，不显示信息
-            st.session_state.deepseek_api_key = st.secrets["deepseek_api_key"]
-        else:
-            api_key = st.text_input(
-                "DeepSeek API Key",
-                type="password",
-                value=st.session_state.deepseek_api_key,
-                help="请输入DeepSeek API密钥"
-            )
-            if api_key:
-                st.session_state.deepseek_api_key = api_key
+        # 如果当前选中的模型不在该平台的可用列表中，或者刚刚切换了平台（由回调处理），则使用默认模型
+        if st.session_state.selected_model not in model_options:
+            st.session_state.selected_model = config["default_model"]
+
+        selected_model = st.selectbox(
+            "选择模型",
+            model_options,
+            index=model_options.index(st.session_state.selected_model) if st.session_state.selected_model in model_options else 0,
+            key="model_selector",
+            help=f"动态获取的 {config['name']} 模型列表"
+        )
+        st.session_state.selected_model = selected_model
     
     # 概念管理
     st.subheader("📚 概念管理")
@@ -739,14 +619,15 @@ input_text = st.text_area(
 )
 
 if st.button("开始标注", type="primary") and input_text:
-    # 根据选择的平台检查API密钥
-    if st.session_state.selected_platform == "kimi" and not st.session_state.kimi_api_key:
-        st.error("请先在侧边栏配置Kimi API Key")
-    elif st.session_state.selected_platform == "deepseek" and not st.session_state.deepseek_api_key:
-        st.error("请先在侧边栏配置DeepSeek API Key")
+    # 检查是否有可用平台
+    if not st.session_state.selected_platform:
+        st.error("没有可用的 AI 平台，请检查 secrets.toml 配置")
     else:
-        with st.spinner("正在调用大模型进行标注..."):
+        with st.spinner(f"正在通过 {st.session_state.available_config[st.session_state.selected_platform]['name']} 进行标注..."):
             try:
+                # 获取当前平台的 Key
+                api_key = st.session_state.available_config[st.session_state.selected_platform]["api_key"]
+                
                 # 构建提示词 - 示例以JSON格式提供，要求返回JSON
                 prompt = f"""你是一个语言学标注助手。请根据以下概念进行文本标注：
 
@@ -786,42 +667,16 @@ if st.button("开始标注", type="primary") and input_text:
   "explanation": "解释说明..."
 }}"""
                 
-                # 根据平台调用相应的API
-                if st.session_state.selected_platform == "kimi":
-                    # 调用Kimi API
-                    client = OpenAI(
-                        api_key=st.session_state.kimi_api_key,
-                        base_url="https://api.moonshot.cn/v1"
-                    )
-                    
-                    response = client.chat.completions.create(
-                        model=st.session_state.selected_model,
-                        messages=[
-                            {"role": "system", "content": "你是一个专业的语言学助手，擅长文本标注和分析。"},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.3,
-                        max_tokens=1000
-                    )
-                    
-                elif st.session_state.selected_platform == "deepseek":
-                    # 调用DeepSeek API
-                    client = OpenAI(
-                        api_key=st.session_state.deepseek_api_key,
-                        base_url="https://api.deepseek.com"
-                    )
-                    
-                    response = client.chat.completions.create(
-                        model=st.session_state.selected_model,
-                        messages=[
-                            {"role": "system", "content": "你是一个专业的语言学助手，擅长文本标注和分析。"},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.3,
-                        max_tokens=1000
-                    )
-                
-                annotation_result = response.choices[0].message.content
+                # 调用统一的 API 接口
+                annotation_result = api_utils.get_chat_response(
+                    platform=st.session_state.selected_platform,
+                    api_key=api_key,
+                    model=st.session_state.selected_model,
+                    messages=[
+                        {"role": "system", "content": "你是一个专业的语言学助手，擅长文本标注和分析。"},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
                 
                 # 尝试解析JSON响应
                 try:
@@ -924,7 +779,7 @@ with st.container():
         <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
             <div style='font-size: 2rem; margin-bottom: 0.8rem;'>🤖</div>
             <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem;'>多模型支持</h4>
-            <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持Kimi和DeepSeek平台，动态获取可用模型，灵活切换不同AI能力</p>
+            <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持国内多家平台，动态获取可用模型，灵活切换不同AI能力</p>
         </div>
         """, unsafe_allow_html=True)
     with cols[1]:
@@ -948,7 +803,7 @@ with st.container():
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
-    <p><strong>🔍 Rosetta - 智能语言学概念标注系统 v2.1</strong></p>
+    <p><strong>Rosetta - 智能语言学概念标注系统 v2.1</strong></p>
     <p>当前平台: <span style='color: var(--color-primary);'>{}</span> | 当前模型: <span style='color: var(--color-secondary);'>{}</span></p>
     <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a> | 在线演示: <a href='https://rosetta-git.streamlit.app/' target='_blank'>Streamlit Cloud</a></p>
 </div>
