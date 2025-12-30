@@ -28,7 +28,7 @@ st.markdown("""
         --color-bg-sec: #2D3748;       /* 次要背景色：中灰色（侧边栏） */
         
         /* 界面元素色 */
-        --color-card: #2B474B;         /* 卡片背景色：青灰色 */
+        --color-card: #2C5282;         /* 卡片背景色：青灰色 */
         --color-text: #F7FAFC;         /* 文字颜色：浅灰色 */
         --color-text-secondary: #A0AEC0;   /* 按钮文字颜色：白色 */
     }

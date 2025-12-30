@@ -86,7 +86,7 @@ with cols[0]:
     <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
         <div style='font-size: 2rem; margin-bottom: 0.8rem;'>🤖</div>
         <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>多模型支持</h4>
-        <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持国内多个大模型平台，动态获取可用模型</p>
+        <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持国内多个大语言模型平台，实时动态获取可用模型</p>
     </div>
     """, unsafe_allow_html=True)
 
