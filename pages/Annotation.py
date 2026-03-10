@@ -1,7 +1,15 @@
 import streamlit as st
-import json
-from datetime import datetime
 import api_utils
+from app.services.annotation_service import (
+    build_annotation_prompt,
+    build_history_entry,
+    parse_annotation_response,
+)
+from app.state.session_state import (
+    ensure_available_config,
+    ensure_core_state,
+    ensure_platform_selection,
+)
 
 # 页面标题
 st.title("✏️ 文本标注工具")
@@ -13,53 +21,16 @@ st.markdown("""
 </p>
 """, unsafe_allow_html=True)
 
-# 初始化session state（如果尚未初始化）
-if "concepts" not in st.session_state:
-    # 尝试从文件加载概念，如果文件不存在则使用默认概念
-    try:
-        with open("concepts.json", "r", encoding="utf-8") as f:
-            st.session_state.concepts = json.load(f)["concepts"]
-    except FileNotFoundError:
-        # 如果文件不存在，使用默认概念
-        st.session_state.concepts = [
-            {
-                "name": "默认",
-                "prompt": "默认",
-                "examples": [
-                    {
-                        "text": "默认",
-                        "annotation": "默认",
-                        "explanation": "默认"
-                    }
-                ],
-                "category": "默认",
-                "is_default": True
-            }
-        ]
-
-if "annotation_history" not in st.session_state:
-    st.session_state.annotation_history = []
+# 初始化共享 session state
+ensure_core_state()
 
 # 自动探测可用平台
 if "available_config" not in st.session_state:
     with st.spinner("正在探测可用 AI 平台..."):
-        st.session_state.available_config = api_utils.probe_available_platforms()
+        ensure_available_config(api_utils.probe_available_platforms)
 
 # 初始化默认平台和模型
-if "selected_platform" not in st.session_state:
-    if "deepseek" in st.session_state.available_config:
-        st.session_state.selected_platform = "deepseek"
-    elif st.session_state.available_config:
-        st.session_state.selected_platform = list(st.session_state.available_config.keys())[0]
-    else:
-        st.session_state.selected_platform = None
-
-if "selected_model" not in st.session_state:
-    if st.session_state.selected_platform:
-        config = st.session_state.available_config[st.session_state.selected_platform]
-        st.session_state.selected_model = config["default_model"]
-    else:
-        st.session_state.selected_model = None
+ensure_platform_selection(preferred_platform="deepseek")
 
 # 侧边栏 - API设置
 with st.sidebar:
@@ -193,44 +164,7 @@ else:
                     # 获取当前平台的 Key
                     api_key = st.session_state.available_config[st.session_state.selected_platform]["api_key"]
                     
-                    # 构建提示词 - 示例以JSON格式提供，要求返回JSON
-                    prompt = f"""你是一个语言学标注助手。请根据以下概念进行文本标注：
-
-概念：{selected_concept['name']}
-定义：{selected_concept['prompt']}
-
-标注示例（JSON格式）：
-[
-"""
-                    
-                    # 添加示例，每个示例包含text、annotation、explanation
-                    examples_json = []
-                    for example in selected_concept.get("examples", []):
-                        example_dict = {
-                            "text": example["text"],
-                            "annotation": example["annotation"],
-                            "explanation": example.get("explanation", "")
-                        }
-                        examples_json.append(json.dumps(example_dict, ensure_ascii=False))
-                    
-                    prompt += ",\n".join(examples_json)
-                    prompt += f"""
-]
-
-现在请标注以下文本：
-文本：\"{input_text}\"
-
-请以JSON格式返回标注结果，只包含JSON，不要有其他文本。JSON应包含以下字段：
-- text: 原始文本
-- annotation: 标注分析
-- explanation: 解释说明
-
-返回格式示例：
-{{
-  "text": "{input_text}",
-  "annotation": "标注内容...",
-  "explanation": "解释说明..."
-}}"""
+                    prompt = build_annotation_prompt(selected_concept, input_text)
                     
                     # 调用统一的 API 接口
                     annotation_result = api_utils.get_chat_response(
@@ -244,44 +178,20 @@ else:
                         temperature=temperature
                     )
                     
-                    # 尝试解析JSON响应
-                    try:
-                        # 清理响应文本，移除可能的markdown代码块
-                        cleaned_result = annotation_result.strip()
-                        if cleaned_result.startswith("```json"):
-                            cleaned_result = cleaned_result[7:]
-                        if cleaned_result.startswith("```"):
-                            cleaned_result = cleaned_result[3:]
-                        if cleaned_result.endswith("```"):
-                            cleaned_result = cleaned_result[:-3]
-                        cleaned_result = cleaned_result.strip()
-                        
-                        # 解析JSON
-                        parsed_result = json.loads(cleaned_result)
-                        
-                        # 验证必需字段
-                        if "text" not in parsed_result or "annotation" not in parsed_result or "explanation" not in parsed_result:
-                            st.warning("JSON响应缺少必需字段，显示原始响应")
-                            parsed_result = None
-                            
-                    except json.JSONDecodeError as e:
-                        st.warning(f"无法解析JSON响应：{str(e)}，显示原始响应")
-                        parsed_result = None
-                    except Exception as e:
-                        st.warning(f"处理响应时出错：{str(e)}，显示原始响应")
-                        parsed_result = None
+                    parsed_result, parse_warning = parse_annotation_response(annotation_result)
+                    if parse_warning:
+                        st.warning(parse_warning)
                     
                     # 保存到历史记录
-                    history_entry = {
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "concept": selected_concept['name'],
-                        "text": input_text,
-                        "annotation": annotation_result,
-                        "parsed_result": parsed_result,
-                        "platform": st.session_state.selected_platform,
-                        "model": st.session_state.selected_model,
-                        "temperature": temperature
-                    }
+                    history_entry = build_history_entry(
+                        concept_name=selected_concept["name"],
+                        input_text=input_text,
+                        annotation_result=annotation_result,
+                        parsed_result=parsed_result,
+                        platform=st.session_state.selected_platform,
+                        model=st.session_state.selected_model,
+                        temperature=temperature,
+                    )
                     st.session_state.annotation_history.insert(0, history_entry)
                     
                     # 显示结果

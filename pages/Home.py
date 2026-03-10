@@ -1,6 +1,5 @@
 import streamlit as st
-import json
-from datetime import datetime
+from app.state.session_state import ensure_core_state
 
 # 页面标题
 st.title("🏠 Rosetta - 智能语义概念标注系统")
@@ -14,32 +13,8 @@ st.markdown("""
 </p>
 """, unsafe_allow_html=True)
 
-# 初始化session state（如果尚未初始化）
-if "concepts" not in st.session_state:
-    # 尝试从文件加载概念，如果文件不存在则使用默认概念
-    try:
-        with open("concepts.json", "r", encoding="utf-8") as f:
-            st.session_state.concepts = json.load(f)["concepts"]
-    except FileNotFoundError:
-        # 如果文件不存在，使用默认概念
-        st.session_state.concepts = [
-            {
-                "name": "默认",
-                "prompt": "默认",
-                "examples": [
-                    {
-                        "text": "默认",
-                        "annotation": "默认",
-                        "explanation": "默认"
-                    }
-                ],
-                "category": "默认",
-                "is_default": True
-            }
-        ]
-
-if "annotation_history" not in st.session_state:
-    st.session_state.annotation_history = []
+# 初始化共享 session state
+ensure_core_state()
 
 # 快速统计卡片
 st.subheader("📊 快速统计")

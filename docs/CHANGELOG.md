@@ -18,3 +18,13 @@
 ### Next
 
 - Stage 1 代码改造将严格按上述文档执行。
+
+### Stage 1 / Code Restructure (in progress)
+
+1. 新增 `app/state/session_state.py`，统一 `concepts`、`annotation_history`、平台配置与默认模型初始化。
+2. 新增 `app/services/concept_service.py`，抽取概念导入导出、合并与创建逻辑。
+3. 新增 `app/services/annotation_service.py`，抽取 prompt 构建、响应解析与历史记录构建逻辑。
+4. `pages/Home.py` 改为使用 `ensure_core_state()`，移除重复状态初始化代码。
+5. `pages/Concept_Management.py` 改为调用 concept service，移除页面内重复业务逻辑。
+6. `pages/Annotation.py` 改为调用 state/service，移除页面内 prompt 组装与解析细节。
+7. 基础验证通过：`python -m compileall ...`、`python test_concepts.py`。

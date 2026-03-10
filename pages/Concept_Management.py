@@ -1,7 +1,14 @@
 import streamlit as st
 import json
-import base64
-import api_utils
+from app.state.session_state import ensure_core_state
+from app.services.concept_service import (
+    build_export_json,
+    create_concept,
+    merge_concepts,
+    parse_import_json,
+    replace_concepts,
+    validate_import_payload,
+)
 
 # 页面标题
 st.title("📚 概念管理")
@@ -13,29 +20,8 @@ st.markdown("""
 </p>
 """, unsafe_allow_html=True)
 
-# 初始化session state（如果尚未初始化）
-if "concepts" not in st.session_state:
-    # 尝试从文件加载概念，如果文件不存在则使用默认概念
-    try:
-        with open("concepts.json", "r", encoding="utf-8") as f:
-            st.session_state.concepts = json.load(f)["concepts"]
-    except FileNotFoundError:
-        # 如果文件不存在，使用默认概念
-        st.session_state.concepts = [
-            {
-                "name": "默认",
-                "prompt": "默认",
-                "examples": [
-                    {
-                        "text": "默认",
-                        "annotation": "默认",
-                        "explanation": "默认"
-                    }
-                ],
-                "category": "默认",
-                "is_default": True
-            }
-        ]
+# 初始化共享 session state
+ensure_core_state()
 
 # 数据管理部分
 st.subheader("📁 数据管理")
@@ -53,8 +39,7 @@ with col1:
         st.markdown(f":blue[当前共有 {len(st.session_state.concepts)} 个概念]")
         
         # 准备导出的数据
-        export_data = {"concepts": st.session_state.concepts}
-        export_json = json.dumps(export_data, ensure_ascii=False, indent=2)
+        export_json = build_export_json(st.session_state.concepts)
         
         # 创建下载按钮
         st.download_button(
@@ -86,12 +71,14 @@ with col2:
         try:
             # 读取上传的文件
             file_content = uploaded_file.getvalue().decode("utf-8")
-            imported_data = json.loads(file_content)
-            
-            # 验证数据格式
-            if "concepts" in imported_data and isinstance(imported_data["concepts"], list):
+            imported_data = parse_import_json(file_content)
+
+            is_valid, error_message = validate_import_payload(imported_data)
+            if not is_valid:
+                st.error(error_message)
+            else:
                 st.info(f"检测到 {len(imported_data['concepts'])} 个概念")
-                
+
                 # 显示导入选项
                 import_option = st.radio(
                     "导入选项",
@@ -99,40 +86,18 @@ with col2:
                     index=0,
                     help="选择如何导入概念"
                 )
-                
+
                 if st.button("确认导入", type="primary", use_container_width=True):
-                    import_success = False
-                    import_message = ""
-                    
                     if import_option == "替换现有概念":
-                        # 替换现有概念
-                        st.session_state.concepts = imported_data["concepts"]
-                        import_message = f"✅ 成功替换为 {len(imported_data['concepts'])} 个概念"
-                        import_success = True
+                        st.session_state.concepts, import_message = replace_concepts(imported_data["concepts"])
                     else:
-                        # 添加到当前所有概念的后面
-                        existing_names = {c["name"] for c in st.session_state.concepts}
-                        new_concepts = []
-                        duplicate_count = 0
-                        
-                        for concept in imported_data["concepts"]:
-                            if concept["name"] not in existing_names:
-                                new_concepts.append(concept)
-                            else:
-                                duplicate_count += 1
-                        
-                        # 添加到现有概念后面
-                        st.session_state.concepts.extend(new_concepts)
-                        import_message = f"✅ 成功添加 {len(new_concepts)} 个新概念"
-                        if duplicate_count > 0:
-                            import_message += f"，跳过了 {duplicate_count} 个重复概念"
-                        import_success = True
-                    
-                    if import_success:
-                        st.success(import_message)
-                        st.rerun()
-            else:
-                st.error("文件格式错误：缺少 'concepts' 字段或格式不正确")
+                        st.session_state.concepts, import_message = merge_concepts(
+                            st.session_state.concepts,
+                            imported_data["concepts"],
+                        )
+
+                    st.success(import_message)
+                    st.rerun()
         except json.JSONDecodeError:
             st.error("文件格式错误：不是有效的JSON文件")
         except Exception as e:
@@ -267,13 +232,7 @@ with st.form(key="add_concept_form"):
             if new_concept_name in existing_names:
                 st.error(f"概念名称 '{new_concept_name}' 已存在，请使用其他名称")
             else:
-                new_concept = {
-                    "name": new_concept_name,
-                    "prompt": new_concept_prompt,
-                    "examples": [],  # 初始为空数组，不需要填写样例
-                    "category": new_concept_category,
-                    "is_default": False
-                }
+                new_concept = create_concept(new_concept_name, new_concept_prompt, new_concept_category)
                 st.session_state.concepts.append(new_concept)
                 st.success(f"概念 '{new_concept_name}' 已添加！")
                 st.rerun()
