@@ -32,3 +32,10 @@
 9. `scripts/` 完成分层重构：新增 `deploy/ops/data/cron/lib`。
 10. 新增标准脚本：`deploy.sh`、`update.sh`、`rollback.sh`、`healthcheck.sh`、`logs.sh`、`restart.sh`、`backup.sh`、`restore.sh`。
 11. 旧入口 `scripts/daily_restart.sh` 与 `scripts/monthly_rebuild.sh` 改为兼容转发，不破坏现有 cron 路径。
+
+### Stage 2 / Domain & Data Governance (started)
+
+1. 新增 `app/domain`：`models.py`、`schemas.py`、`validators.py`。
+2. 概念导入导出开始引入版本化数据结构（`version` + `concepts`）。
+3. 兼容旧数据格式（无 `version`），并在导入时进行规范化校验。
+4. 新增 `tests/unit/test_domain_validators.py`，覆盖基础规范化与缺失字段异常场景。

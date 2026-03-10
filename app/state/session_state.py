@@ -1,5 +1,6 @@
 import json
 import streamlit as st
+from app.domain.validators import normalize_payload
 
 _DEFAULT_CONCEPT = {
     "name": "默认",
@@ -21,9 +22,9 @@ def load_concepts_from_file(file_path: str = "concepts.json") -> list[dict]:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             payload = json.load(f)
-        concepts = payload.get("concepts", [])
-        if isinstance(concepts, list) and concepts:
-            return concepts
+        normalized = normalize_payload(payload)
+        if normalized["concepts"]:
+            return normalized["concepts"]
     except FileNotFoundError:
         pass
     except Exception:

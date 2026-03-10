@@ -1,9 +1,11 @@
 import json
+from app.domain.schemas import DATA_VERSION
+from app.domain.validators import normalize_payload
 
 
 def build_export_json(concepts: list[dict]) -> str:
     """Serialize concepts to pretty JSON for download."""
-    return json.dumps({"concepts": concepts}, ensure_ascii=False, indent=2)
+    return json.dumps({"version": DATA_VERSION, "concepts": concepts}, ensure_ascii=False, indent=2)
 
 
 def parse_import_json(raw_content: str) -> dict:
@@ -12,24 +14,28 @@ def parse_import_json(raw_content: str) -> dict:
 
 
 def validate_import_payload(payload: dict) -> tuple[bool, str]:
-    """Validate concepts import payload schema at a minimal level."""
-    if "concepts" not in payload or not isinstance(payload["concepts"], list):
-        return False, "文件格式错误：缺少 'concepts' 字段或格式不正确"
+    """Validate concepts import payload and normalize to stable schema."""
+    try:
+        normalize_payload(payload)
+    except ValueError as e:
+        return False, str(e)
     return True, ""
 
 
 def replace_concepts(imported_concepts: list[dict]) -> tuple[list[dict], str]:
     """Replace existing concepts with imported concepts."""
-    return imported_concepts, f"✅ 成功替换为 {len(imported_concepts)} 个概念"
+    normalized = normalize_payload({"concepts": imported_concepts})["concepts"]
+    return normalized, f"✅ 成功替换为 {len(normalized)} 个概念"
 
 
 def merge_concepts(existing_concepts: list[dict], imported_concepts: list[dict]) -> tuple[list[dict], str]:
     """Append non-duplicate concepts from import payload."""
+    normalized_imported = normalize_payload({"concepts": imported_concepts})["concepts"]
     existing_names = {c["name"] for c in existing_concepts}
     new_concepts = []
     duplicate_count = 0
 
-    for concept in imported_concepts:
+    for concept in normalized_imported:
         if concept["name"] not in existing_names:
             new_concepts.append(concept)
         else:

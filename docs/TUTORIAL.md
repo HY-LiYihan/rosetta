@@ -49,6 +49,7 @@ python test_concepts.py
 
 ```bash
 python -m pytest -q
+python -m unittest tests/unit/test_domain_validators.py
 ```
 
 ## 5. 建议提交流程
