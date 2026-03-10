@@ -42,3 +42,10 @@
 5. 导入校验错误升级为结构化格式：`field / reason / hint`，并在概念导入页面显示。
 6. 新增导入预检摘要：显示 `version`、重复概念数、自动修复字段数、可导入概念数。
 7. 导出文件名加入版本和日期（如 `concepts_v1_0_20260310.json`），并在概念管理页面显示当前数据版本。
+
+### Stage 3 / Platform Adapter (started)
+
+1. 新增 `app/infrastructure/llm`，实现 OpenAI 兼容 provider 抽象与平台注册表。
+2. 新增 `app/services/platform_service.py`，统一平台探测与对话调用编排。
+3. `api_utils.py` 改为兼容门面，内部转发到 provider/service 层。
+4. 新增 `tests/unit/test_platform_service.py`，覆盖平台探测核心逻辑。
