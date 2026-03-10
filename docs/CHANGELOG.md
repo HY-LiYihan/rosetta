@@ -39,3 +39,4 @@
 2. 概念导入导出开始引入版本化数据结构（`version` + `concepts`）。
 3. 兼容旧数据格式（无 `version`），并在导入时进行规范化校验。
 4. 新增 `tests/unit/test_domain_validators.py`，覆盖基础规范化与缺失字段异常场景。
+5. 导入校验错误升级为结构化格式：`field / reason / hint`，并在概念导入页面显示。

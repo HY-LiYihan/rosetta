@@ -1,6 +1,6 @@
 import json
 from app.domain.schemas import DATA_VERSION
-from app.domain.validators import normalize_payload
+from app.domain.validators import ImportValidationError, normalize_payload
 
 
 def build_export_json(concepts: list[dict]) -> str:
@@ -13,13 +13,15 @@ def parse_import_json(raw_content: str) -> dict:
     return json.loads(raw_content)
 
 
-def validate_import_payload(payload: dict) -> tuple[bool, str]:
+def validate_import_payload(payload: dict) -> tuple[bool, dict | None]:
     """Validate concepts import payload and normalize to stable schema."""
     try:
         normalize_payload(payload)
-    except ValueError as e:
-        return False, str(e)
-    return True, ""
+    except ImportValidationError as e:
+        return False, {"field": e.field, "reason": e.reason, "hint": e.hint}
+    except Exception as e:
+        return False, {"field": "unknown", "reason": str(e), "hint": "检查导入 JSON 的结构与字段类型"}
+    return True, None
 
 
 def replace_concepts(imported_concepts: list[dict]) -> tuple[list[dict], str]:

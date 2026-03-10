@@ -1,6 +1,7 @@
 import unittest
 
-from app.domain.validators import normalize_payload
+from app.domain.validators import ImportValidationError, normalize_payload
+from app.services.concept_service import validate_import_payload
 
 
 class TestDomainValidators(unittest.TestCase):
@@ -33,8 +34,27 @@ class TestDomainValidators(unittest.TestCase):
             ]
         }
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportValidationError) as ctx:
             normalize_payload(payload)
+        self.assertIn("concepts[0].is_default", str(ctx.exception))
+
+    def test_validate_payload_returns_structured_error(self):
+        payload = {
+            "concepts": [
+                {
+                    "name": "c1",
+                    "prompt": "p1",
+                    "examples": [{"text": "t"}],
+                    "category": "cat",
+                    "is_default": False,
+                }
+            ]
+        }
+
+        is_valid, error = validate_import_payload(payload)
+        self.assertFalse(is_valid)
+        self.assertIsNotNone(error)
+        self.assertEqual(error["field"], "concepts[0].examples[0].annotation")
 
 
 if __name__ == "__main__":

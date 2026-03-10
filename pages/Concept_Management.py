@@ -73,9 +73,13 @@ with col2:
             file_content = uploaded_file.getvalue().decode("utf-8")
             imported_data = parse_import_json(file_content)
 
-            is_valid, error_message = validate_import_payload(imported_data)
+            is_valid, error_details = validate_import_payload(imported_data)
             if not is_valid:
-                st.error(error_message)
+                st.error("导入校验失败")
+                if error_details:
+                    st.markdown(f"**字段**: `{error_details['field']}`")
+                    st.markdown(f"**原因**: {error_details['reason']}")
+                    st.markdown(f"**建议**: {error_details['hint']}")
             else:
                 st.info(f"检测到 {len(imported_data['concepts'])} 个概念")
 
