@@ -171,23 +171,31 @@ docker-compose up --build -d
 
 ## 🔧 本地开发
 
-### 不使用 Docker 的本地部署
+### 不使用 Docker 的本地部署（推荐 Conda）
 
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/HY-LiYihan/rosetta.git
 cd rosetta
 
-# 2. 创建虚拟环境（推荐）
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或 venv\Scripts\activate  # Windows
+# 2. 创建 Conda 环境（推荐）
+conda env create -f environment.yml
+conda activate rosetta-dev
 
 # 3. 安装依赖
 pip install -r requirements.txt
 
 # 4. 运行应用
 streamlit run streamlit_app.py
+```
+
+如不使用 Conda，也可使用 `venv`：
+
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或 venv\\Scripts\\activate  # Windows
+pip install -r requirements.txt
 ```
 
 ### 项目结构
