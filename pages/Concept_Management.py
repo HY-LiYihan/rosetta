@@ -2,6 +2,7 @@ import streamlit as st
 import json
 from app.state.session_state import ensure_core_state
 from app.services.concept_service import (
+    build_import_preview,
     build_export_json,
     create_concept,
     merge_concepts,
@@ -81,27 +82,43 @@ with col2:
                     st.markdown(f"**原因**: {error_details['reason']}")
                     st.markdown(f"**建议**: {error_details['hint']}")
             else:
-                st.info(f"检测到 {len(imported_data['concepts'])} 个概念")
+                ok, preview_error, preview = build_import_preview(imported_data, st.session_state.concepts)
+                if not ok:
+                    st.error("导入预检失败")
+                    if preview_error:
+                        st.markdown(f"**字段**: `{preview_error['field']}`")
+                        st.markdown(f"**原因**: {preview_error['reason']}")
+                        st.markdown(f"**建议**: {preview_error['hint']}")
+                else:
+                    st.info(f"检测到 {preview['concept_count']} 个概念（version: {preview['version']}）")
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.metric("重复概念数", preview["duplicate_count"])
+                    with c2:
+                        st.metric("自动修复字段数", preview["auto_fix_count"])
+                    with c3:
+                        st.metric("可导入概念数", preview["concept_count"] - preview["duplicate_count"])
 
-                # 显示导入选项
-                import_option = st.radio(
-                    "导入选项",
-                    ["替换现有概念", "添加到当前所有概念的后面"],
-                    index=0,
-                    help="选择如何导入概念"
-                )
+                    # 显示导入选项
+                    import_option = st.radio(
+                        "导入选项",
+                        ["替换现有概念", "添加到当前所有概念的后面"],
+                        index=0,
+                        help="选择如何导入概念"
+                    )
 
-                if st.button("确认导入", type="primary", use_container_width=True):
-                    if import_option == "替换现有概念":
-                        st.session_state.concepts, import_message = replace_concepts(imported_data["concepts"])
-                    else:
-                        st.session_state.concepts, import_message = merge_concepts(
-                            st.session_state.concepts,
-                            imported_data["concepts"],
-                        )
+                    if st.button("确认导入", type="primary", use_container_width=True):
+                        normalized_imported_concepts = preview["normalized_concepts"]
+                        if import_option == "替换现有概念":
+                            st.session_state.concepts, import_message = replace_concepts(normalized_imported_concepts)
+                        else:
+                            st.session_state.concepts, import_message = merge_concepts(
+                                st.session_state.concepts,
+                                normalized_imported_concepts,
+                            )
 
-                    st.success(import_message)
-                    st.rerun()
+                        st.success(import_message)
+                        st.rerun()
         except json.JSONDecodeError:
             st.error("文件格式错误：不是有效的JSON文件")
         except Exception as e:

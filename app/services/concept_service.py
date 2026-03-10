@@ -24,6 +24,46 @@ def validate_import_payload(payload: dict) -> tuple[bool, dict | None]:
     return True, None
 
 
+def build_import_preview(payload: dict, existing_concepts: list[dict]) -> tuple[bool, dict | None, dict | None]:
+    """
+    Validate and normalize payload, then return a preview summary:
+    - version
+    - concept_count
+    - duplicate_count (name collision with existing concepts)
+    - auto_fix_count (missing/None explanation normalized to empty string)
+    """
+    try:
+        normalized_payload = normalize_payload(payload)
+    except ImportValidationError as e:
+        return False, {"field": e.field, "reason": e.reason, "hint": e.hint}, None
+    except Exception as e:
+        return False, {"field": "unknown", "reason": str(e), "hint": "检查导入 JSON 的结构与字段类型"}, None
+
+    existing_names = {c["name"] for c in existing_concepts}
+    duplicate_count = sum(1 for c in normalized_payload["concepts"] if c["name"] in existing_names)
+
+    auto_fix_count = 0
+    raw_concepts = payload.get("concepts", [])
+    for raw_concept in raw_concepts:
+        examples = raw_concept.get("examples", [])
+        if not isinstance(examples, list):
+            continue
+        for raw_example in examples:
+            if not isinstance(raw_example, dict):
+                continue
+            if "explanation" not in raw_example or raw_example.get("explanation") is None:
+                auto_fix_count += 1
+
+    preview = {
+        "version": normalized_payload.get("version", DATA_VERSION),
+        "concept_count": len(normalized_payload["concepts"]),
+        "duplicate_count": duplicate_count,
+        "auto_fix_count": auto_fix_count,
+        "normalized_concepts": normalized_payload["concepts"],
+    }
+    return True, None, preview
+
+
 def replace_concepts(imported_concepts: list[dict]) -> tuple[list[dict], str]:
     """Replace existing concepts with imported concepts."""
     normalized = normalize_payload({"concepts": imported_concepts})["concepts"]

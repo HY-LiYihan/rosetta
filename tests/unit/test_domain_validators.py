@@ -1,7 +1,7 @@
 import unittest
 
 from app.domain.validators import ImportValidationError, normalize_payload
-from app.services.concept_service import validate_import_payload
+from app.services.concept_service import build_import_preview, validate_import_payload
 
 
 class TestDomainValidators(unittest.TestCase):
@@ -55,6 +55,33 @@ class TestDomainValidators(unittest.TestCase):
         self.assertFalse(is_valid)
         self.assertIsNotNone(error)
         self.assertEqual(error["field"], "concepts[0].examples[0].annotation")
+
+    def test_import_preview_counts_duplicates_and_auto_fixes(self):
+        payload = {
+            "concepts": [
+                {
+                    "name": "c1",
+                    "prompt": "p1",
+                    "examples": [{"text": "t", "annotation": "a"}],
+                    "category": "cat",
+                    "is_default": False,
+                },
+                {
+                    "name": "c2",
+                    "prompt": "p2",
+                    "examples": [{"text": "t2", "annotation": "a2", "explanation": None}],
+                    "category": "cat",
+                    "is_default": False,
+                },
+            ]
+        }
+        existing = [{"name": "c1"}]
+
+        ok, error, preview = build_import_preview(payload, existing)
+        self.assertTrue(ok)
+        self.assertIsNone(error)
+        self.assertEqual(preview["duplicate_count"], 1)
+        self.assertEqual(preview["auto_fix_count"], 2)
 
 
 if __name__ == "__main__":
