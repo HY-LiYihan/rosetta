@@ -91,3 +91,9 @@ git push origin <your-branch>
 1. `requirements.txt` 与 `environment.yml` 同步更新。
 2. 本地 Conda 能启动，Docker 也能构建通过。
 3. Python 主版本保持一致（当前为 3.11）。
+
+## 10. 样式修改流程（TOML First）
+
+1. 优先在 `.streamlit/config.toml` 修改主题参数。
+2. 若需求属于交互态或选择器级控制，再在 `streamlit_app.py` 补最小 CSS。
+3. 禁止先写大段 CSS 再回填 TOML，避免样式治理失控。

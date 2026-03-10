@@ -41,7 +41,8 @@ sudo chown -R $USER:$USER /opt/rosetta
 
 1. `.env`：非敏感配置（端口、容器名、路径）。
 2. `.streamlit/secrets.toml`：敏感配置（API keys），不提交仓库。
-3. `docker-compose.yml`：生产基础编排。
+3. `.streamlit/config.toml`：主题与基础 UI 配置（TOML 优先）。
+4. `docker-compose.yml`：生产基础编排。
 
 建议 `.env` 字段:
 

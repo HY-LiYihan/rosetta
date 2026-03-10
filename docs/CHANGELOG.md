@@ -28,3 +28,4 @@
 5. `pages/Concept_Management.py` 改为调用 concept service，移除页面内重复业务逻辑。
 6. `pages/Annotation.py` 改为调用 state/service，移除页面内 prompt 组装与解析细节。
 7. 基础验证通过：`python -m compileall ...`、`python test_concepts.py`。
+8. 全局样式改为 TOML 优先策略：`.streamlit/config.toml` 承担主题配置，`streamlit_app.py` 仅保留最小 CSS 覆盖。
