@@ -2,6 +2,7 @@ import streamlit as st
 import json
 from app.state.session_state import ensure_core_state
 from app.services.concept_service import (
+    build_export_filename,
     build_import_preview,
     build_export_json,
     create_concept,
@@ -38,15 +39,17 @@ with col1:
     with st.container():
         # 显示当前概念数量
         st.markdown(f":blue[当前共有 {len(st.session_state.concepts)} 个概念]")
+        st.caption(f"当前数据版本: v{st.session_state.get('concepts_data_version', '1.0')}")
         
         # 准备导出的数据
         export_json = build_export_json(st.session_state.concepts)
+        export_file_name = build_export_filename(st.session_state.get("concepts_data_version", "1.0"))
         
         # 创建下载按钮
         st.download_button(
             label="📥 下载概念文件",
             data=export_json,
-            file_name="concepts_export.json",
+            file_name=export_file_name,
             mime="application/json",
             help="下载当前所有概念为JSON文件",
             use_container_width=True,
@@ -117,6 +120,7 @@ with col2:
                                 normalized_imported_concepts,
                             )
 
+                        st.session_state.concepts_data_version = preview["version"]
                         st.success(import_message)
                         st.rerun()
         except json.JSONDecodeError:

@@ -1,5 +1,6 @@
 import json
 import streamlit as st
+from app.domain.schemas import DATA_VERSION
 from app.domain.validators import normalize_payload
 
 _DEFAULT_CONCEPT = {
@@ -17,26 +18,31 @@ _DEFAULT_CONCEPT = {
 }
 
 
-def load_concepts_from_file(file_path: str = "concepts.json") -> list[dict]:
-    """Load concept list from JSON file, fallback to a built-in default concept."""
+def load_concepts_from_file(file_path: str = "concepts.json") -> tuple[list[dict], str]:
+    """Load concept list and data version from JSON file, fallback to default concept."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             payload = json.load(f)
         normalized = normalize_payload(payload)
         if normalized["concepts"]:
-            return normalized["concepts"]
+            return normalized["concepts"], normalized.get("version", DATA_VERSION)
     except FileNotFoundError:
         pass
     except Exception:
         pass
 
-    return [_DEFAULT_CONCEPT.copy()]
+    return [_DEFAULT_CONCEPT.copy()], DATA_VERSION
 
 
 def ensure_core_state(file_path: str = "concepts.json") -> None:
     """Ensure shared session state keys required by all pages are initialized."""
     if "concepts" not in st.session_state:
-        st.session_state.concepts = load_concepts_from_file(file_path)
+        concepts, version = load_concepts_from_file(file_path)
+        st.session_state.concepts = concepts
+        st.session_state.concepts_data_version = version
+
+    if "concepts_data_version" not in st.session_state:
+        st.session_state.concepts_data_version = DATA_VERSION
 
     if "annotation_history" not in st.session_state:
         st.session_state.annotation_history = []

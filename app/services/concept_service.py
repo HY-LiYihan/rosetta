@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from app.domain.schemas import DATA_VERSION
 from app.domain.validators import ImportValidationError, normalize_payload
 
@@ -6,6 +7,13 @@ from app.domain.validators import ImportValidationError, normalize_payload
 def build_export_json(concepts: list[dict]) -> str:
     """Serialize concepts to pretty JSON for download."""
     return json.dumps({"version": DATA_VERSION, "concepts": concepts}, ensure_ascii=False, indent=2)
+
+
+def build_export_filename(version: str = DATA_VERSION, now: datetime | None = None) -> str:
+    """Build a deterministic export file name with data version and date."""
+    ts = (now or datetime.now()).strftime("%Y%m%d")
+    safe_version = version.replace(".", "_")
+    return f"concepts_v{safe_version}_{ts}.json"
 
 
 def parse_import_json(raw_content: str) -> dict:
