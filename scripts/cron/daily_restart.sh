@@ -2,4 +2,4 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-"${SCRIPT_DIR}/cron/monthly_rebuild.sh"
+"${SCRIPT_DIR}/../deploy/update.sh"

@@ -66,7 +66,7 @@ ROSETTA_LOG_DIR=/opt/rosetta/logs
 ```bash
 cd /opt/rosetta/app
 cp .env.example .env
-./scripts/deploy.sh
+./scripts/deploy/deploy.sh
 ```
 
 ## 6. 日常更新流程
@@ -82,7 +82,7 @@ cp .env.example .env
 
 ```bash
 cd /opt/rosetta/app
-./scripts/update.sh
+./scripts/deploy/update.sh
 ```
 
 ## 7. 备份与恢复
@@ -90,7 +90,7 @@ cd /opt/rosetta/app
 ### 7.1 备份
 
 ```bash
-./scripts/backup.sh
+./scripts/data/backup.sh
 ```
 
 备份内容:
@@ -101,7 +101,7 @@ cd /opt/rosetta/app
 ### 7.2 恢复
 
 ```bash
-./scripts/restore.sh /opt/rosetta/backups/concepts_YYYYmmdd_HHMMSS.json
+./scripts/data/restore.sh /opt/rosetta/backups/concepts_YYYYmmdd_HHMMSS.json
 ```
 
 恢复后动作:
@@ -145,6 +145,11 @@ docker compose logs -f
 3. `scripts/data/`：`backup.sh`、`restore.sh`、`migrate.sh`
 4. `scripts/cron/`：`daily_restart.sh`、`monthly_rebuild.sh`
 5. `scripts/lib/`：公共函数（日志、错误处理、环境变量解析）
+
+当前仓库状态（已落地）:
+
+1. 已实现 `deploy/ops/data/cron/lib` 目录分层。
+2. 旧入口 `scripts/daily_restart.sh` 与 `scripts/monthly_rebuild.sh` 保持兼容。
 
 ## 10. 发布与回滚规范
 

@@ -65,20 +65,36 @@ git push origin <your-branch>
 1. 每个可验收子步骤结束后都执行上述流程。
 2. 不允许累积多个阶段后再一次性推送。
 
-## 6. 代码组织约定
+## 6. 脚本运维入口（Stage 1 新增）
+
+```bash
+./scripts/deploy/deploy.sh
+./scripts/deploy/update.sh
+./scripts/ops/healthcheck.sh
+./scripts/data/backup.sh
+./scripts/data/restore.sh <backup-file>
+```
+
+兼容入口（可继续用于 cron）:
+
+```bash
+./scripts/daily_restart.sh
+./scripts/monthly_rebuild.sh
+```
+## 7. 代码组织约定
 
 1. 页面逻辑只保留展示和事件触发。
 2. 业务编排进入 `app/services`。
 3. 状态初始化进入 `app/state`。
 4. 可复用常量进入模块级常量文件。
 
-## 7. 常见问题
+## 8. 常见问题
 
 1. 页面报 `KeyError`：检查是否在页面入口调用 `ensure_session_state()`。
 2. 模型列表为空：检查 `secrets.toml` 与平台探测逻辑。
 3. 导入 JSON 失败：先执行 schema 校验，再查看错误字段提示。
 
-## 8. Stage 1 验收自检清单
+## 9. Stage 1 验收自检清单
 
 1. 三页面可正常渲染。
 2. 概念增删改与导入导出可用。
@@ -86,13 +102,13 @@ git push origin <your-branch>
 4. 无明显行为回归。
 5. 文档已同步更新。
 
-## 9. 双环境一致性检查
+## 10. 双环境一致性检查
 
 1. `requirements.txt` 与 `environment.yml` 同步更新。
 2. 本地 Conda 能启动，Docker 也能构建通过。
 3. Python 主版本保持一致（当前为 3.11）。
 
-## 10. 样式修改流程（TOML First）
+## 11. 样式修改流程（TOML First）
 
 1. 优先在 `.streamlit/config.toml` 修改主题参数。
 2. 若需求属于交互态或选择器级控制，再在 `streamlit_app.py` 补最小 CSS。

@@ -29,3 +29,6 @@
 6. `pages/Annotation.py` 改为调用 state/service，移除页面内 prompt 组装与解析细节。
 7. 基础验证通过：`python -m compileall ...`、`python test_concepts.py`。
 8. 全局样式改为 TOML 优先策略：`.streamlit/config.toml` 承担主题配置，`streamlit_app.py` 仅保留最小 CSS 覆盖。
+9. `scripts/` 完成分层重构：新增 `deploy/ops/data/cron/lib`。
+10. 新增标准脚本：`deploy.sh`、`update.sh`、`rollback.sh`、`healthcheck.sh`、`logs.sh`、`restart.sh`、`backup.sh`、`restore.sh`。
+11. 旧入口 `scripts/daily_restart.sh` 与 `scripts/monthly_rebuild.sh` 改为兼容转发，不破坏现有 cron 路径。
