@@ -270,11 +270,11 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("🏠 返回首页", use_container_width=True):
-        st.switch_page("pages/Home.py")
+        st.switch_page("app/ui/pages/Home.py")
 
 with col2:
     if st.button("✏️ 前往标注", use_container_width=True):
-        st.switch_page("pages/Annotation.py")
+        st.switch_page("app/ui/pages/Annotation.py")
 
 with col3:
     if st.button("🔄 刷新页面", use_container_width=True):

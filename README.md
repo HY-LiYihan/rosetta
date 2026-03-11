@@ -85,7 +85,7 @@ conda env create -f environment.yml
 conda activate rosetta-dev
 
 # 4) 运行测试（建议）
-python -m compileall app pages streamlit_app.py
+python -m compileall app streamlit_app.py
 python -m unittest discover -s tests -p 'test_*.py'
 
 # 5) 启动应用

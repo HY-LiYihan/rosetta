@@ -2,10 +2,18 @@
 
 ## 2026-03-11
 
+### Refactor / page relocation
+
+1. 页面目录由根目录 `pages/` 迁移到 [app/ui/pages/](/Users/liyh/rosetta/app/ui/pages/)。
+2. `streamlit_app.py` 的 `st.Page(...)` 路径全部更新为 `app/ui/pages/*`。
+3. 页面内 `st.switch_page(...)` 路径全部同步更新。
+4. 删除旧目录 `pages/`，实现 UI 层完全收敛到 `app/ui`。
+5. 更新 [ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md) 的目录结构与职责描述。
+
 ### Refactor / api_utils relocation
 
 1. 新增 [app/infrastructure/llm/api_utils.py](/Users/liyh/rosetta/app/infrastructure/llm/api_utils.py) 作为正式 LLM 调用入口。
-2. [pages/Annotation.py](/Users/liyh/rosetta/pages/Annotation.py) 改为直接引用新位置的 `api_utils`。
+2. [app/ui/pages/Annotation.py](/Users/liyh/rosetta/app/ui/pages/Annotation.py) 改为直接引用新位置的 `api_utils`。
 3. 删除根目录 `api_utils.py`，不再保留兼容 shim。
 4. 更新 [ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md) 以反映新模块位置。
 
@@ -44,9 +52,9 @@
 1. 新增 `app/state/session_state.py`，统一 `concepts`、`annotation_history`、平台配置与默认模型初始化。
 2. 新增 `app/services/concept_service.py`，抽取概念导入导出、合并与创建逻辑。
 3. 新增 `app/services/annotation_service.py`，抽取 prompt 构建、响应解析与历史记录构建逻辑。
-4. `pages/Home.py` 改为使用 `ensure_core_state()`，移除重复状态初始化代码。
-5. `pages/Concept_Management.py` 改为调用 concept service，移除页面内重复业务逻辑。
-6. `pages/Annotation.py` 改为调用 state/service，移除页面内 prompt 组装与解析细节。
+4. `app/ui/pages/Home.py` 改为使用 `ensure_core_state()`，移除重复状态初始化代码。
+5. `app/ui/pages/Concept_Management.py` 改为调用 concept service，移除页面内重复业务逻辑。
+6. `app/ui/pages/Annotation.py` 改为调用 state/service，移除页面内 prompt 组装与解析细节。
 7. 基础验证通过：`python -m compileall ...`、`python -m unittest discover -s tests -p 'test_*.py'`。
 8. 全局样式改为 TOML 优先策略：`.streamlit/config.toml` 承担主题配置，`streamlit_app.py` 仅保留最小 CSS 覆盖。
 9. `scripts/` 完成分层重构：新增 `deploy/ops/data/cron/lib`。

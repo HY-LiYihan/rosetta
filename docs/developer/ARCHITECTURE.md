@@ -14,11 +14,12 @@
 ```text
 rosetta/
   streamlit_app.py
-  pages/
-    Home.py
-    Concept_Management.py
-    Annotation.py
   app/
+    ui/
+      pages/
+        Home.py
+        Concept_Management.py
+        Annotation.py
     state/
       session_state.py
     domain/
@@ -48,7 +49,7 @@ rosetta/
 
 ## 3. 关键层职责
 
-1. `pages/*`
+1. `app/ui/pages/*`
 - 负责页面渲染与交互。
 - 调用 `state/service`，不实现复杂业务规则。
 
@@ -95,4 +96,4 @@ rosetta/
 
 1. 先读 [WORKFLOW.md](/Users/liyh/rosetta/docs/developer/WORKFLOW.md)。
 2. 再改 `app/services` / `app/domain`。
-3. 最后才动 `pages/*`。
+3. 最后才动 `app/ui/pages/*`。

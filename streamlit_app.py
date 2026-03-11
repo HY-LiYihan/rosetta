@@ -92,9 +92,9 @@ st.markdown(
 )
 
 # 使用新的 Streamlit 导航 API
-home_page = st.Page("pages/Home.py", title="首页", icon="🏠", default=True)
-concept_management_page = st.Page("pages/Concept_Management.py", title="概念管理", icon="📚")
-annotation_page = st.Page("pages/Annotation.py", title="智能标注", icon="✏️")
+home_page = st.Page("app/ui/pages/Home.py", title="首页", icon="🏠", default=True)
+concept_management_page = st.Page("app/ui/pages/Concept_Management.py", title="概念管理", icon="📚")
+annotation_page = st.Page("app/ui/pages/Annotation.py", title="智能标注", icon="✏️")
 
 navigation = st.navigation(
     pages=[home_page, concept_management_page, annotation_page],

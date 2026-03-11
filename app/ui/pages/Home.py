@@ -97,10 +97,10 @@ if st.session_state.concepts:
             with col1:
                 if st.button(f"使用此概念标注", key=f"use_concept_{i}"):
                     st.session_state.selected_concept = concept['name']
-                    st.switch_page("pages/Annotation.py")
+                    st.switch_page("app/ui/pages/Annotation.py")
             with col2:
                 if st.button(f"编辑概念", key=f"edit_concept_{i}"):
-                    st.switch_page("pages/Concept_Management.py")
+                    st.switch_page("app/ui/pages/Concept_Management.py")
 else:
     st.info("暂无概念，请先添加概念")
 

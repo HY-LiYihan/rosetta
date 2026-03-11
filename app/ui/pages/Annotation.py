@@ -111,7 +111,7 @@ st.subheader("🎯 选择标注概念")
 if not st.session_state.concepts:
     st.warning("暂无可用概念，请先添加概念")
     if st.button("前往概念管理页面"):
-        st.switch_page("pages/Concept_Management.py")
+        st.switch_page("app/ui/pages/Concept_Management.py")
 else:
     selected_concept_name = st.selectbox(
         "选择要标注的概念",
@@ -271,11 +271,11 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("🏠 返回首页", use_container_width=True):
-        st.switch_page("pages/Home.py")
+        st.switch_page("app/ui/pages/Home.py")
 
 with col2:
     if st.button("📚 概念管理", use_container_width=True):
-        st.switch_page("pages/Concept_Management.py")
+        st.switch_page("app/ui/pages/Concept_Management.py")
 
 with col3:
     if st.button("🔄 刷新页面", use_container_width=True):
