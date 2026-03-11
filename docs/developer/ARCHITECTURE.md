@@ -31,6 +31,7 @@ rosetta/
       platform_service.py
     infrastructure/
       llm/
+        api_utils.py
         base.py
         providers.py
         registry.py
@@ -67,7 +68,7 @@ rosetta/
 5. `app/infrastructure/llm`
 - 平台配置注册。
 - OpenAI 兼容 provider。
-- 由 `api_utils.py` 兼容门面调用。
+- `api_utils.py` 放在该层，作为页面侧统一调用入口。
 
 ## 4. 核心数据流
 
@@ -88,7 +89,7 @@ rosetta/
 
 ## 5. 当前技术债
 
-1. `api_utils.py` 仍保留为兼容层，后续可让页面直连 `platform_service`。
+1. 根目录 `api_utils.py` 仍保留为兼容 shim；页面已切换到 `app/infrastructure/llm/api_utils.py`。
 2. 目前持久化仍是 JSON，数据库后端待 Stage 6。
 
 ## 6. 更新项目建议

@@ -1,5 +1,5 @@
 import streamlit as st
-import api_utils
+from app.infrastructure.llm import api_utils
 from app.services.annotation_service import (
     build_annotation_prompt,
     build_history_entry,
