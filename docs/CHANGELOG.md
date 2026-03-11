@@ -36,6 +36,15 @@
 3. 新增单测：`tests/unit/test_annotation_visualization.py`。
 4. 首页页脚版本更新为 `v2.4`。
 
+### UX / Home core cards navigation refinement
+
+1. 首页核心功能区移除额外小按钮，改为卡片标题文本直接可点击跳转（`st.page_link`）。
+2. 跳转映射保持不变：
+- 多模型支持 -> 智能标注
+- 概念管理 -> 概念管理
+- 智能标注 -> 智能标注
+3. 首页页脚版本更新为 `v2.5`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
