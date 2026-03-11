@@ -6,7 +6,7 @@
 
 1. 新增 [app/infrastructure/llm/api_utils.py](/Users/liyh/rosetta/app/infrastructure/llm/api_utils.py) 作为正式 LLM 调用入口。
 2. [pages/Annotation.py](/Users/liyh/rosetta/pages/Annotation.py) 改为直接引用新位置的 `api_utils`。
-3. 根目录 [api_utils.py](/Users/liyh/rosetta/api_utils.py) 保留为兼容 shim，仅做转发导出。
+3. 删除根目录 `api_utils.py`，不再保留兼容 shim。
 4. 更新 [ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md) 以反映新模块位置。
 
 ### Runtime Layout / Docs Clarity

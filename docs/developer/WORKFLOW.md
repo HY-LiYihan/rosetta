@@ -13,7 +13,7 @@
 3. 每个可验收步骤至少执行：
 
 ```bash
-python -m compileall app pages streamlit_app.py api_utils.py
+python -m compileall app pages streamlit_app.py
 python -m unittest discover -s tests -p 'test_*.py'
 for f in $(find scripts -type f -name '*.sh'); do bash -n "$f"; done
 ```

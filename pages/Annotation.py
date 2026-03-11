@@ -1,5 +1,8 @@
 import streamlit as st
-from app.infrastructure.llm import api_utils
+from app.infrastructure.llm.api_utils import (
+    get_chat_response,
+    probe_available_platforms,
+)
 from app.services.annotation_service import (
     build_annotation_prompt,
     build_history_entry,
@@ -27,7 +30,7 @@ ensure_core_state()
 # 自动探测可用平台
 if "available_config" not in st.session_state:
     with st.spinner("正在探测可用 AI 平台..."):
-        ensure_available_config(api_utils.probe_available_platforms)
+        ensure_available_config(probe_available_platforms)
 
 # 初始化默认平台和模型
 ensure_platform_selection(preferred_platform="deepseek")
@@ -167,7 +170,7 @@ else:
                     prompt = build_annotation_prompt(selected_concept, input_text)
                     
                     # 调用统一的 API 接口
-                    annotation_result = api_utils.get_chat_response(
+                    annotation_result = get_chat_response(
                         platform=st.session_state.selected_platform,
                         api_key=api_key,
                         model=st.session_state.selected_model,

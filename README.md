@@ -85,7 +85,7 @@ conda env create -f environment.yml
 conda activate rosetta-dev
 
 # 4) 运行测试（建议）
-python -m compileall app pages streamlit_app.py api_utils.py
+python -m compileall app pages streamlit_app.py
 python -m unittest discover -s tests -p 'test_*.py'
 
 # 5) 启动应用
@@ -107,7 +107,7 @@ streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 ```
 rosetta/
 ├── streamlit_app.py          # 主应用文件
-├── api_utils.py             # API 工具函数
+├── app/infrastructure/llm/api_utils.py  # LLM 统一调用入口
 ├── assets/concepts.json      # 默认概念数据
 ├── requirements.txt         # Python 依赖
 ├── Dockerfile              # Docker 构建文件

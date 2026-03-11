@@ -89,8 +89,7 @@ rosetta/
 
 ## 5. 当前技术债
 
-1. 根目录 `api_utils.py` 仍保留为兼容 shim；页面已切换到 `app/infrastructure/llm/api_utils.py`。
-2. 目前持久化仍是 JSON，数据库后端待 Stage 6。
+1. 目前持久化仍是 JSON，数据库后端待 Stage 6。
 
 ## 6. 更新项目建议
 
