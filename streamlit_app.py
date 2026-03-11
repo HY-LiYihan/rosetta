@@ -17,7 +17,8 @@ runtime_flags = parse_runtime_flags(sys.argv[1:])
 configure_debug(enabled=runtime_flags.debug_mode)
 if is_debug_mode():
     log_debug_event("app_entry", {"argv": sys.argv[1:]})
-    render_debug_notice(countdown_seconds=5)
+    if not render_debug_notice(countdown_seconds=5):
+        st.stop()
 
 # 全局样式策略：优先使用 .streamlit/config.toml 主题配置；
 # 这里仅保留 TOML 暂不覆盖的选择器级样式（导航密度、侧边栏按钮可见性、移动端导航细节）。
