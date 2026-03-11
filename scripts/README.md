@@ -10,6 +10,12 @@ Rosetta 脚本目录已按职责分层，保持旧入口兼容。
 - `scripts/cron/`: 定时任务入口
 - `scripts/lib/`: 公共函数
 
+默认运行目录由 `ROSETTA_RUNTIME_DIR` 控制（默认 `/opt/rosetta/runtime`），统一包含：
+
+- `data/`
+- `backups/`
+- `logs/`
+
 ## 常用命令
 
 ```bash

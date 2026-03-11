@@ -4,6 +4,7 @@
 
 1. 服务器根目录：`/opt/streamlit`
 2. 项目目录：`/opt/streamlit/rosetta`
+3. 运行目录：`/opt/rosetta/runtime`（统一包含 `data/backups/logs`）
 
 ## 2. 首次部署
 
@@ -42,6 +43,15 @@ cd /opt/streamlit/rosetta
 5. 备份：`./scripts/data/backup.sh`
 6. 恢复：`./scripts/data/restore.sh <backup-file>`
 7. 详细职责说明见 [SCRIPTS.md](/Users/liyh/rosetta/docs/developer/SCRIPTS.md)
+
+## 7. 运行目录说明
+
+1. 默认使用 `ROSETTA_RUNTIME_DIR=/opt/rosetta/runtime`。
+2. 脚本会自动创建：
+- `/opt/rosetta/runtime/data`
+- `/opt/rosetta/runtime/backups`
+- `/opt/rosetta/runtime/logs`
+3. 如需拆分目录，可在 `.env` 中单独覆盖 `ROSETTA_DATA_DIR`、`ROSETTA_BACKUP_DIR`、`ROSETTA_LOG_DIR`。
 
 ## 5. 兼容 cron 入口
 

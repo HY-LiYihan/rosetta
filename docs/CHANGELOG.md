@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-03-11
+
+### Runtime Layout / Docs Clarity
+
+1. 引入统一运行目录变量 `ROSETTA_RUNTIME_DIR`（默认 `/opt/rosetta/runtime`）。
+2. `scripts/lib/common.sh` 改为从 `ROSETTA_RUNTIME_DIR` 自动派生：
+- `ROSETTA_DATA_DIR=${ROSETTA_RUNTIME_DIR}/data`
+- `ROSETTA_BACKUP_DIR=${ROSETTA_RUNTIME_DIR}/backups`
+- `ROSETTA_LOG_DIR=${ROSETTA_RUNTIME_DIR}/logs`
+3. `.env.example` 重写为“主变量 + 可选覆盖”结构，减少配置理解成本。
+4. `.gitignore` 增加 `.runtime/` 整目录忽略规则，避免本地/服务器运行产物进入版本库。
+5. 更新 [SCRIPTS.md](/Users/liyh/rosetta/docs/developer/SCRIPTS.md)、[DEPLOYMENT.md](/Users/liyh/rosetta/docs/developer/DEPLOYMENT.md)、[README.md](/Users/liyh/rosetta/README.md)、[scripts/README.md](/Users/liyh/rosetta/scripts/README.md) 以匹配新目录约定。
+
 ## 2026-03-10
 
 ### Docs / Architecture V1

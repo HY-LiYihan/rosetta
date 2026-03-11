@@ -24,10 +24,11 @@
 2. `ROSETTA_SERVICE`: Compose 服务名，默认 `rosetta`。
 3. `ROSETTA_CONTAINER`: 容器名，默认 `rosetta-app`。
 4. `ROSETTA_PORT`: 服务端口，默认 `8501`。
-5. `ROSETTA_DATA_DIR`: 数据目录，默认 `/opt/rosetta/data`。
-6. `ROSETTA_BACKUP_DIR`: 备份目录，默认 `/opt/rosetta/backups`。
-7. `ROSETTA_LOG_DIR`: 日志目录，默认 `/opt/rosetta/logs`。
-8. `ROSETTA_HEALTH_URL`: 健康检查 URL，默认 `http://localhost:${ROSETTA_PORT}/_stcore/health`。
+5. `ROSETTA_RUNTIME_DIR`: 运行时根目录，默认 `/opt/rosetta/runtime`。
+6. `ROSETTA_DATA_DIR`: 数据目录，默认 `${ROSETTA_RUNTIME_DIR}/data`。
+7. `ROSETTA_BACKUP_DIR`: 备份目录，默认 `${ROSETTA_RUNTIME_DIR}/backups`。
+8. `ROSETTA_LOG_DIR`: 日志目录，默认 `${ROSETTA_RUNTIME_DIR}/logs`。
+9. `ROSETTA_HEALTH_URL`: 健康检查 URL，默认 `http://localhost:${ROSETTA_PORT}/_stcore/health`。
 
 ## 4. 脚本职责矩阵
 

@@ -41,6 +41,7 @@ cd /opt/streamlit/rosetta
 
 # 3) 准备环境变量（首次）
 cp -n .env.example .env
+# 默认运行目录：/opt/rosetta/runtime（含 data/backups/logs）
 
 # 4) 启动服务
 ./scripts/deploy/deploy.sh
@@ -60,6 +61,7 @@ cd /opt/streamlit/rosetta
 ./scripts/data/backup.sh
 ./scripts/ops/logs.sh
 docker compose ps
+ls -la /opt/rosetta/runtime
 ```
 
 ### 方式 B：本地开发（Conda，推荐开发）
