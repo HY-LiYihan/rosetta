@@ -38,6 +38,20 @@ streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 
 访问应用：http://localhost:8501
 
+## 🧭 双环境说明（服务器 + 开发）
+
+本项目长期维护两套环境：
+
+1. 服务器部署环境（Docker + Compose）
+- 目标：稳定运行、可回滚、可脚本化运维
+- 推荐入口：`./scripts/deploy/deploy.sh`、`./scripts/deploy/update.sh`
+
+2. 本地开发环境（Conda）
+- 目标：快速迭代与调试
+- 推荐入口：`conda env create -f environment.yml` + `conda activate rosetta-dev`
+
+说明：依赖基线以 `requirements.txt` 为准，Conda 环境通过 `environment.yml` 引用同一依赖清单。
+
 ## 📋 详细部署指南
 
 ### 完整部署步骤
@@ -207,6 +221,38 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
+## ✅ 环境测试（简要）
+
+### A. 服务器 Docker 环境测试
+
+```bash
+# 1) 部署/更新
+./scripts/deploy/deploy.sh
+
+# 2) 健康检查
+./scripts/ops/healthcheck.sh
+curl -f http://localhost:8501/_stcore/health
+
+# 3) 查看状态与日志
+docker compose ps
+./scripts/ops/logs.sh
+```
+
+### B. 本地 Conda 开发环境测试
+
+```bash
+# 1) 创建并激活环境
+conda env create -f environment.yml
+conda activate rosetta-dev
+
+# 2) 运行静态检查与测试
+python -m compileall app pages streamlit_app.py api_utils.py
+python -m unittest discover -s tests -p 'test_*.py'
+
+# 3) 启动应用
+streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+```
+
 ### 项目结构
 
 ```
@@ -285,4 +331,4 @@ A: 目前支持以下 AI 平台：
 
 ---
 
-**最后更新**: 2025年12月30日
+**最后更新**: 2026年3月11日
