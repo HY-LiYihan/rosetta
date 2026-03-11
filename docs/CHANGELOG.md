@@ -26,6 +26,16 @@
 - 智能标注 -> 智能标注页面
 2. 首页页脚版本更新为 `v2.3`。
 
+### UX / Annotation visualization
+
+1. 在 [Annotation.py](/Users/liyh/rosetta/app/ui/pages/Annotation.py) 的「查看概念详情」样例区，新增标注可视化渲染：
+- 按 `[]` 中被标注文本高亮显示
+- 根据 `{}` 中标签稳定映射颜色
+- 悬浮提示显示标签内容（tooltip）
+2. 新增渲染器 [annotation_visualization.py](/Users/liyh/rosetta/app/ui/viewmodels/annotation_visualization.py)。
+3. 新增单测：`tests/unit/test_annotation_visualization.py`。
+4. 首页页脚版本更新为 `v2.4`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。

@@ -18,6 +18,7 @@ from app.state.keys import (
     SELECTED_MODEL,
     SELECTED_PLATFORM,
 )
+from app.ui.viewmodels.annotation_visualization import annotation_to_colored_html
 
 # 页面标题
 st.title("✏️ 文本标注工具")
@@ -136,7 +137,11 @@ else:
             st.markdown("**标注样例**:")
             for i, example in enumerate(selected_concept.get("examples", [])):
                 st.markdown(f"{i+1}. **文本**: `{example['text']}`")
-                st.markdown(f"   **标注**: {example['annotation']}")
+                annotation_html = annotation_to_colored_html(example.get("annotation", ""))
+                st.markdown(
+                    f"   **标注**: <span style='line-height:1.8'>{annotation_html}</span>",
+                    unsafe_allow_html=True,
+                )
                 if "explanation" in example and example["explanation"]:
                     st.markdown(f"   **解释**: {example['explanation']}")
                 st.markdown("---")
