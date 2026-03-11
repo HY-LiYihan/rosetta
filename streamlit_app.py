@@ -1,4 +1,9 @@
 import streamlit as st
+import sys
+
+from app.infrastructure.config.runtime_flags import parse_runtime_flags
+from app.infrastructure.debug import configure_debug, is_debug_mode, log_debug_event
+from app.ui.components.debug_notice import render_debug_notice
 
 # 页面配置
 st.set_page_config(
@@ -7,6 +12,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+runtime_flags = parse_runtime_flags(sys.argv[1:])
+configure_debug(enabled=runtime_flags.debug_mode)
+if is_debug_mode():
+    log_debug_event("app_entry", {"argv": sys.argv[1:]})
+    render_debug_notice(countdown_seconds=5)
 
 # 全局样式策略：优先使用 .streamlit/config.toml 主题配置；
 # 这里仅保留 TOML 暂不覆盖的选择器级样式（导航密度、侧边栏按钮可见性、移动端导航细节）。

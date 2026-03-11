@@ -2,6 +2,16 @@
 
 ## 2026-03-11
 
+### Feature / Debug mode
+
+1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
+2. 新增调试运行时模块 [runtime.py](/Users/liyh/rosetta/app/infrastructure/debug/runtime.py)，可留存操作日志与上传副本。
+3. 新增首次访问双语提示组件 [debug_notice.py](/Users/liyh/rosetta/app/ui/components/debug_notice.py)，5 秒倒计时后可关闭。
+4. 在 `streamlit_app.py` 接入 debug 初始化与提示展示逻辑。
+5. 标注与概念导入流程接入调试事件埋点，记录操作与中间结果（含导入文件副本）。
+6. 调试日志落盘到 `.runtime/logs/debug/*.jsonl`，上传副本保存到 `.runtime/data/debug_uploads/`。
+7. 新增单测：`test_runtime_flags.py`、`test_debug_runtime.py`。
+
 ### Refactor / service layering
 
 1. 新增 `app/state/keys.py`，统一管理 `session_state` 键名常量。

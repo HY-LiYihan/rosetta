@@ -92,6 +92,23 @@ python -m unittest discover -s tests -p 'test_*.py'
 streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 ```
 
+### Debug 模式（可选）
+
+用于在一段时间内留存操作轨迹与中间结果，便于排查问题。开启后：
+1. 首次访问会显示中英双语调试提示（5 秒倒计时后可关闭）。
+2. 操作与中间结果写入 `.runtime/logs/debug/*.jsonl`。
+3. 导入文件副本保存到 `.runtime/data/debug_uploads/`。
+
+启动方式（二选一）：
+
+```bash
+# 方式 1：脚本参数（arg parse）
+streamlit run streamlit_app.py -- --debug
+
+# 方式 2：环境变量
+ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
+```
+
 ## 🎯 使用入口
 
 1. 访问应用：`http://localhost:8501`

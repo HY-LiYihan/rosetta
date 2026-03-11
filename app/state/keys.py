@@ -7,6 +7,7 @@ SELECTED_MODEL = "selected_model"
 SELECTED_CONCEPT = "selected_concept"
 EDITING_CONCEPT_INDEX = "editing_concept_index"
 REUSE_TEXT = "reuse_text"
+DEBUG_NOTICE_ACK = "debug_notice_ack"
 
 # Widget keys
 PLATFORM_SELECTOR = "platform_selector"

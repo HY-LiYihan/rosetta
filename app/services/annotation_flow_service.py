@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.infrastructure.debug import log_debug_event
 from app.services.annotation_service import (
     build_annotation_prompt,
     build_history_entry,
@@ -17,6 +18,16 @@ def run_annotation(
     temperature: float,
 ) -> dict:
     """Execute end-to-end annotation flow and return structured result."""
+    log_debug_event(
+        "annotation_requested",
+        {
+            "concept": concept.get("name"),
+            "text": input_text,
+            "platform": selected_platform,
+            "model": selected_model,
+            "temperature": temperature,
+        },
+    )
     if not selected_platform:
         return {"ok": False, "error": "没有可用的 AI 平台，请检查 secrets.toml 配置"}
 
@@ -26,6 +37,7 @@ def run_annotation(
         return {"ok": False, "error": f"平台 {selected_platform} 缺少 API Key"}
 
     prompt = build_annotation_prompt(concept, input_text)
+    log_debug_event("annotation_prompt_built", {"prompt": prompt})
     raw_result = get_chat_response(
         platform=selected_platform,
         api_key=api_key,
@@ -37,6 +49,10 @@ def run_annotation(
         temperature=temperature,
     )
     parsed_result, parse_warning = parse_annotation_response(raw_result)
+    log_debug_event(
+        "annotation_response_received",
+        {"raw_result": raw_result, "parsed_result": parsed_result, "parse_warning": parse_warning},
+    )
 
     history_entry = build_history_entry(
         concept_name=concept["name"],

@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
+from app.infrastructure.debug import log_debug_event
 from app.infrastructure.llm.registry import get_platform_configs, get_provider
 from app.services.platform_service import (
     get_chat_response as service_get_chat_response,
@@ -25,9 +26,15 @@ def probe_available_platforms():
     Return: dict {platform_id: {"name": str, "models": list, "api_key": str}}
     """
     try:
-        return probe_available_platforms_from_secrets(st.secrets)
+        available = probe_available_platforms_from_secrets(st.secrets)
+        log_debug_event(
+            "platform_probe_result",
+            {"platforms": list(available.keys()), "count": len(available)},
+        )
+        return available
     except StreamlitSecretNotFoundError:
         # Local/dev mode may not provide secrets.toml; treat as no configured platforms.
+        log_debug_event("platform_probe_no_secrets", {})
         return {}
 
 

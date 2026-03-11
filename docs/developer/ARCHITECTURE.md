@@ -16,6 +16,8 @@ rosetta/
   streamlit_app.py
   app/
     ui/
+      components/
+        debug_notice.py
       pages/
         Home.py
         Concept_Management.py
@@ -39,6 +41,10 @@ rosetta/
       base.py
       json_concept_repository.py
     infrastructure/
+      config/
+        runtime_flags.py
+      debug/
+        runtime.py
       llm/
         api_utils.py
         base.py
@@ -87,6 +93,10 @@ rosetta/
 - 平台配置注册。
 - OpenAI 兼容 provider。
 - `api_utils.py` 放在该层，作为页面侧统一调用入口。
+
+8. `app/infrastructure/config + debug`
+- `runtime_flags.py` 解析运行开关（如 `--debug` / `ROSETTA_DEBUG_MODE`）。
+- `debug/runtime.py` 负责调试日志与上传副本落盘。
 
 ## 4. 核心数据流
 

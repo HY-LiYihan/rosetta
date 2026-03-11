@@ -53,6 +53,14 @@ cd /opt/streamlit/rosetta
 - `/opt/rosetta/runtime/logs`
 3. 如需拆分目录，可在 `.env` 中单独覆盖 `ROSETTA_DATA_DIR`、`ROSETTA_BACKUP_DIR`、`ROSETTA_LOG_DIR`。
 
+## 8. Debug 模式（临时排障）
+
+1. 开启方式（二选一）：
+- `streamlit run streamlit_app.py -- --debug`
+- `ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py`
+2. Debug 开启后，首次访问会展示中英双语提示（5 秒后可关闭）。
+3. 调试日志写入 `.runtime/logs/debug/*.jsonl`，上传副本写入 `.runtime/data/debug_uploads/`。
+
 ## 5. 兼容 cron 入口
 
 1. `./scripts/daily_restart.sh`
