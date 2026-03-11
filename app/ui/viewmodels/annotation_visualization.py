@@ -6,7 +6,7 @@ from app.domain.annotation_format import TOKEN_PATTERN
 
 BASE_GREEN_HUE = 142  # darker green base
 COLOR_SATURATION = 65
-COLOR_LIGHTNESS = 32
+COLOR_LIGHTNESS = 40
 WHITE_BG = "#FFFFFF"
 
 

@@ -76,6 +76,11 @@
 3. 两个标签时固定为绿色 + 红色；更多标签时按规则平均分配剩余色调。
 4. 首页页脚版本更新为 `v2.8.2`。
 
+### UX / Annotation color lightness tweak
+
+1. 在保持既有配色规则不变的前提下，将标注颜色亮度小幅提升（视觉更浅）。
+2. 首页页脚版本更新为 `v2.8.3`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
