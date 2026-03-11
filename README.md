@@ -110,6 +110,15 @@ docker-compose up -d
 docker-compose up --build -d
 ```
 
+推荐使用项目内运维脚本（已分层）：
+
+```bash
+./scripts/deploy/deploy.sh
+./scripts/deploy/update.sh
+./scripts/ops/healthcheck.sh
+./scripts/data/backup.sh
+```
+
 ## 🎯 使用指南
 
 ### 首次使用配置
@@ -259,6 +268,13 @@ A: 目前支持以下 AI 平台：
 
 - 项目地址：https://github.com/HY-LiYihan/rosetta
 - 问题反馈：通过 GitHub Issues 提交
+
+## 📚 架构与运维文档
+
+- 架构总览：`docs/ARCHITECTURE.md`
+- 部署指南：`docs/DEPLOYMENT.md`
+- 开发教程：`docs/TUTORIAL.md`
+- 迭代路线：`docs/ROADMAP.md`
 
 ## 🙏 致谢
 

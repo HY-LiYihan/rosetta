@@ -58,7 +58,7 @@ ROSETTA_LOG_DIR=/opt/rosetta/logs
 
 1. 克隆仓库到 `/opt/rosetta/app`。
 2. 准备 `.env` 与 `.streamlit/secrets.toml`。
-3. 执行 `scripts/deploy.sh`。
+3. 执行 `scripts/deploy/deploy.sh`。
 4. 确认健康检查通过。
 
 期望命令:

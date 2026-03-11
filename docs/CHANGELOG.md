@@ -19,7 +19,7 @@
 
 - Stage 1 代码改造将严格按上述文档执行。
 
-### Stage 1 / Code Restructure (in progress)
+### Stage 1 / Code Restructure (completed)
 
 1. 新增 `app/state/session_state.py`，统一 `concepts`、`annotation_history`、平台配置与默认模型初始化。
 2. 新增 `app/services/concept_service.py`，抽取概念导入导出、合并与创建逻辑。
@@ -33,7 +33,7 @@
 10. 新增标准脚本：`deploy.sh`、`update.sh`、`rollback.sh`、`healthcheck.sh`、`logs.sh`、`restart.sh`、`backup.sh`、`restore.sh`。
 11. 旧入口 `scripts/daily_restart.sh` 与 `scripts/monthly_rebuild.sh` 改为兼容转发，不破坏现有 cron 路径。
 
-### Stage 2 / Domain & Data Governance (started)
+### Stage 2 / Domain & Data Governance (completed)
 
 1. 新增 `app/domain`：`models.py`、`schemas.py`、`validators.py`。
 2. 概念导入导出开始引入版本化数据结构（`version` + `concepts`）。
@@ -49,3 +49,15 @@
 2. 新增 `app/services/platform_service.py`，统一平台探测与对话调用编排。
 3. `api_utils.py` 改为兼容门面，内部转发到 provider/service 层。
 4. 新增 `tests/unit/test_platform_service.py`，覆盖平台探测核心逻辑。
+
+### Stage 4 / Testing (completed)
+
+1. 新增 `tests/unit/test_annotation_service.py`，覆盖 prompt 构建与响应解析。
+2. 新增 `tests/unit/test_concept_service.py`，覆盖导出、替换、合并核心逻辑。
+3. 新增 `tests/integration/test_import_flow.py`，覆盖导入预检到合并流程。
+4. 测试执行统一为 `python -m unittest discover -s tests -p 'test_*.py'`。
+
+### Stage 5 / Engineering (completed)
+
+1. 新增 `.github/workflows/ci.yml`，包含编译检查、单元测试与脚本语法检查。
+2. CI 使用 Python 3.11 与 `requirements.txt` 作为依赖基线。
