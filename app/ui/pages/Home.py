@@ -60,35 +60,35 @@ cols = st.columns(3)
 
 with cols[0]:
     st.markdown("""
-    <a href="/Annotation" style="text-decoration:none; display:block;">
-      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%; cursor:pointer;'>
+      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
           <div style='font-size: 2rem; margin-bottom: 0.8rem;'>🤖</div>
-          <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>多模型支持</h4>
+          <h4 style='margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>
+            <a href="/Annotation" target="_self" style="color: var(--color-primary); text-decoration: none;">多模型支持</a>
+          </h4>
           <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持国内多个大语言模型平台，实时动态获取可用模型</p>
       </div>
-    </a>
     """, unsafe_allow_html=True)
 
 with cols[1]:
     st.markdown("""
-    <a href="/Concept_Management" style="text-decoration:none; display:block;">
-      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%; cursor:pointer;'>
+      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
           <div style='font-size: 2rem; margin-bottom: 0.8rem;'>📚</div>
-          <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>概念管理</h4>
+          <h4 style='margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>
+            <a href="/Concept_Management" target="_self" style="color: var(--color-primary); text-decoration: none;">概念管理</a>
+          </h4>
           <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>自定义语言学概念，支持编辑、导入导出，满足不同研究需求</p>
       </div>
-    </a>
     """, unsafe_allow_html=True)
 
 with cols[2]:
     st.markdown("""
-    <a href="/Annotation" style="text-decoration:none; display:block;">
-      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%; cursor:pointer;'>
+      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
           <div style='font-size: 2rem; margin-bottom: 0.8rem;'>✏️</div>
-          <h4 style='color: var(--color-primary); margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>智能标注</h4>
+          <h4 style='margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>
+            <a href="/Annotation" target="_self" style="color: var(--color-primary); text-decoration: none;">智能标注</a>
+          </h4>
           <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>利用大语言模型自动标注复杂的语言学概念，提高研究效率</p>
       </div>
-    </a>
     """, unsafe_allow_html=True)
 
 # 最近概念列表
@@ -127,7 +127,7 @@ st.divider()
 st.markdown("""
 <div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
     <p><strong>Rosetta - 智能语言学概念标注系统</strong></p>
-    <p>版本: v2.7 | 最后更新: 2026年3月11日</p>
+    <p>版本: v2.8 | 最后更新: 2026年3月11日</p>
     <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a></p>
 </div>
 """, unsafe_allow_html=True)

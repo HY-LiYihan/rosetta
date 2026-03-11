@@ -60,6 +60,15 @@
 - 智能标注 -> `/Annotation`
 3. 首页页脚版本更新为 `v2.7`。
 
+### UX / Home core cards navigation adjustment
+
+1. 核心功能区改为“仅原标题文字可点击跳转”，卡片视觉保持不变，不新增控件。
+2. 跳转路径保持：
+- 多模型支持 -> `/Annotation`
+- 概念管理 -> `/Concept_Management`
+- 智能标注 -> `/Annotation`
+3. 首页页脚版本更新为 `v2.8`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
