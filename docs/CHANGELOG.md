@@ -90,3 +90,9 @@
 
 1. README 的两种部署方式在“项目已存在”场景下增加 `fetch/pull` 更新命令。
 2. 关键文档引用改为可点击链接格式，避免仅保留纯路径文本。
+
+### Docs / Developer Refresh
+
+1. 全量更新 `docs/developer/README.md`、`ARCHITECTURE.md`、`WORKFLOW.md`、`ROADMAP.md`、`DEPLOYMENT.md`。
+2. 开发文档内容与当前代码、脚本、测试、CI 状态对齐。
+3. 统一补充了可点击链接引用与 `/opt/streamlit` 路径约定。
