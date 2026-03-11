@@ -14,123 +14,74 @@
 - **数据持久化**：支持概念数据的导入导出和历史记录
 - **现代化界面**：基于 Streamlit 的响应式设计，支持深色主题
 
-## 🚀 快速开始
+## 🚀 部署方式
 
 ### 环境要求
-- Python 3.8+
-- 2GB+ 可用内存（1G 比较极限）
+- Python 3.11（推荐）
+- 2GB+ 可用内存
+- 服务器环境需要 Docker + Docker Compose
 
-### 一键部署（推荐）
+下方两种方式都统一从 `/opt/streamlit` 开始。
 
-无需 Docker，直接运行以下命令即可快速启动：
-
-```bash
-# 克隆项目
-git clone https://github.com/HY-LiYihan/rosetta.git
-cd rosetta
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 启动应用
-streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
-```
-
-访问应用：http://localhost:8501
-
-## 🧭 双环境说明（服务器 + 开发）
-
-本项目长期维护两套环境：
-
-1. 服务器部署环境（Docker + Compose）
-- 目标：稳定运行、可回滚、可脚本化运维
-- 推荐入口：`./scripts/deploy/deploy.sh`、`./scripts/deploy/update.sh`
-
-2. 本地开发环境（Conda）
-- 目标：快速迭代与调试
-- 推荐入口：`conda env create -f environment.yml` + `conda activate rosetta-dev`
-
-说明：依赖基线以 `requirements.txt` 为准，Conda 环境通过 `environment.yml` 引用同一依赖清单。
-
-## 📋 详细部署指南
-
-### 完整部署步骤
-
-以下是在新设备上从零开始配置 Rosetta 的完整步骤：
+### 方式 A：服务器部署（Docker，推荐生产）
 
 ```bash
-# 1. 创建工作目录并进入
+# 1) 创建目录（如果不存在）
 sudo mkdir -p /opt/streamlit
 cd /opt/streamlit
 
-# 2. 克隆仓库
-git clone https://github.com/HY-LiYihan/rosetta.git
-cd rosetta
+# 2) 获取代码（目录不存在时 clone，存在时更新）
+if [ ! -d rosetta ]; then
+  git clone https://github.com/HY-LiYihan/rosetta.git
+fi
+cd /opt/streamlit/rosetta
 
-# 3. 构建 Docker 镜像（使用 --network=host 解决网络问题）
-docker build --network=host -t rosetta-app .
+# 3) 准备环境变量（首次）
+cp -n .env.example .env
 
-# 4. 使用 Docker Compose 启动服务（使用已构建的镜像）
-docker-compose up -d
-
-# 5. 验证服务运行
-docker ps
-curl http://localhost:8501/_stcore/health
-
-# 6. 访问应用
-# 打开浏览器访问 http://localhost:8501
-```
-
-**注意事项**：
-- 步骤3使用 `--network=host` 参数可以解决某些网络环境下 pip 安装失败的问题
-- docker-compose.yml 已配置为使用已构建的镜像 (`image: rosetta-app`) 和只读挂载 (`/opt/streamlit/rosetta:/app:ro`)
-- 如果端口 8501 已被占用，请先停止占用该端口的服务或修改 docker-compose.yml 中的端口映射
-- 如果之前构建过，Docker 会使用缓存加速构建过程
-
-### Docker Compose 配置
-
-项目已包含优化后的 `docker-compose.yml`：
-
-```yaml
-version: '3.8'
-
-services:
-  rosetta:
-    image: rosetta-app
-    container_name: rosetta-app
-    ports:
-      - "8501:8501"
-    restart: unless-stopped
-    volumes:
-      - /opt/streamlit/rosetta:/app:ro
-```
-
-### 管理命令
-
-```bash
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
-
-# 重启服务
-docker-compose up -d
-
-# 更新服务（重新构建）
-docker-compose up --build -d
-```
-
-推荐使用项目内运维脚本（已分层）：
-
-```bash
+# 4) 启动服务
 ./scripts/deploy/deploy.sh
-./scripts/deploy/update.sh
+
+# 5) 健康检查
 ./scripts/ops/healthcheck.sh
+curl -f http://localhost:8501/_stcore/health
+```
+
+访问地址：http://localhost:8501
+
+日常运维命令：
+
+```bash
+cd /opt/streamlit/rosetta
+./scripts/deploy/update.sh
 ./scripts/data/backup.sh
+./scripts/ops/logs.sh
+docker compose ps
+```
+
+### 方式 B：本地开发（Conda，推荐开发）
+
+```bash
+# 1) 创建目录（如果不存在）
+mkdir -p /opt/streamlit
+cd /opt/streamlit
+
+# 2) 获取代码（目录不存在时 clone，存在时更新）
+if [ ! -d rosetta ]; then
+  git clone https://github.com/HY-LiYihan/rosetta.git
+fi
+cd /opt/streamlit/rosetta
+
+# 3) 创建并激活开发环境
+conda env create -f environment.yml
+conda activate rosetta-dev
+
+# 4) 运行测试（建议）
+python -m compileall app pages streamlit_app.py api_utils.py
+python -m unittest discover -s tests -p 'test_*.py'
+
+# 5) 启动应用
+streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 ```
 
 ## 🎯 使用指南
@@ -192,74 +143,13 @@ docker-compose up --build -d
    
    系统会自动探测配置文件中可用的平台。
 
-## 🔧 本地开发
-
-### 不使用 Docker 的本地部署（推荐 Conda）
-
-```bash
-# 1. 克隆仓库
-git clone https://github.com/HY-LiYihan/rosetta.git
-cd rosetta
-
-# 2. 创建 Conda 环境（推荐）
-conda env create -f environment.yml
-conda activate rosetta-dev
-
-# 3. 安装依赖
-pip install -r requirements.txt
-
-# 4. 运行应用
-streamlit run streamlit_app.py
-```
-
-如不使用 Conda，也可使用 `venv`：
-
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或 venv\\Scripts\\activate  # Windows
-pip install -r requirements.txt
-```
-
-## ✅ 环境测试（简要）
-
-### A. 服务器 Docker 环境测试
-
-```bash
-# 1) 部署/更新
-./scripts/deploy/deploy.sh
-
-# 2) 健康检查
-./scripts/ops/healthcheck.sh
-curl -f http://localhost:8501/_stcore/health
-
-# 3) 查看状态与日志
-docker compose ps
-./scripts/ops/logs.sh
-```
-
-### B. 本地 Conda 开发环境测试
-
-```bash
-# 1) 创建并激活环境
-conda env create -f environment.yml
-conda activate rosetta-dev
-
-# 2) 运行静态检查与测试
-python -m compileall app pages streamlit_app.py api_utils.py
-python -m unittest discover -s tests -p 'test_*.py'
-
-# 3) 启动应用
-streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
-```
-
 ### 项目结构
 
 ```
 rosetta/
 ├── streamlit_app.py          # 主应用文件
 ├── api_utils.py             # API 工具函数
-├── assets/concepts.json            # 默认概念数据
+├── assets/concepts.json      # 默认概念数据
 ├── requirements.txt         # Python 依赖
 ├── Dockerfile              # Docker 构建文件
 ├── docker-compose.yml      # Docker Compose 配置
