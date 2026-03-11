@@ -18,7 +18,7 @@ _DEFAULT_CONCEPT = {
 }
 
 
-def load_concepts_from_file(file_path: str = "concepts.json") -> tuple[list[dict], str]:
+def load_concepts_from_file(file_path: str = "assets/concepts.json") -> tuple[list[dict], str]:
     """Load concept list and data version from JSON file, fallback to default concept."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -34,7 +34,7 @@ def load_concepts_from_file(file_path: str = "concepts.json") -> tuple[list[dict
     return [_DEFAULT_CONCEPT.copy()], DATA_VERSION
 
 
-def ensure_core_state(file_path: str = "concepts.json") -> None:
+def ensure_core_state(file_path: str = "assets/concepts.json") -> None:
     """Ensure shared session state keys required by all pages are initialized."""
     if "concepts" not in st.session_state:
         concepts, version = load_concepts_from_file(file_path)

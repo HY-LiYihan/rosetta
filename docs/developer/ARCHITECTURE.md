@@ -35,7 +35,7 @@ rosetta/
 
 3. 状态层 `app/state/session_state.py`
 - 统一初始化：`concepts`、`annotation_history`、`concepts_data_version`。
-- 从 `concepts.json` 读取时走 `domain.normalize_payload`。
+- 从 `assets/concepts.json` 读取时走 `domain.normalize_payload`。
 
 4. 领域层 `app/domain/*`
 - `schemas.py` 定义数据版本与字段要求。

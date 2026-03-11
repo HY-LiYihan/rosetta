@@ -285,6 +285,6 @@ st.divider()
 st.markdown("""
 <div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
     <p><strong>概念管理页面</strong> | 当前概念数量: {}</p>
-    <p>提示: 概念数据保存在 session state 中，重启应用后会从 concepts.json 重新加载</p>
+    <p>提示: 概念数据保存在 session state 中，重启应用后会从 assets/concepts.json 重新加载</p>
 </div>
 """.format(len(st.session_state.concepts)), unsafe_allow_html=True)

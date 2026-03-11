@@ -259,7 +259,7 @@ streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 rosetta/
 ├── streamlit_app.py          # 主应用文件
 ├── api_utils.py             # API 工具函数
-├── concepts.json            # 默认概念数据
+├── assets/concepts.json            # 默认概念数据
 ├── requirements.txt         # Python 依赖
 ├── Dockerfile              # Docker 构建文件
 ├── docker-compose.yml      # Docker Compose 配置

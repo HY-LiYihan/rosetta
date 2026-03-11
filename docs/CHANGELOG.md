@@ -27,7 +27,7 @@
 4. `pages/Home.py` 改为使用 `ensure_core_state()`，移除重复状态初始化代码。
 5. `pages/Concept_Management.py` 改为调用 concept service，移除页面内重复业务逻辑。
 6. `pages/Annotation.py` 改为调用 state/service，移除页面内 prompt 组装与解析细节。
-7. 基础验证通过：`python -m compileall ...`、`python test_concepts.py`。
+7. 基础验证通过：`python -m compileall ...`、`python -m unittest discover -s tests -p 'test_*.py'`。
 8. 全局样式改为 TOML 优先策略：`.streamlit/config.toml` 承担主题配置，`streamlit_app.py` 仅保留最小 CSS 覆盖。
 9. `scripts/` 完成分层重构：新增 `deploy/ops/data/cron/lib`。
 10. 新增标准脚本：`deploy.sh`、`update.sh`、`rollback.sh`、`healthcheck.sh`、`logs.sh`、`restart.sh`、`backup.sh`、`restore.sh`。
@@ -74,3 +74,9 @@
 
 1. 删除已弃用的旧文档入口：`docs/ARCHITECTURE.md`、`docs/DEPLOYMENT.md`、`docs/ROADMAP.md`、`docs/TUTORIAL.md`。
 2. 统一文档入口到 `docs/developer/*` 与 `docs/user/*`，避免重复维护。
+
+### Repo / Root Cleanup
+
+1. `concepts.json` 从根目录迁移到 `assets/concepts.json`，并同步更新加载与脚本路径。
+2. 删除已弃用脚本 `test_concepts.py`，统一使用 `tests/` 自动化测试体系。
+3. `api_utils.py` 保留为兼容门面（仍被页面调用），内部逻辑已下沉到 provider/service 层。

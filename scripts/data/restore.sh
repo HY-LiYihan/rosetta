@@ -20,7 +20,7 @@ ensure_dirs
 
 TARGET_FILE="${ROSETTA_DATA_DIR}/concepts.json"
 if [[ ! -d "${ROSETTA_DATA_DIR}" ]]; then
-  TARGET_FILE="${ROSETTA_APP_DIR}/concepts.json"
+  TARGET_FILE="${ROSETTA_APP_DIR}/assets/concepts.json"
 fi
 
 cp "${BACKUP_FILE}" "${TARGET_FILE}"

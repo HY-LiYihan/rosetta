@@ -9,11 +9,11 @@ ensure_dirs
 
 SOURCE_FILE="${ROSETTA_DATA_DIR}/concepts.json"
 if [[ ! -f "${SOURCE_FILE}" ]]; then
-  SOURCE_FILE="${ROSETTA_APP_DIR}/concepts.json"
+  SOURCE_FILE="${ROSETTA_APP_DIR}/assets/concepts.json"
 fi
 
 if [[ ! -f "${SOURCE_FILE}" ]]; then
-  err "concepts.json not found in ${ROSETTA_DATA_DIR} or ${ROSETTA_APP_DIR}"
+  err "concepts.json not found in ${ROSETTA_DATA_DIR} or ${ROSETTA_APP_DIR}/assets"
   exit 1
 fi
 
