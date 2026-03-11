@@ -3,16 +3,25 @@ from __future__ import annotations
 from app.infrastructure.llm.registry import get_platform_configs, get_provider
 
 
+def _safe_read_secret(secrets, key_name: str) -> str | None:
+    """Read secret value without assuming secrets backend is initialized."""
+    try:
+        value = secrets[key_name]
+    except Exception:
+        return None
+    return value if value else None
+
+
 def probe_available_platforms_from_secrets(secrets) -> dict:
     """Probe available platforms by validating configured API keys against model listing."""
     available: dict[str, dict] = {}
 
     for pid, config in get_platform_configs().items():
         key_name = config["key_name"]
-        if key_name not in secrets or not secrets[key_name]:
+        api_key = _safe_read_secret(secrets, key_name)
+        if not api_key:
             continue
 
-        api_key = secrets[key_name]
         provider = get_provider(pid)
         if provider is None:
             continue

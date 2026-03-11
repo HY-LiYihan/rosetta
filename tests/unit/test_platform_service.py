@@ -40,6 +40,25 @@ class TestPlatformService(unittest.TestCase):
         self.assertEqual(available, {})
         mock_get_provider.assert_not_called()
 
+    @patch("app.services.platform_service.get_provider")
+    @patch("app.services.platform_service.get_platform_configs")
+    def test_probe_available_platforms_handles_uninitialized_secrets_backend(self, mock_configs, mock_get_provider):
+        mock_configs.return_value = {
+            "deepseek": {
+                "name": "DeepSeek",
+                "key_name": "deepseek_api_key",
+                "default_model": "deepseek-chat",
+            }
+        }
+
+        class BrokenSecrets:
+            def __getitem__(self, key):
+                raise RuntimeError("secrets backend not initialized")
+
+        available = probe_available_platforms_from_secrets(BrokenSecrets())
+        self.assertEqual(available, {})
+        mock_get_provider.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

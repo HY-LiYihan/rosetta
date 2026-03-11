@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
 from app.infrastructure.llm.registry import get_platform_configs, get_provider
 from app.services.platform_service import (
     get_chat_response as service_get_chat_response,
@@ -20,7 +21,11 @@ def probe_available_platforms():
     根据 st.secrets 探测可用的平台。
     返回: dict {platform_id: {"name": str, "models": list, "api_key": str}}
     """
-    return probe_available_platforms_from_secrets(st.secrets)
+    try:
+        return probe_available_platforms_from_secrets(st.secrets)
+    except StreamlitSecretNotFoundError:
+        # Local/dev mode may not provide secrets.toml; treat as no configured platforms.
+        return {}
 
 def get_chat_response(platform, api_key, model, messages, temperature=0.3):
     """统一的对话接口"""
