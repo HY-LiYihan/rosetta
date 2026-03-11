@@ -2,6 +2,11 @@
 
 ## 2026-03-11
 
+### Reliability / State observability
+
+1. [app/state/session_state.py](/Users/liyh/rosetta/app/state/session_state.py) 为概念加载失败场景补充日志输出。
+2. `load_concepts_from_file()` 不再静默吞掉异常，改为记录 warning/exception 后回退默认概念。
+
 ### Refactor / page relocation
 
 1. 页面目录由根目录 `pages/` 迁移到 [app/ui/pages/](/Users/liyh/rosetta/app/ui/pages/)。

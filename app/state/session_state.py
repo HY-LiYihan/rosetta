@@ -1,7 +1,10 @@
 import json
+import logging
 import streamlit as st
 from app.domain.schemas import DATA_VERSION
 from app.domain.validators import normalize_payload
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_CONCEPT = {
     "name": "默认",
@@ -27,9 +30,9 @@ def load_concepts_from_file(file_path: str = "assets/concepts.json") -> tuple[li
         if normalized["concepts"]:
             return normalized["concepts"], normalized.get("version", DATA_VERSION)
     except FileNotFoundError:
-        pass
-    except Exception:
-        pass
+        logger.warning("Concept file not found, fallback to default concept: %s", file_path)
+    except Exception as e:
+        logger.exception("Failed to load concepts from %s, fallback to default. error=%s", file_path, e)
 
     return [_DEFAULT_CONCEPT.copy()], DATA_VERSION
 
