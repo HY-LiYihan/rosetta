@@ -11,7 +11,7 @@ class TestAnnotationService(unittest.TestCase):
         concept = {
             "name": "demo",
             "prompt": "definition",
-            "examples": [{"text": "a", "annotation": "b", "explanation": "c"}],
+            "examples": [{"text": "a", "annotation": "[a]{demo}", "explanation": "c"}],
         }
         prompt = build_annotation_prompt(concept, "input text")
         self.assertIn("概念：demo", prompt)
@@ -19,7 +19,7 @@ class TestAnnotationService(unittest.TestCase):
         self.assertIn("annotation", prompt)
 
     def test_parse_annotation_response_json_code_block(self):
-        raw = """```json\n{\"text\":\"t\",\"annotation\":\"a\",\"explanation\":\"e\"}\n```"""
+        raw = """```json\n{\"text\":\"t\",\"annotation\":\"[t]{demo}\",\"explanation\":\"e\"}\n```"""
         parsed, warning = parse_annotation_response(raw)
         self.assertIsNone(warning)
         self.assertEqual(parsed["text"], "t")

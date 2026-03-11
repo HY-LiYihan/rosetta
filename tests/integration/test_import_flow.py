@@ -20,14 +20,14 @@ class TestImportFlow(unittest.TestCase):
                 {
                     "name": "c1",
                     "prompt": "p1",
-                    "examples": [{"text": "a", "annotation": "b"}],
+                    "examples": [{"text": "a", "annotation": "[a]{demo}", "explanation": "说明a"}],
                     "category": "cat",
                     "is_default": False,
                 },
                 {
                     "name": "c2",
                     "prompt": "p2",
-                    "examples": [{"text": "x", "annotation": "y"}],
+                    "examples": [{"text": "x", "annotation": "[x]{demo}", "explanation": "说明x"}],
                     "category": "cat",
                     "is_default": False,
                 },

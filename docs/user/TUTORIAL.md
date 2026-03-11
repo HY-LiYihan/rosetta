@@ -29,10 +29,41 @@
 2. 选择概念并输入文本。
 3. 查看结构化标注结果与历史记录。
 
+### 4.1 标注格式（V2 规范）
+
+标注结果 `annotation` 必须使用以下格式：
+
+1. 显性原文标注：`[原文片段]{概念标签}`
+2. 隐含义标注：`[!隐含义]{概念标签}`
+
+说明：
+1. 方括号 `[]` 内是被标注内容。
+2. 大括号 `{}` 内是概念标签/属性。
+3. 如果原文中没有直接出现、但语义隐含，必须用 `!` 前缀标识（例如 `[!主语省略]{reference}`）。
+
+示例：
+
+```text
+The guests’ supper of ice cream was followed by a gentle swim.
+[supper]{nominalization} ... [swim]{nominalization}
+```
+
+```text
+Needless to say, he passed.
+[Needless to say]{projection} [!说话者态度]{projection}
+```
+
+### 4.2 概念示例格式（导入/编辑）
+
+`examples[*]` 中每个示例都必须包含：
+1. `text`
+2. `annotation`（必须符合上面的 `[ ]{ }` / `[! ]{ }` 规则）
+3. `explanation`（必填，不能为空）
+
 ## 5. 常见问题
 
 1. 无可用平台：检查 `.streamlit/secrets.toml` 是否配置 API Key。
-2. 导入失败：根据 `字段/原因/建议` 修复 JSON。
+2. 导入失败：根据 `字段/原因/建议` 修复 JSON，重点检查 `annotation` 格式与 `explanation` 是否为空。
 3. 启动报 secrets 错误：当前版本已兼容无 secrets 场景，会显示平台未配置而不是崩溃。
 
 ## 6. API 密钥配置

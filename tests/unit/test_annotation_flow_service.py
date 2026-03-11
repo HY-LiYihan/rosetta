@@ -18,7 +18,7 @@ class TestAnnotationFlowService(unittest.TestCase):
 
     @patch("app.services.annotation_flow_service.get_chat_response")
     def test_run_annotation_success(self, mock_chat):
-        mock_chat.return_value = '{"text":"t","annotation":"a","explanation":"e"}'
+        mock_chat.return_value = '{"text":"t","annotation":"[t]{demo}","explanation":"e"}'
         result = run_annotation(
             concept={"name": "A", "prompt": "p", "examples": []},
             input_text="text",

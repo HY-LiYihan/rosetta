@@ -168,22 +168,33 @@ if EDITING_CONCEPT_INDEX in st.session_state:
         examples = concept.get("examples", [])
         
         for i, example in enumerate(examples):
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 new_text = st.text_area(f"样例{i+1}文本", value=example["text"], 
                                        key=f"edit_text_{index}_{i}")
             with col2:
                 new_annotation = st.text_area(f"样例{i+1}标注", value=example["annotation"],
                                             key=f"edit_ann_{index}_{i}")
+            with col3:
+                new_explanation = st.text_area(
+                    f"样例{i+1}解释",
+                    value=example.get("explanation", ""),
+                    key=f"edit_exp_{index}_{i}",
+                )
             
-            if new_text != example["text"] or new_annotation != example["annotation"]:
+            if (
+                new_text != example["text"]
+                or new_annotation != example["annotation"]
+                or new_explanation != example.get("explanation", "")
+            ):
                 example["text"] = new_text
                 example["annotation"] = new_annotation
+                example["explanation"] = new_explanation
         
         # 添加新样例按钮
         add_example = st.form_submit_button("添加样例")
         if add_example:
-            examples.append({"text": "", "annotation": ""})
+            examples.append({"text": "", "annotation": "", "explanation": ""})
             st.rerun()
         
         # 删除最后一个样例按钮

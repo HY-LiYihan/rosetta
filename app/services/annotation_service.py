@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 
+from app.domain.annotation_format import validate_annotation_markup
+
 
 def build_annotation_prompt(concept: dict, input_text: str) -> str:
     """Build the user prompt for annotation request."""
@@ -31,13 +33,13 @@ def build_annotation_prompt(concept: dict, input_text: str) -> str:
 
 请以JSON格式返回标注结果，只包含JSON，不要有其他文本。JSON应包含以下字段：
 - text: 原始文本
-- annotation: 标注分析
+- annotation: 标注结果，必须使用 [原文]{{概念标签}} 格式；隐含义使用 [!隐含义]{{概念标签}}
 - explanation: 解释说明
 
 返回格式示例：
 {{
   "text": "{input_text}",
-  "annotation": "标注内容...",
+  "annotation": "[示例词]{{标签}} ... [!隐含义]{{标签}}",
   "explanation": "解释说明..."
 }}"""
 
@@ -65,6 +67,13 @@ def parse_annotation_response(raw_response: str) -> tuple[dict | None, str | Non
     required = {"text", "annotation", "explanation"}
     if not required.issubset(parsed.keys()):
         return None, "JSON响应缺少必需字段，显示原始响应"
+
+    if not isinstance(parsed.get("explanation"), str) or not parsed["explanation"].strip():
+        return None, "JSON响应 explanation 为空，显示原始响应"
+
+    ok, reason = validate_annotation_markup(parsed.get("annotation", ""))
+    if not ok:
+        return None, f"标注格式不符合规范：{reason}，显示原始响应"
 
     return parsed, None
 

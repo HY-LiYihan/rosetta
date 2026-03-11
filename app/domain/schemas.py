@@ -1,4 +1,4 @@
-DATA_VERSION = "1.0"
+DATA_VERSION = "2.0"
 
 REQUIRED_CONCEPT_FIELDS = {
     "name": str,
@@ -11,8 +11,5 @@ REQUIRED_CONCEPT_FIELDS = {
 REQUIRED_EXAMPLE_FIELDS = {
     "text": str,
     "annotation": str,
-}
-
-OPTIONAL_EXAMPLE_FIELDS = {
     "explanation": str,
 }

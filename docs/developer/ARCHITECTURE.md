@@ -77,6 +77,7 @@ rosetta/
 4. `app/domain`
 - 维护数据 schema 与验证器。
 - 导入错误返回结构化字段：`field/reason/hint`。
+- 标注字符串格式由 [ANNOTATION_FORMAT.md](/Users/liyh/rosetta/docs/developer/ANNOTATION_FORMAT.md) 约束（`[原文]{标签}` / `[!隐含义]{标签}`）。
 
 5. `app/services`
 - `concept_service`: 导入导出、预检摘要、合并替换。

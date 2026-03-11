@@ -2,6 +2,21 @@
 
 ## 2026-03-11
 
+### Format / Annotation V2
+
+1. 新增统一标注格式校验模块 [annotation_format.py](/Users/liyh/rosetta/app/domain/annotation_format.py)。
+2. 标注规范升级为：
+- 显性标注：`[原文]{标签}`
+- 隐含语义：`[!隐含义]{标签}`
+3. `examples[*].explanation` 从可选改为必填且非空；导入校验同步升级。
+4. 标注响应解析增加格式校验，不再接受旧格式 `[...] (...)`。
+5. 迁移 [assets/concepts.json](/Users/liyh/rosetta/assets/concepts.json) 到 V2（版本 `2.0`），批量转换旧标注并补齐 explanation。
+6. 概念管理页面编辑样例新增 explanation 输入项。
+7. 新增文档：
+- 用户文档更新 [TUTORIAL.md](/Users/liyh/rosetta/docs/user/TUTORIAL.md)
+- 开发文档新增 [ANNOTATION_FORMAT.md](/Users/liyh/rosetta/docs/developer/ANNOTATION_FORMAT.md)
+8. 新增测试：`test_annotation_format.py`，并更新相关单测与集成测以匹配新格式。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。

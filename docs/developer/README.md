@@ -9,6 +9,7 @@
 3. [阶段路线图](./ROADMAP.md)
 4. [部署与运维](./DEPLOYMENT.md)
 5. [脚本职责](./SCRIPTS.md)
+6. [标注格式规范](./ANNOTATION_FORMAT.md)
 
 ## 推荐阅读顺序
 
@@ -17,6 +18,7 @@
 3. [ROADMAP.md](/Users/liyh/rosetta/docs/developer/ROADMAP.md)
 4. [DEPLOYMENT.md](/Users/liyh/rosetta/docs/developer/DEPLOYMENT.md)
 5. [SCRIPTS.md](/Users/liyh/rosetta/docs/developer/SCRIPTS.md)
+6. [ANNOTATION_FORMAT.md](/Users/liyh/rosetta/docs/developer/ANNOTATION_FORMAT.md)
 
 ## 当前状态
 

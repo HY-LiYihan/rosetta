@@ -16,7 +16,7 @@ class TestDomainValidators(unittest.TestCase):
                 {
                     "name": "c1",
                     "prompt": "p1",
-                    "examples": [{"text": "t", "annotation": "a"}],
+                    "examples": [{"text": "t", "annotation": "[t]{demo}", "explanation": "说明"}],
                     "category": "cat",
                     "is_default": False,
                 }
@@ -25,7 +25,7 @@ class TestDomainValidators(unittest.TestCase):
 
         normalized = normalize_payload(payload)
         self.assertIn("version", normalized)
-        self.assertEqual(normalized["concepts"][0]["examples"][0]["explanation"], "")
+        self.assertEqual(normalized["concepts"][0]["examples"][0]["explanation"], "说明")
 
     def test_rejects_missing_required_field(self):
         payload = {
@@ -33,7 +33,7 @@ class TestDomainValidators(unittest.TestCase):
                 {
                     "name": "c1",
                     "prompt": "p1",
-                    "examples": [{"text": "t", "annotation": "a"}],
+                    "examples": [{"text": "t", "annotation": "[t]{demo}", "explanation": "说明"}],
                     "category": "cat",
                 }
             ]
@@ -49,7 +49,7 @@ class TestDomainValidators(unittest.TestCase):
                 {
                     "name": "c1",
                     "prompt": "p1",
-                    "examples": [{"text": "t"}],
+                    "examples": [{"text": "t", "annotation": "[t]{demo}", "explanation": ""}],
                     "category": "cat",
                     "is_default": False,
                 }
@@ -59,7 +59,7 @@ class TestDomainValidators(unittest.TestCase):
         is_valid, error = validate_import_payload(payload)
         self.assertFalse(is_valid)
         self.assertIsNotNone(error)
-        self.assertEqual(error["field"], "concepts[0].examples[0].annotation")
+        self.assertEqual(error["field"], "concepts[0].examples[0].explanation")
 
     def test_import_preview_counts_duplicates_and_auto_fixes(self):
         payload = {
@@ -67,14 +67,14 @@ class TestDomainValidators(unittest.TestCase):
                 {
                     "name": "c1",
                     "prompt": "p1",
-                    "examples": [{"text": "t", "annotation": "a"}],
+                    "examples": [{"text": "t", "annotation": "[t]{demo}", "explanation": "说明"}],
                     "category": "cat",
                     "is_default": False,
                 },
                 {
                     "name": "c2",
                     "prompt": "p2",
-                    "examples": [{"text": "t2", "annotation": "a2", "explanation": None}],
+                    "examples": [{"text": "t2", "annotation": "[!隐含义]{demo}", "explanation": "说明2"}],
                     "category": "cat",
                     "is_default": False,
                 },
@@ -86,7 +86,7 @@ class TestDomainValidators(unittest.TestCase):
         self.assertTrue(ok)
         self.assertIsNone(error)
         self.assertEqual(preview["duplicate_count"], 1)
-        self.assertEqual(preview["auto_fix_count"], 2)
+        self.assertEqual(preview["auto_fix_count"], 0)
 
     def test_export_filename_contains_version_and_date(self):
         file_name = build_export_filename(version="1.2", now=datetime(2026, 3, 10))

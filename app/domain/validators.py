@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.domain.annotation_format import validate_annotation_markup
 from app.domain.schemas import (
     DATA_VERSION,
-    OPTIONAL_EXAMPLE_FIELDS,
     REQUIRED_CONCEPT_FIELDS,
     REQUIRED_EXAMPLE_FIELDS,
 )
@@ -43,16 +43,26 @@ def normalize_example(example: dict, path_prefix: str) -> dict:
             )
         _assert_type(example[field], expected_type, f"{path_prefix}.{field}")
 
+    ok, reason = validate_annotation_markup(example["annotation"])
+    if not ok:
+        _raise_validation(
+            field=f"{path_prefix}.annotation",
+            reason=f"标注格式不合法: {reason}",
+            hint="使用 [原文]{概念标签}；隐含义使用 [!隐含义]{概念标签}",
+        )
+
+    if not example["explanation"].strip():
+        _raise_validation(
+            field=f"{path_prefix}.explanation",
+            reason="解释不能为空",
+            hint="每个示例必须提供 explanation，用于说明标注依据",
+        )
+
     normalized = {
         "text": example["text"],
         "annotation": example["annotation"],
-        "explanation": "",
+        "explanation": example["explanation"],
     }
-
-    for field, expected_type in OPTIONAL_EXAMPLE_FIELDS.items():
-        if field in example and example[field] is not None:
-            _assert_type(example[field], expected_type, f"{path_prefix}.{field}")
-            normalized[field] = example[field]
 
     return normalized
 

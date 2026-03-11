@@ -31,7 +31,7 @@ def load_concepts_with_fallback(file_path: str) -> tuple[list[dict], str]:
     default_concept = {
         "name": "默认",
         "prompt": "默认",
-        "examples": [{"text": "默认", "annotation": "默认", "explanation": "默认"}],
+        "examples": [{"text": "默认", "annotation": "[默认]{default}", "explanation": "默认占位示例"}],
         "category": "默认",
         "is_default": True,
     }

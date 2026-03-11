@@ -38,7 +38,7 @@ def build_import_preview(payload: dict, existing_concepts: list[dict]) -> tuple[
     - version
     - concept_count
     - duplicate_count (name collision with existing concepts)
-    - auto_fix_count (missing/None explanation normalized to empty string)
+    - auto_fix_count (deprecated, kept for compatibility; always 0 in v2 format)
     """
     try:
         normalized_payload = normalize_payload(payload)
@@ -50,23 +50,11 @@ def build_import_preview(payload: dict, existing_concepts: list[dict]) -> tuple[
     existing_names = {c["name"] for c in existing_concepts}
     duplicate_count = sum(1 for c in normalized_payload["concepts"] if c["name"] in existing_names)
 
-    auto_fix_count = 0
-    raw_concepts = payload.get("concepts", [])
-    for raw_concept in raw_concepts:
-        examples = raw_concept.get("examples", [])
-        if not isinstance(examples, list):
-            continue
-        for raw_example in examples:
-            if not isinstance(raw_example, dict):
-                continue
-            if "explanation" not in raw_example or raw_example.get("explanation") is None:
-                auto_fix_count += 1
-
     preview = {
         "version": normalized_payload.get("version", DATA_VERSION),
         "concept_count": len(normalized_payload["concepts"]),
         "duplicate_count": duplicate_count,
-        "auto_fix_count": auto_fix_count,
+        "auto_fix_count": 0,
         "normalized_concepts": normalized_payload["concepts"],
     }
     return True, None, preview

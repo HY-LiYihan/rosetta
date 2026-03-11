@@ -18,12 +18,12 @@ class TestConceptService(unittest.TestCase):
             {
                 "name": "c",
                 "prompt": "p",
-                "examples": [{"text": "t", "annotation": "a"}],
+                "examples": [{"text": "t", "annotation": "[t]{demo}", "explanation": "说明"}],
                 "category": "cat",
                 "is_default": False,
             }
         ])
-        self.assertEqual(concepts[0]["examples"][0]["explanation"], "")
+        self.assertEqual(concepts[0]["examples"][0]["explanation"], "说明")
 
     def test_merge_concepts_skips_duplicates(self):
         existing = [
