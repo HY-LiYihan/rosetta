@@ -80,3 +80,8 @@
 1. `concepts.json` 从根目录迁移到 `assets/concepts.json`，并同步更新加载与脚本路径。
 2. 删除已弃用脚本 `test_concepts.py`，统一使用 `tests/` 自动化测试体系。
 3. `api_utils.py` 保留为兼容门面（仍被页面调用），内部逻辑已下沉到 provider/service 层。
+
+### Docs / README Simplification
+
+1. README 调整为入口级文档，保留部署与导航信息。
+2. 使用细节（API Key 配置、FAQ 等）下沉到 `docs/user/TUTORIAL.md`。
