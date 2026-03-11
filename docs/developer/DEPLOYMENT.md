@@ -41,6 +41,7 @@ cd /opt/streamlit/rosetta
 4. 日志：`./scripts/ops/logs.sh`
 5. 备份：`./scripts/data/backup.sh`
 6. 恢复：`./scripts/data/restore.sh <backup-file>`
+7. 详细职责说明见 [SCRIPTS.md](/Users/liyh/rosetta/docs/developer/SCRIPTS.md)
 
 ## 5. 兼容 cron 入口
 
