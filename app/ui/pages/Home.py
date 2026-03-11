@@ -66,6 +66,8 @@ with cols[0]:
         <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持国内多个大语言模型平台，实时动态获取可用模型</p>
     </div>
     """, unsafe_allow_html=True)
+    if st.button("进入智能标注", key="home_core_multimodel", use_container_width=True):
+        st.switch_page("app/ui/pages/Annotation.py")
 
 with cols[1]:
     st.markdown("""
@@ -75,6 +77,8 @@ with cols[1]:
         <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>自定义语言学概念，支持编辑、导入导出，满足不同研究需求</p>
     </div>
     """, unsafe_allow_html=True)
+    if st.button("进入概念管理", key="home_core_concept", use_container_width=True):
+        st.switch_page("app/ui/pages/Concept_Management.py")
 
 with cols[2]:
     st.markdown("""
@@ -84,6 +88,8 @@ with cols[2]:
         <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>利用大语言模型自动标注复杂的语言学概念，提高研究效率</p>
     </div>
     """, unsafe_allow_html=True)
+    if st.button("进入智能标注", key="home_core_annotation", use_container_width=True):
+        st.switch_page("app/ui/pages/Annotation.py")
 
 # 最近概念列表
 st.subheader("📋 最近使用的概念")
@@ -121,7 +127,7 @@ st.divider()
 st.markdown("""
 <div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
     <p><strong>Rosetta - 智能语言学概念标注系统</strong></p>
-    <p>版本: v2.2 | 最后更新: 2026年3月11日</p>
+    <p>版本: v2.3 | 最后更新: 2026年3月11日</p>
     <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a></p>
 </div>
 """, unsafe_allow_html=True)

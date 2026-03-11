@@ -18,6 +18,14 @@
 8. 新增测试：`test_annotation_format.py`，并更新相关单测与集成测以匹配新格式。
 9. 修复 `assets/concepts.json` 中 `terminology` 概念样例的遗留格式：将 `[词]` 统一迁移为 `[词]{terminology}`，避免启动时回退默认概念。
 
+### UX / Home navigation
+
+1. 首页「核心功能」区域新增快速跳转按钮：
+- 多模型支持 -> 智能标注页面
+- 概念管理 -> 概念管理页面
+- 智能标注 -> 智能标注页面
+2. 首页页脚版本更新为 `v2.3`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
