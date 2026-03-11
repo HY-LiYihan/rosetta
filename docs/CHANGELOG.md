@@ -69,6 +69,13 @@
 - 智能标注 -> `/Annotation`
 3. 首页页脚版本更新为 `v2.8.1`，开始采用三段式版本号（`主.次.修`）以标记 fix 类改动。
 
+### UX / Annotation color rule update
+
+1. 标注可视化改为“动态色相分配”规则：按当前标签数量分配颜色。
+2. 绿色作为基准色（更深一点），背景保持白色，饱和度与亮度参数固定。
+3. 两个标签时固定为绿色 + 红色；更多标签时按规则平均分配剩余色调。
+4. 首页页脚版本更新为 `v2.8.2`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。

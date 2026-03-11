@@ -14,6 +14,11 @@ class TestAnnotationVisualization(unittest.TestCase):
         self.assertIn("|reference", html)
         self.assertIn("background:", html)
 
+    def test_two_labels_include_green_and_red_hues(self):
+        html = annotation_to_colored_html("[a]{x} [b]{y}")
+        self.assertIn("hsl(142", html)
+        self.assertIn("hsl(0", html)
+
 
 if __name__ == "__main__":
     unittest.main()
