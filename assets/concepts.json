@@ -230,77 +230,77 @@
       "examples": [
         {
           "text": "The plaintiff filed a lawsuit against the defendant.",
-          "annotation": "The [plaintiff] filed a lawsuit against the defendant.",
+          "annotation": "The [plaintiff]{terminology} filed a lawsuit against the defendant.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "The court issued a subpoena for the witness to appear.",
-          "annotation": "The court issued a [subpoena] for the witness to appear.",
+          "annotation": "The court issued a [subpoena]{terminology} for the witness to appear.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "Force majeure clauses are common in international contracts.",
-          "annotation": "[Force majeure] clauses are common in international contracts.",
+          "annotation": "[Force majeure]{terminology} clauses are common in international contracts.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "The notary public certified the document.",
-          "annotation": "The [notary public] certified the document.",
+          "annotation": "The [notary public]{terminology} certified the document.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "Cloud computing has revolutionized data storage.",
-          "annotation": "[Cloud computing] has revolutionized data storage.",
+          "annotation": "[Cloud computing]{terminology} has revolutionized data storage.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "Hypertension is a major risk factor for heart disease.",
-          "annotation": "[Hypertension] is a major risk factor for heart disease.",
+          "annotation": "[Hypertension]{terminology} is a major risk factor for heart disease.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "The company secured a mortgage for the new building.",
-          "annotation": "The company secured a [mortgage] for the new building.",
+          "annotation": "The company secured a [mortgage]{terminology} for the new building.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "The arbitration process resolved the dispute efficiently.",
-          "annotation": "The [arbitration] process resolved the dispute efficiently.",
+          "annotation": "The [arbitration]{terminology} process resolved the dispute efficiently.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "The software uses machine learning algorithms.",
-          "annotation": "The software uses [machine learning] algorithms.",
+          "annotation": "The software uses [machine learning]{terminology} algorithms.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "The patent application was submitted to the office.",
-          "annotation": "The [patent] application was submitted to the office.",
+          "annotation": "The [patent]{terminology} application was submitted to the office.",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "原告向法院提起了诉讼。",
-          "annotation": "[原告]向法院提起了诉讼。",
+          "annotation": "[原告]{terminology}向法院提起了诉讼。",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "不可抗力条款适用于自然灾害情况。",
-          "annotation": "[不可抗力]条款适用于自然灾害情况。",
+          "annotation": "[不可抗力]{terminology}条款适用于自然灾害情况。",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "云计算服务需要获得相关认证。",
-          "annotation": "[云计算]服务需要获得相关认证。",
+          "annotation": "[云计算]{terminology}服务需要获得相关认证。",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "高血压患者需要定期监测血压。",
-          "annotation": "[高血压]患者需要定期监测血压。",
+          "annotation": "[高血压]{terminology}患者需要定期监测血压。",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         },
         {
           "text": "抵押贷款需要提供财产证明。",
-          "annotation": "[抵押贷款]需要提供财产证明。",
+          "annotation": "[抵押贷款]{terminology}需要提供财产证明。",
           "explanation": "该示例用于展示概念 terminology 的标注依据与语义解释。"
         }
       ],

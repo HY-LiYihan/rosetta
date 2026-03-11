@@ -16,6 +16,7 @@
 - 用户文档更新 [TUTORIAL.md](/Users/liyh/rosetta/docs/user/TUTORIAL.md)
 - 开发文档新增 [ANNOTATION_FORMAT.md](/Users/liyh/rosetta/docs/developer/ANNOTATION_FORMAT.md)
 8. 新增测试：`test_annotation_format.py`，并更新相关单测与集成测以匹配新格式。
+9. 修复 `assets/concepts.json` 中 `terminology` 概念样例的遗留格式：将 `[词]` 统一迁移为 `[词]{terminology}`，避免启动时回退默认概念。
 
 ### Feature / Debug mode
 
