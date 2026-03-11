@@ -67,7 +67,7 @@
 - 多模型支持 -> `/Annotation`
 - 概念管理 -> `/Concept_Management`
 - 智能标注 -> `/Annotation`
-3. 首页页脚版本更新为 `v2.8`。
+3. 首页页脚版本更新为 `v2.8.1`，开始采用三段式版本号（`主.次.修`）以标记 fix 类改动。
 
 ### Feature / Debug mode
 
