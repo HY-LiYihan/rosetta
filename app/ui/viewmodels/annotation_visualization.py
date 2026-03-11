@@ -32,20 +32,24 @@ def annotation_to_colored_html(annotation_text: str) -> str:
     last_end = 0
     for match in TOKEN_PATTERN.finditer(annotation_text):
         start, end = match.span()
-        raw_text = match.group(1)
+        raw_text = match.group(1).strip()
         label = match.group(2).strip()
+        implicit = raw_text.startswith("!")
+        visible_text = raw_text[1:].strip() if implicit else raw_text
 
         if start > last_end:
             parts.append(html.escape(annotation_text[last_end:start]))
 
         text_color, bg_color = _label_color(label)
-        visible_text = raw_text
+        label_suffix = f"|{label}"
         token_html = (
-            f'<span title="{html.escape(label)}" '
+            f'<span '
             f'style="display:inline-block;padding:0 0.35rem;border-radius:0.35rem;'
             f'border:1px solid {text_color};background:{bg_color};color:{text_color};'
             f'font-weight:600;cursor:help;line-height:1.6;">'
-            f'{html.escape("[" + visible_text + "]")}</span>'
+            f'{html.escape(visible_text)}</span>'
+            f'<span style="color:{text_color};font-weight:600;margin-left:0.2rem;line-height:1.6;">'
+            f'{html.escape(label_suffix)}</span>'
         )
         parts.append(token_html)
         last_end = end

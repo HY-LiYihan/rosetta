@@ -45,6 +45,12 @@
 - 智能标注 -> 智能标注
 3. 首页页脚版本更新为 `v2.5`。
 
+### UX / Annotation visualization refinement
+
+1. 概念详情中的高亮文本不再显示中括号。
+2. 为避免 tooltip 兼容性差异，改为在高亮片段后直接显示 `|标签`。
+3. 首页页脚版本更新为 `v2.6`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
