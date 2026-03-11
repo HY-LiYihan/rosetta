@@ -61,3 +61,11 @@
 
 1. 新增 `.github/workflows/ci.yml`，包含编译检查、单元测试与脚本语法检查。
 2. CI 使用 Python 3.11 与 `requirements.txt` 作为依赖基线。
+
+### Docs / Classification Update
+
+1. 文档分为两类：`docs/developer/`（开发）与 `docs/user/`（用户）。
+2. 新增 `docs/developer/ARCHITECTURE.md`（详细架构说明）与 `docs/developer/WORKFLOW.md`（执行流程）。
+3. 新增 `docs/user/TUTORIAL.md`（用户教程）。
+4. 新增仓库级 `CLAUDE.md`，定义任务前必读与提交前检查清单。
+5. 同步更新 `docs/README.md` 与仓库 `README.md` 文档索引。

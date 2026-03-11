@@ -317,10 +317,10 @@ A: 目前支持以下 AI 平台：
 
 ## 📚 架构与运维文档
 
-- 架构总览：`docs/ARCHITECTURE.md`
-- 部署指南：`docs/DEPLOYMENT.md`
-- 开发教程：`docs/TUTORIAL.md`
-- 迭代路线：`docs/ROADMAP.md`
+- 文档总入口：`docs/README.md`
+- 开发文档入口：`docs/developer/README.md`
+- 用户教程：`docs/user/TUTORIAL.md`
+- 变更记录：`docs/CHANGELOG.md`
 
 ## 🙏 致谢
 
