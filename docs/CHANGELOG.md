@@ -69,3 +69,8 @@
 3. 新增 `docs/user/TUTORIAL.md`（用户教程）。
 4. 新增仓库级 `CLAUDE.md`，定义任务前必读与提交前检查清单。
 5. 同步更新 `docs/README.md` 与仓库 `README.md` 文档索引。
+
+### Docs / Cleanup
+
+1. 删除已弃用的旧文档入口：`docs/ARCHITECTURE.md`、`docs/DEPLOYMENT.md`、`docs/ROADMAP.md`、`docs/TUTORIAL.md`。
+2. 统一文档入口到 `docs/developer/*` 与 `docs/user/*`，避免重复维护。
