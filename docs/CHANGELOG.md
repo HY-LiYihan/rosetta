@@ -51,6 +51,15 @@
 2. 为避免 tooltip 兼容性差异，改为在高亮片段后直接显示 `|标签`。
 3. 首页页脚版本更新为 `v2.6`。
 
+### UX / Home core cards clickable on original UI
+
+1. 首页核心功能区取消额外链接控件，恢复原卡片视觉结构。
+2. 跳转能力绑定到原卡片本体（整块圆角矩形可点击）：
+- 多模型支持 -> `/Annotation`
+- 概念管理 -> `/Concept_Management`
+- 智能标注 -> `/Annotation`
+3. 首页页脚版本更新为 `v2.7`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
