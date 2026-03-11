@@ -12,8 +12,9 @@
 
 1. 代码改动必须同步更新文档（至少 [docs/CHANGELOG.md](/Users/liyh/rosetta/docs/CHANGELOG.md)）。
 2. 如果改动影响用户使用方式，必须同步更新 [README.md](/Users/liyh/rosetta/README.md)。
-3. 运行最小验证（至少编译检查 + 相关测试）。
-4. 确认 `git status` 干净后再结束当前任务。
+3. 每次功能或行为变更后，必须同步更新页面底部版本号与更新日期（至少 [app/ui/pages/Home.py](/Users/liyh/rosetta/app/ui/pages/Home.py) 的页脚版本信息）。
+4. 运行最小验证（至少编译检查 + 相关测试）。
+5. 确认 `git status` 干净后再结束当前任务。
 
 ## 3. 提交规范
 
