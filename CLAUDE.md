@@ -4,14 +4,14 @@
 
 ## 1. 任务前必做
 
-1. 阅读 `docs/README.md`，确认当前文档索引与阶段状态。
-2. 阅读 `docs/developer/ARCHITECTURE.md`，确认分层边界。
-3. 阅读 `docs/developer/WORKFLOW.md`，确认提交流程和检查清单。
+1. 阅读 [docs/README.md](/Users/liyh/rosetta/docs/README.md)，确认当前文档索引与阶段状态。
+2. 阅读 [docs/developer/ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md)，确认分层边界。
+3. 阅读 [docs/developer/WORKFLOW.md](/Users/liyh/rosetta/docs/developer/WORKFLOW.md)，确认提交流程和检查清单。
 
 ## 2. 提交前必做
 
-1. 代码改动必须同步更新文档（至少 `docs/CHANGELOG.md`）。
-2. 如果改动影响用户使用方式，必须同步更新 `README.md`。
+1. 代码改动必须同步更新文档（至少 [docs/CHANGELOG.md](/Users/liyh/rosetta/docs/CHANGELOG.md)）。
+2. 如果改动影响用户使用方式，必须同步更新 [README.md](/Users/liyh/rosetta/README.md)。
 3. 运行最小验证（至少编译检查 + 相关测试）。
 4. 确认 `git status` 干净后再结束当前任务。
 
@@ -25,4 +25,3 @@
 
 1. `docs/developer/`：开发与架构文档。
 2. `docs/user/`：面向用户的使用教程。
-

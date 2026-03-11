@@ -85,3 +85,8 @@
 
 1. README 调整为入口级文档，保留部署与导航信息。
 2. 使用细节（API Key 配置、FAQ 等）下沉到 `docs/user/TUTORIAL.md`。
+
+### Docs / Deployment & Link Style
+
+1. README 的两种部署方式在“项目已存在”场景下增加 `fetch/pull` 更新命令。
+2. 关键文档引用改为可点击链接格式，避免仅保留纯路径文本。

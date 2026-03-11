@@ -33,6 +33,9 @@ cd /opt/streamlit
 # 2) 获取代码（目录不存在时 clone，存在时更新）
 if [ ! -d rosetta ]; then
   git clone https://github.com/HY-LiYihan/rosetta.git
+else
+  git -C rosetta fetch --all --prune
+  git -C rosetta pull --ff-only origin main
 fi
 cd /opt/streamlit/rosetta
 
@@ -69,6 +72,9 @@ cd /opt/streamlit
 # 2) 获取代码（目录不存在时 clone，存在时更新）
 if [ ! -d rosetta ]; then
   git clone https://github.com/HY-LiYihan/rosetta.git
+else
+  git -C rosetta fetch --all --prune
+  git -C rosetta pull --ff-only origin main
 fi
 cd /opt/streamlit/rosetta
 
@@ -92,7 +98,7 @@ streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 - `概念管理`
 - `智能标注`
 3. 详细的用户使用说明（概念管理、标注流程、API 密钥配置、常见问题）请查看：
-- `docs/user/TUTORIAL.md`
+- [用户教程](/Users/liyh/rosetta/docs/user/TUTORIAL.md)
 
 ### 项目结构
 
@@ -131,10 +137,10 @@ rosetta/
 
 ## 📚 架构与运维文档
 
-- 文档总入口：`docs/README.md`
-- 开发文档入口：`docs/developer/README.md`
-- 用户教程：`docs/user/TUTORIAL.md`
-- 变更记录：`docs/CHANGELOG.md`
+- 文档总入口：[docs/README.md](/Users/liyh/rosetta/docs/README.md)
+- 开发文档入口：[docs/developer/README.md](/Users/liyh/rosetta/docs/developer/README.md)
+- 用户教程：[docs/user/TUTORIAL.md](/Users/liyh/rosetta/docs/user/TUTORIAL.md)
+- 变更记录：[docs/CHANGELOG.md](/Users/liyh/rosetta/docs/CHANGELOG.md)
 
 ## 🙏 致谢
 

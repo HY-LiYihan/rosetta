@@ -2,8 +2,8 @@
 
 ## 1. 任务开始前
 
-1. 阅读 `CLAUDE.md`。
-2. 阅读 `docs/developer/ARCHITECTURE.md`。
+1. 阅读 [CLAUDE.md](/Users/liyh/rosetta/CLAUDE.md)。
+2. 阅读 [docs/developer/ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md)。
 3. 明确当前 Stage 和目标验收标准。
 
 ## 2. 开发步骤
@@ -19,8 +19,8 @@ python -m unittest discover -s tests -p 'test_*.py'
 
 ## 3. 提交检查清单
 
-1. 代码改动是否同步 `docs/CHANGELOG.md`。
-2. 用户使用方式变更是否同步 `README.md`。
+1. 代码改动是否同步 [docs/CHANGELOG.md](/Users/liyh/rosetta/docs/CHANGELOG.md)。
+2. 用户使用方式变更是否同步 [README.md](/Users/liyh/rosetta/README.md)。
 3. 新增脚本是否通过 `bash -n`。
 4. 提交信息是否符合 `stageX-scope: summary`。
 
