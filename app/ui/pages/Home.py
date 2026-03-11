@@ -1,5 +1,7 @@
 import streamlit as st
+from app.state.keys import ANNOTATION_HISTORY, CONCEPTS, SELECTED_CONCEPT
 from app.state.session_state import ensure_core_state
+from app.ui.viewmodels.home_viewmodel import build_home_metrics
 
 # 页面标题
 st.title("🏠 Rosetta - 智能语义概念标注系统")
@@ -22,26 +24,26 @@ st.subheader("📊 快速统计")
 col1, col2, col3 = st.columns(3)
 
 with col1:
+    metrics = build_home_metrics(st.session_state[CONCEPTS], st.session_state[ANNOTATION_HISTORY])
     st.metric(
         label="概念数量",
-        value=len(st.session_state.concepts),
-        delta=f"{len([c for c in st.session_state.concepts if not c.get('is_default', False)])} 个自定义"
+        value=metrics["concept_count"],
+        delta=f"{metrics['custom_count']} 个自定义"
     )
 
 with col2:
     st.metric(
         label="标注历史",
-        value=len(st.session_state.annotation_history),
-        delta="最近记录" if st.session_state.annotation_history else "暂无记录"
+        value=metrics["history_count"],
+        delta=metrics["history_delta"],
     )
 
 with col3:
     # 计算平均标注长度
-    if st.session_state.annotation_history:
-        avg_length = sum(len(h.get("annotation", "")) for h in st.session_state.annotation_history) / len(st.session_state.annotation_history)
+    if metrics["history_count"]:
         st.metric(
             label="平均标注长度",
-            value=f"{avg_length:.0f} 字符",
+            value=f"{metrics['avg_length']:.0f} 字符",
             delta="字符"
         )
     else:
@@ -86,9 +88,9 @@ with cols[2]:
 # 最近概念列表
 st.subheader("📋 最近使用的概念")
 
-if st.session_state.concepts:
+if st.session_state[CONCEPTS]:
     # 显示前5个概念
-    for i, concept in enumerate(st.session_state.concepts[:5]):
+    for i, concept in enumerate(st.session_state[CONCEPTS][:5]):
         with st.expander(f"{concept['name']} - {concept.get('category', '未分类')}", expanded=False):
             st.markdown(f"**提示词**: {concept['prompt'][:100]}..." if len(concept['prompt']) > 100 else f"**提示词**: {concept['prompt']}")
             st.markdown(f"**样例数量**: {len(concept.get('examples', []))}")
@@ -96,7 +98,7 @@ if st.session_state.concepts:
             col1, col2 = st.columns(2)
             with col1:
                 if st.button(f"使用此概念标注", key=f"use_concept_{i}"):
-                    st.session_state.selected_concept = concept['name']
+                    st.session_state[SELECTED_CONCEPT] = concept['name']
                     st.switch_page("app/ui/pages/Annotation.py")
             with col2:
                 if st.button(f"编辑概念", key=f"edit_concept_{i}"):
@@ -105,10 +107,10 @@ else:
     st.info("暂无概念，请先添加概念")
 
 # 最近标注历史
-if st.session_state.annotation_history:
+if st.session_state[ANNOTATION_HISTORY]:
     st.subheader("📜 最近标注记录")
     
-    for i, entry in enumerate(st.session_state.annotation_history[:3]):
+    for i, entry in enumerate(st.session_state[ANNOTATION_HISTORY][:3]):
         with st.expander(f"{entry['timestamp']} - {entry['concept']}", expanded=False):
             st.markdown(f"**平台**: {entry.get('platform', '未知')}")
             st.markdown(f"**文本**: {entry['text'][:100]}..." if len(entry['text']) > 100 else f"**文本**: {entry['text']}")

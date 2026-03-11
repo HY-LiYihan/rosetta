@@ -20,7 +20,10 @@ rosetta/
         Home.py
         Concept_Management.py
         Annotation.py
+      viewmodels/
+        home_viewmodel.py
     state/
+      keys.py
       session_state.py
     domain/
       models.py
@@ -28,8 +31,13 @@ rosetta/
       validators.py
     services/
       concept_service.py
+      concept_flow_service.py
       annotation_service.py
+      annotation_flow_service.py
       platform_service.py
+    repositories/
+      base.py
+      json_concept_repository.py
     infrastructure/
       llm/
         api_utils.py
@@ -53,20 +61,29 @@ rosetta/
 - 负责页面渲染与交互。
 - 调用 `state/service`，不实现复杂业务规则。
 
-2. `app/state`
-- 统一 session state 初始化。
-- 读取 `assets/concepts.json` 并做数据规范化。
+2. `app/ui/viewmodels`
+- 负责页面展示数据聚合（如首页统计卡片）。
 
-3. `app/domain`
+3. `app/state`
+- 统一 session state 初始化。
+- 通过 `keys.py` 统一维护状态键名。
+
+4. `app/domain`
 - 维护数据 schema 与验证器。
 - 导入错误返回结构化字段：`field/reason/hint`。
 
-4. `app/services`
+5. `app/services`
 - `concept_service`: 导入导出、预检摘要、合并替换。
+- `concept_flow_service`: 概念导入/创建的页面流程编排。
 - `annotation_service`: prompt 构建、响应解析、历史记录。
+- `annotation_flow_service`: 标注流程端到端执行编排。
 - `platform_service`: 平台探测、模型拉取、聊天编排。
 
-5. `app/infrastructure/llm`
+6. `app/repositories`
+- 数据访问抽象层。
+- 当前 `json_concept_repository` 负责 JSON 文件读取/回退策略。
+
+7. `app/infrastructure/llm`
 - 平台配置注册。
 - OpenAI 兼容 provider。
 - `api_utils.py` 放在该层，作为页面侧统一调用入口。

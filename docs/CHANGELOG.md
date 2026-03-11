@@ -2,6 +2,16 @@
 
 ## 2026-03-11
 
+### Refactor / service layering
+
+1. 新增 `app/state/keys.py`，统一管理 `session_state` 键名常量。
+2. 新增 `app/services/annotation_flow_service.py`，收敛标注端到端流程（调用、解析、历史记录构建）。
+3. 新增 `app/services/concept_flow_service.py`，收敛概念导入预检与应用导入流程。
+4. 新增 `app/repositories/base.py` 与 `app/repositories/json_concept_repository.py`，建立数据访问抽象并接入 `session_state`。
+5. 新增 `app/ui/viewmodels/home_viewmodel.py`，收敛首页统计聚合逻辑。
+6. 页面 `app/ui/pages/*` 改为优先调用 flow service + state keys，降低页面层业务耦合。
+7. 新增单测：`test_annotation_flow_service.py`、`test_concept_flow_service.py`、`test_home_viewmodel.py`。
+
 ### Reliability / State observability
 
 1. [app/state/session_state.py](/Users/liyh/rosetta/app/state/session_state.py) 为概念加载失败场景补充日志输出。

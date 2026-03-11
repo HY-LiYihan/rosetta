@@ -1,15 +1,14 @@
 import streamlit as st
-import json
 from app.state.session_state import ensure_core_state
+from app.state.keys import CONCEPTS, CONCEPTS_DATA_VERSION, EDITING_CONCEPT_INDEX
+from app.services.concept_flow_service import (
+    apply_import,
+    create_concept_if_valid,
+    parse_and_preview_import,
+)
 from app.services.concept_service import (
     build_export_filename,
-    build_import_preview,
     build_export_json,
-    create_concept,
-    merge_concepts,
-    parse_import_json,
-    replace_concepts,
-    validate_import_payload,
 )
 
 # 页面标题
@@ -38,12 +37,12 @@ with col1:
     # 创建一个容器来模拟文件上传器的高度
     with st.container():
         # 显示当前概念数量
-        st.markdown(f":blue[当前共有 {len(st.session_state.concepts)} 个概念]")
-        st.caption(f"当前数据版本: v{st.session_state.get('concepts_data_version', '1.0')}")
+        st.markdown(f":blue[当前共有 {len(st.session_state[CONCEPTS])} 个概念]")
+        st.caption(f"当前数据版本: v{st.session_state.get(CONCEPTS_DATA_VERSION, '1.0')}")
         
         # 准备导出的数据
-        export_json = build_export_json(st.session_state.concepts)
-        export_file_name = build_export_filename(st.session_state.get("concepts_data_version", "1.0"))
+        export_json = build_export_json(st.session_state[CONCEPTS])
+        export_file_name = build_export_filename(st.session_state.get(CONCEPTS_DATA_VERSION, "1.0"))
         
         # 创建下载按钮
         st.download_button(
@@ -75,56 +74,43 @@ with col2:
         try:
             # 读取上传的文件
             file_content = uploaded_file.getvalue().decode("utf-8")
-            imported_data = parse_import_json(file_content)
-
-            is_valid, error_details = validate_import_payload(imported_data)
-            if not is_valid:
+            import_result = parse_and_preview_import(file_content, st.session_state[CONCEPTS])
+            if not import_result["ok"]:
+                error_details = import_result["error"]
                 st.error("导入校验失败")
                 if error_details:
                     st.markdown(f"**字段**: `{error_details['field']}`")
                     st.markdown(f"**原因**: {error_details['reason']}")
                     st.markdown(f"**建议**: {error_details['hint']}")
             else:
-                ok, preview_error, preview = build_import_preview(imported_data, st.session_state.concepts)
-                if not ok:
-                    st.error("导入预检失败")
-                    if preview_error:
-                        st.markdown(f"**字段**: `{preview_error['field']}`")
-                        st.markdown(f"**原因**: {preview_error['reason']}")
-                        st.markdown(f"**建议**: {preview_error['hint']}")
-                else:
-                    st.info(f"检测到 {preview['concept_count']} 个概念（version: {preview['version']}）")
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        st.metric("重复概念数", preview["duplicate_count"])
-                    with c2:
-                        st.metric("自动修复字段数", preview["auto_fix_count"])
-                    with c3:
-                        st.metric("可导入概念数", preview["concept_count"] - preview["duplicate_count"])
+                preview = import_result["preview"]
+                st.info(f"检测到 {preview['concept_count']} 个概念（version: {preview['version']}）")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    st.metric("重复概念数", preview["duplicate_count"])
+                with c2:
+                    st.metric("自动修复字段数", preview["auto_fix_count"])
+                with c3:
+                    st.metric("可导入概念数", preview["concept_count"] - preview["duplicate_count"])
 
-                    # 显示导入选项
-                    import_option = st.radio(
-                        "导入选项",
-                        ["替换现有概念", "添加到当前所有概念的后面"],
-                        index=0,
-                        help="选择如何导入概念"
+                # 显示导入选项
+                import_option = st.radio(
+                    "导入选项",
+                    ["替换现有概念", "添加到当前所有概念的后面"],
+                    index=0,
+                    help="选择如何导入概念"
+                )
+
+                if st.button("确认导入", type="primary", use_container_width=True):
+                    next_concepts, import_message, next_version = apply_import(
+                        existing_concepts=st.session_state[CONCEPTS],
+                        preview=preview,
+                        import_option=import_option,
                     )
-
-                    if st.button("确认导入", type="primary", use_container_width=True):
-                        normalized_imported_concepts = preview["normalized_concepts"]
-                        if import_option == "替换现有概念":
-                            st.session_state.concepts, import_message = replace_concepts(normalized_imported_concepts)
-                        else:
-                            st.session_state.concepts, import_message = merge_concepts(
-                                st.session_state.concepts,
-                                normalized_imported_concepts,
-                            )
-
-                        st.session_state.concepts_data_version = preview["version"]
-                        st.success(import_message)
-                        st.rerun()
-        except json.JSONDecodeError:
-            st.error("文件格式错误：不是有效的JSON文件")
+                    st.session_state[CONCEPTS] = next_concepts
+                    st.session_state[CONCEPTS_DATA_VERSION] = next_version
+                    st.success(import_message)
+                    st.rerun()
         except Exception as e:
             st.error(f"导入失败：{str(e)}")
 
@@ -133,11 +119,11 @@ st.divider()
 # 概念列表和编辑
 st.subheader("📋 概念列表")
 
-if not st.session_state.concepts:
+if not st.session_state[CONCEPTS]:
     st.info("暂无概念，请先添加概念")
 else:
     # 显示所有概念
-    for i, concept in enumerate(st.session_state.concepts):
+    for i, concept in enumerate(st.session_state[CONCEPTS]):
         with st.expander(f"{concept['name']} - {concept.get('category', '未分类')}", expanded=False):
             col1, col2 = st.columns([3, 1])
             
@@ -154,24 +140,24 @@ else:
                 # 编辑按钮
                 edit_key = f"edit_{i}"
                 if st.button("✏️ 编辑", key=edit_key, use_container_width=True):
-                    st.session_state.editing_concept_index = i
+                    st.session_state[EDITING_CONCEPT_INDEX] = i
                     st.rerun()
                 
                 # 删除按钮（不能删除默认概念）
                 if not concept.get('is_default', False):
                     delete_key = f"delete_{i}"
                     if st.button("🗑️ 删除", key=delete_key, use_container_width=True):
-                        st.session_state.concepts.pop(i)
+                        st.session_state[CONCEPTS].pop(i)
                         st.success(f"概念 '{concept['name']}' 已删除")
                         st.rerun()
 
 # 编辑概念功能
-if "editing_concept_index" in st.session_state:
+if EDITING_CONCEPT_INDEX in st.session_state:
     st.divider()
     st.subheader("✏️ 编辑概念")
     
-    index = st.session_state.editing_concept_index
-    concept = st.session_state.concepts[index]
+    index = st.session_state[EDITING_CONCEPT_INDEX]
+    concept = st.session_state[CONCEPTS][index]
     
     with st.form(key=f"edit_form_{index}"):
         new_name = st.text_input("概念名称", value=concept["name"])
@@ -222,13 +208,13 @@ if "editing_concept_index" in st.session_state:
             concept["examples"] = examples
             
             # 清除编辑状态
-            del st.session_state.editing_concept_index
+            del st.session_state[EDITING_CONCEPT_INDEX]
             st.success("概念已更新！")
             st.rerun()
         
         if cancel_clicked:
             # 清除编辑状态
-            del st.session_state.editing_concept_index
+            del st.session_state[EDITING_CONCEPT_INDEX]
             st.rerun()
 
 # 添加新概念
@@ -253,12 +239,16 @@ with st.form(key="add_concept_form"):
     if submit_clicked:
         if new_concept_name and new_concept_prompt and new_concept_category:
             # 检查是否已存在同名概念
-            existing_names = {c["name"] for c in st.session_state.concepts}
-            if new_concept_name in existing_names:
-                st.error(f"概念名称 '{new_concept_name}' 已存在，请使用其他名称")
+            ok, message, new_concept = create_concept_if_valid(
+                existing_concepts=st.session_state[CONCEPTS],
+                name=new_concept_name,
+                prompt=new_concept_prompt,
+                category=new_concept_category,
+            )
+            if not ok:
+                st.error(message)
             else:
-                new_concept = create_concept(new_concept_name, new_concept_prompt, new_concept_category)
-                st.session_state.concepts.append(new_concept)
+                st.session_state[CONCEPTS].append(new_concept)
                 st.success(f"概念 '{new_concept_name}' 已添加！")
                 st.rerun()
         else:
@@ -287,4 +277,4 @@ st.markdown("""
     <p><strong>概念管理页面</strong> | 当前概念数量: {}</p>
     <p>提示: 概念数据保存在 session state 中，重启应用后会从 assets/concepts.json 重新加载</p>
 </div>
-""".format(len(st.session_state.concepts)), unsafe_allow_html=True)
+""".format(len(st.session_state[CONCEPTS])), unsafe_allow_html=True)
