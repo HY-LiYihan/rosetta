@@ -8,6 +8,7 @@ SELECTED_CONCEPT = "selected_concept"
 EDITING_CONCEPT_INDEX = "editing_concept_index"
 REUSE_TEXT = "reuse_text"
 DEBUG_NOTICE_ACK = "debug_notice_ack"
+DEBUG_NOTICE_STARTED_AT = "debug_notice_started_at"
 
 # Widget keys
 PLATFORM_SELECTOR = "platform_selector"

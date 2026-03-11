@@ -4,12 +4,19 @@ import time
 
 import streamlit as st
 
-from app.state.keys import DEBUG_NOTICE_ACK
+from app.state.keys import DEBUG_NOTICE_ACK, DEBUG_NOTICE_STARTED_AT
 
 
 def render_debug_notice(countdown_seconds: int = 5) -> None:
     if st.session_state.get(DEBUG_NOTICE_ACK):
         return
+
+    if DEBUG_NOTICE_STARTED_AT not in st.session_state:
+        st.session_state[DEBUG_NOTICE_STARTED_AT] = time.time()
+
+    started_at = st.session_state[DEBUG_NOTICE_STARTED_AT]
+    elapsed = int(time.time() - started_at)
+    remaining = max(0, countdown_seconds - elapsed)
 
     with st.container(border=True):
         st.error("Debug Maintenance Mode / 调试维护模式")
@@ -25,14 +32,14 @@ If you need stronger personal data protection, please revisit in 1-2 hours.
 """
         )
 
-        countdown_placeholder = st.empty()
-        for remaining in range(countdown_seconds, 0, -1):
-            countdown_placeholder.warning(
-                f"请等待 {remaining} 秒后关闭 / Please wait {remaining}s before closing"
-            )
+        if remaining > 0:
+            st.warning(f"请等待 {remaining} 秒后关闭 / Please wait {remaining}s before closing")
             time.sleep(1)
-        countdown_placeholder.success("可以关闭提示窗口 / You may now close this notice.")
+            st.rerun()
+            return
 
+        st.success("可以关闭提示窗口 / You may now close this notice.")
         if st.button("我已知悉 / I Understand", type="primary", key="debug_notice_ack_btn"):
             st.session_state[DEBUG_NOTICE_ACK] = True
+            st.session_state.pop(DEBUG_NOTICE_STARTED_AT, None)
             st.rerun()
