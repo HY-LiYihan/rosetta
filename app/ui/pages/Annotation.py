@@ -1,7 +1,11 @@
 import streamlit as st
+import streamlit.components.v1 as components
+import json
+from collections import Counter
 from app.infrastructure.llm.api_utils import (
     probe_available_platforms,
 )
+from app.domain.annotation_format import extract_annotation_tokens
 from app.services.annotation_flow_service import run_annotation
 from app.state.session_state import (
     ensure_available_config,
@@ -19,6 +23,40 @@ from app.state.keys import (
     SELECTED_PLATFORM,
 )
 from app.ui.viewmodels.annotation_visualization import annotation_to_colored_html
+
+
+def _render_json_copy_button(json_text: str) -> None:
+    payload = json.dumps(json_text)
+    components.html(
+        f"""
+<div style="margin:0.25rem 0 0.75rem 0;">
+  <button id="copy-json-btn" style="
+    border:1px solid #88D4E1;
+    background:#FFFFFF;
+    color:#0f172a;
+    border-radius:0.4rem;
+    padding:0.35rem 0.7rem;
+    font-size:0.85rem;
+    cursor:pointer;
+  ">📋 复制完整 JSON</button>
+  <span id="copy-json-status" style="margin-left:0.5rem;color:#88D4E1;font-size:0.82rem;"></span>
+</div>
+<script>
+const text = {payload};
+const btn = document.getElementById("copy-json-btn");
+const status = document.getElementById("copy-json-status");
+btn.onclick = async () => {{
+  try {{
+    await navigator.clipboard.writeText(text);
+    status.textContent = "已复制 / Copied";
+  }} catch (e) {{
+    status.textContent = "复制失败，请手动复制";
+  }}
+}};
+</script>
+""",
+        height=54,
+    )
 
 # 页面标题
 st.title("✏️ 文本标注工具")
@@ -198,19 +236,41 @@ else:
                     st.subheader("📊 标注结果")
                     
                     if parsed_result:
-                        # 显示格式化后的JSON结果
-                        st.json(parsed_result)
-                        
-                        # 显示结构化信息
-                        st.markdown("**结构化信息：**")
+                        st.markdown("**JSON 结果（默认折叠）**")
+                        _render_json_copy_button(
+                            json.dumps(parsed_result, ensure_ascii=False, indent=2)
+                        )
+                        st.json(parsed_result, expanded=False)
+
+                        annotation_text = parsed_result.get("annotation", "")
+                        tokens = extract_annotation_tokens(annotation_text)
+                        label_counter = Counter(t["label"] for t in tokens)
+                        implicit_count = sum(1 for t in tokens if t["implicit"])
+
+                        st.markdown("**标注结果统计：**")
                         col1, col2, col3 = st.columns(3)
                         with col1:
-                            st.metric("文本", parsed_result.get("text", "")[:50] + "..." if len(parsed_result.get("text", "")) > 50 else parsed_result.get("text", ""))
+                            st.metric("标注片段数", len(tokens))
                         with col2:
-                            st.metric("标注类型", "已解析")
+                            st.metric("标签种类", len(label_counter))
                         with col3:
-                            st.metric("解释长度", f"{len(parsed_result.get('explanation', ''))} 字符")
-                        
+                            st.metric("隐含标注数", implicit_count)
+
+                        st.markdown("**标注可视化：**")
+                        visual_html = annotation_to_colored_html(annotation_text)
+                        st.markdown(
+                            f"<div style='line-height:1.9;font-size:1rem'>{visual_html}</div>",
+                            unsafe_allow_html=True,
+                        )
+
+                        if label_counter:
+                            st.markdown("**标签分布：**")
+                            st.dataframe(
+                                [{"label": k, "count": v} for k, v in label_counter.items()],
+                                use_container_width=True,
+                                hide_index=True,
+                            )
+
                         # 显示详细内容
                         with st.expander("查看详细内容", expanded=True):
                             st.markdown(f"**文本：** {parsed_result.get('text', '')}")

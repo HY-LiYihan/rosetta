@@ -81,6 +81,14 @@
 1. 在保持既有配色规则不变的前提下，将标注颜色亮度小幅提升（视觉更浅）。
 2. 首页页脚版本更新为 `v2.8.3`。
 
+### UX / Annotation result visualization upgrade
+
+1. 标注完成后的结果区新增 `JSON 结果（默认折叠）` 小标题，并将 JSON 默认折叠展示。
+2. 新增“复制完整 JSON”按钮，可一键复制完整 JSON 文本。
+3. 新增标注结果统计：标注片段数、标签种类、隐含标注数。
+4. 新增标注结果可视化：按与概念详情一致的规则高亮，并展示标签分布表。
+5. 首页页脚版本更新为 `v2.9.0`。
+
 ### Feature / Debug mode
 
 1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
