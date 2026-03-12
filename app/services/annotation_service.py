@@ -98,3 +98,20 @@ def build_history_entry(
         "model": model,
         "temperature": temperature,
     }
+
+
+def build_history_export_filename(now: datetime | None = None) -> str:
+    """Build stable filename for annotation history export."""
+    dt = now or datetime.now()
+    return f"annotation_history_{dt.strftime('%Y%m%d_%H%M%S')}.json"
+
+
+def build_history_export_json(history: list[dict], now: datetime | None = None) -> str:
+    """Build downloadable JSON payload for current annotation history."""
+    dt = now or datetime.now()
+    payload = {
+        "exported_at": dt.strftime("%Y-%m-%d %H:%M:%S"),
+        "history_count": len(history),
+        "history": history,
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)

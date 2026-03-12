@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-03-12
+
+### Feature / Annotation history export
+
+1. 在 [Annotation.py](/Users/liyh/rosetta/app/ui/pages/Annotation.py) 的「📜 标注历史」区域新增“下载全部历史”按钮，可一键导出当前 session 中的全部标注历史。
+2. 新增导出构建函数 [annotation_service.py](/Users/liyh/rosetta/app/services/annotation_service.py)：
+- `build_history_export_json(history)`：生成导出 JSON（含 `exported_at`、`history_count`、`history`）。
+- `build_history_export_filename()`：生成时间戳文件名（如 `annotation_history_20260312_090807.json`）。
+3. 新增单测覆盖导出文件名与导出 JSON 内容结构：`tests/unit/test_annotation_service.py`。
+4. 首页页脚版本更新为 `v2.9.1`。
+
 ## 2026-03-11
 
 ### Format / Annotation V2

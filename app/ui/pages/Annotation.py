@@ -6,6 +6,10 @@ from app.infrastructure.llm.api_utils import (
     probe_available_platforms,
 )
 from app.domain.annotation_format import extract_annotation_tokens
+from app.services.annotation_service import (
+    build_history_export_filename,
+    build_history_export_json,
+)
 from app.services.annotation_flow_service import run_annotation
 from app.state.session_state import (
     ensure_available_config,
@@ -290,7 +294,19 @@ else:
 # 历史记录
 if st.session_state[ANNOTATION_HISTORY]:
     st.divider()
-    st.subheader("📜 标注历史")
+    history_col, download_col = st.columns([3, 1])
+    with history_col:
+        st.subheader("📜 标注历史")
+    with download_col:
+        history_export_json = build_history_export_json(st.session_state[ANNOTATION_HISTORY])
+        st.download_button(
+            "下载全部历史",
+            data=history_export_json,
+            file_name=build_history_export_filename(),
+            mime="application/json",
+            use_container_width=True,
+            key="download_annotation_history",
+        )
     
     for i, entry in enumerate(st.session_state[ANNOTATION_HISTORY][:5]):  # 显示最近5条
         with st.expander(f"{entry['timestamp']} - {entry['concept']} ({entry.get('platform', '未知')})"):
