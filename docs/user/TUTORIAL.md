@@ -1,97 +1,74 @@
-# 用户教程
+# 用户教程（网站使用版）
 
-更新时间: 2026-03-11
+更新时间: 2026-03-12
 
-## 1. 你需要准备什么
+本教程仅面向直接使用 Rosetta 网站的用户，不包含部署、密钥配置、运维脚本等内容。
 
-1. 一个可运行的 Rosetta 环境（服务器 Docker 或本地 Conda）。
-2. 至少一个 LLM 平台 API Key（DeepSeek/Kimi/Qwen/Zhipu）。
+## 1. 使用流程总览
 
-## 2. 快速开始
+1. 进入「概念管理」准备概念。
+2. 进入「智能标注」选择概念并提交文本。
+3. 查看标注结果、可视化和历史记录。
 
-1. 打开应用首页。
-2. 进入「概念管理」导入或创建概念。
-3. 进入「智能标注」输入文本并开始标注。
+## 2. 首页功能
+
+1. 快速统计：概念数量、标注历史数量、平均标注长度。
+2. 核心功能入口：
+- 多模型支持（跳转到智能标注）
+- 概念管理
+- 智能标注
+3. 最近使用概念与最近标注记录：可快速回看。
 
 ## 3. 概念管理
 
-1. 导出概念：下载 JSON 文件（包含版本号）。
-2. 导入概念：支持替换或追加。
-3. 导入前会显示预检摘要：
-- 数据版本
-- 重复概念数
-- 自动修复字段数
-- 可导入概念数
+1. 创建概念：填写名称、分类、提示词和样例。
+2. 编辑概念：修改已有概念内容。
+3. 删除概念：移除不再需要的概念。
+4. 导入概念：支持 JSON 文件导入，支持覆盖或追加。
+5. 导出概念：下载当前全部概念 JSON。
+
+### 3.1 样例格式要求
+
+每个 `examples[*]` 需包含 3 个字段：
+1. `text`
+2. `annotation`
+3. `explanation`（必填，不能为空）
 
 ## 4. 智能标注
 
-1. 选择平台和模型。
-2. 选择概念并输入文本。
-3. 查看结构化标注结果与历史记录。
+1. 在左侧选择平台、模型和温度参数。
+2. 在主区域选择标注概念。
+3. 输入待标注文本并点击「开始标注」。
+4. 查看结果区输出。
 
-### 4.1 标注格式（V2 规范）
+### 4.1 标注格式（V2）
 
-标注结果 `annotation` 必须使用以下格式：
-
-1. 显性原文标注：`[原文片段]{概念标签}`
+1. 显性标注：`[原文片段]{概念标签}`
 2. 隐含义标注：`[!隐含义]{概念标签}`
 
 说明：
-1. 方括号 `[]` 内是被标注内容。
-2. 大括号 `{}` 内是概念标签/属性。
-3. 如果原文中没有直接出现、但语义隐含，必须用 `!` 前缀标识（例如 `[!主语省略]{reference}`）。
+1. `[]` 内是被标注内容。
+2. `{}` 内是概念标签。
+3. 隐含语义必须使用 `!` 前缀。
 
-示例：
+### 4.2 标注结果查看
 
-```text
-The guests’ supper of ice cream was followed by a gentle swim.
-[supper]{nominalization} ... [swim]{nominalization}
-```
+1. JSON 结果（默认折叠）。
+2. 一键复制完整 JSON。
+3. 标注统计：
+- 标注片段数
+- 标签种类数
+- 隐含标注数
+4. 标注可视化：高亮片段 + 标签显示。
 
-```text
-Needless to say, he passed.
-[Needless to say]{projection} [!说话者态度]{projection}
-```
+## 5. 标注历史
 
-### 4.2 概念示例格式（导入/编辑）
+1. 最近历史支持展开查看完整内容。
+2. 可删除单条历史，或“重新使用此文本”。
+3. 支持“下载全部历史”，导出当前会话中的全部标注记录（JSON）。
 
-`examples[*]` 中每个示例都必须包含：
-1. `text`
-2. `annotation`（必须符合上面的 `[ ]{ }` / `[! ]{ }` 规则）
-3. `explanation`（必填，不能为空）
+## 6. 常见使用问题
 
-## 5. 常见问题
-
-1. 无可用平台：检查 `.streamlit/secrets.toml` 是否配置 API Key。
-2. 导入失败：根据 `字段/原因/建议` 修复 JSON，重点检查 `annotation` 格式与 `explanation` 是否为空。
-3. 启动报 secrets 错误：当前版本已兼容无 secrets 场景，会显示平台未配置而不是崩溃。
-
-## 6. API 密钥配置
-
-### 6.1 获取 API Key
-
-1. DeepSeek：DeepSeek 官网
-2. Kimi (Moonshot)：https://platform.moonshot.cn/console/api-keys
-3. Qwen (DashScope)：阿里云 DashScope 控制台
-4. Zhipu AI (GLM)：智谱 AI 开放平台
-
-### 6.2 配置方式
-
-1. 在线配置：在应用侧边栏输入 API Key。
-2. 文件配置（推荐多平台）：
-
-```bash
-mkdir -p .streamlit
-cat > .streamlit/secrets.toml << EOF
-deepseek_api_key = "your_actual_deepseek_api_key_here"
-kimi_api_key = "your_actual_kimi_api_key_here"
-qwen_api_key = "your_actual_qwen_api_key_here"
-zhipuai_api_key = "your_actual_zhipuai_api_key_here"
-EOF
-```
-
-## 7. 常见运维问题（用户视角）
-
-1. 构建时 pip 安装失败：可尝试 `docker build --network=host ...`。
-2. 需要改挂载目录：修改 `docker-compose.yml` 的 `volumes`。
-3. 需要备份概念数据：使用 `./scripts/data/backup.sh`。
+1. 没有可用模型：这通常是服务端配置问题，请联系管理员。
+2. 导入概念失败：根据界面提示修复字段格式，重点检查 `annotation` 和 `explanation`。
+3. 页面显示维护提示：说明当前处于调试窗口期，阅读提示后继续使用即可。

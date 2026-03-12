@@ -2,6 +2,13 @@
 
 ## 2026-03-12
 
+### Feature / User tutorial page
+
+1. 新增页面 [Tutorial.py](/Users/liyh/rosetta/app/ui/pages/Tutorial.py)，在应用内直接展示用户教程文档。
+2. 侧边栏导航顺序调整为：`首页 -> 使用教程 -> 概念管理 -> 智能标注`，其中“使用教程”固定为第二项。
+3. 重写 [docs/user/TUTORIAL.md](/Users/liyh/rosetta/docs/user/TUTORIAL.md) 为“网站使用版”，移除部署、Token 配置、运维脚本等非终端用户内容。
+4. 首页页脚版本更新为 `v2.9.2`。
+
 ### Feature / Annotation history export
 
 1. 在 [Annotation.py](/Users/liyh/rosetta/app/ui/pages/Annotation.py) 的「📜 标注历史」区域新增“下载全部历史”按钮，可一键导出当前 session 中的全部标注历史。
