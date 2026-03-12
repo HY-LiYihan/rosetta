@@ -2,17 +2,23 @@
 
 ## 2026-03-12
 
+### Docs / Markdown links fix
+
+1. 修复 `README.md` 与 `docs/*` 中失效的本机绝对路径链接（`/Users/liyh/rosetta/...`）。
+2. 统一改为仓库内相对路径，确保在 GitHub 和本地 Markdown 预览中均可跳转。
+3. 同步更新首页页脚版本为 `v2.9.3`。
+
 ### Feature / User tutorial page
 
-1. 新增页面 [Tutorial.py](/Users/liyh/rosetta/app/ui/pages/Tutorial.py)，在应用内直接展示用户教程文档。
+1. 新增页面 [Tutorial.py](../app/ui/pages/Tutorial.py)，在应用内直接展示用户教程文档。
 2. 侧边栏导航顺序调整为：`首页 -> 使用教程 -> 概念管理 -> 智能标注`，其中“使用教程”固定为第二项。
-3. 重写 [docs/user/TUTORIAL.md](/Users/liyh/rosetta/docs/user/TUTORIAL.md) 为“网站使用版”，移除部署、Token 配置、运维脚本等非终端用户内容。
+3. 重写 [docs/user/TUTORIAL.md](./user/TUTORIAL.md) 为“网站使用版”，移除部署、Token 配置、运维脚本等非终端用户内容。
 4. 首页页脚版本更新为 `v2.9.2`。
 
 ### Feature / Annotation history export
 
-1. 在 [Annotation.py](/Users/liyh/rosetta/app/ui/pages/Annotation.py) 的「📜 标注历史」区域新增“下载全部历史”按钮，可一键导出当前 session 中的全部标注历史。
-2. 新增导出构建函数 [annotation_service.py](/Users/liyh/rosetta/app/services/annotation_service.py)：
+1. 在 [Annotation.py](../app/ui/pages/Annotation.py) 的「📜 标注历史」区域新增“下载全部历史”按钮，可一键导出当前 session 中的全部标注历史。
+2. 新增导出构建函数 [annotation_service.py](../app/services/annotation_service.py)：
 - `build_history_export_json(history)`：生成导出 JSON（含 `exported_at`、`history_count`、`history`）。
 - `build_history_export_filename()`：生成时间戳文件名（如 `annotation_history_20260312_090807.json`）。
 3. 新增单测覆盖导出文件名与导出 JSON 内容结构：`tests/unit/test_annotation_service.py`。
@@ -22,17 +28,17 @@
 
 ### Format / Annotation V2
 
-1. 新增统一标注格式校验模块 [annotation_format.py](/Users/liyh/rosetta/app/domain/annotation_format.py)。
+1. 新增统一标注格式校验模块 [annotation_format.py](../app/domain/annotation_format.py)。
 2. 标注规范升级为：
 - 显性标注：`[原文]{标签}`
 - 隐含语义：`[!隐含义]{标签}`
 3. `examples[*].explanation` 从可选改为必填且非空；导入校验同步升级。
 4. 标注响应解析增加格式校验，不再接受旧格式 `[...] (...)`。
-5. 迁移 [assets/concepts.json](/Users/liyh/rosetta/assets/concepts.json) 到 V2（版本 `2.0`），批量转换旧标注并补齐 explanation。
+5. 迁移 [assets/concepts.json](../assets/concepts.json) 到 V2（版本 `2.0`），批量转换旧标注并补齐 explanation。
 6. 概念管理页面编辑样例新增 explanation 输入项。
 7. 新增文档：
-- 用户文档更新 [TUTORIAL.md](/Users/liyh/rosetta/docs/user/TUTORIAL.md)
-- 开发文档新增 [ANNOTATION_FORMAT.md](/Users/liyh/rosetta/docs/developer/ANNOTATION_FORMAT.md)
+- 用户文档更新 [TUTORIAL.md](./user/TUTORIAL.md)
+- 开发文档新增 [ANNOTATION_FORMAT.md](./developer/ANNOTATION_FORMAT.md)
 8. 新增测试：`test_annotation_format.py`，并更新相关单测与集成测以匹配新格式。
 9. 修复 `assets/concepts.json` 中 `terminology` 概念样例的遗留格式：将 `[词]` 统一迁移为 `[词]{terminology}`，避免启动时回退默认概念。
 
@@ -46,11 +52,11 @@
 
 ### UX / Annotation visualization
 
-1. 在 [Annotation.py](/Users/liyh/rosetta/app/ui/pages/Annotation.py) 的「查看概念详情」样例区，新增标注可视化渲染：
+1. 在 [Annotation.py](../app/ui/pages/Annotation.py) 的「查看概念详情」样例区，新增标注可视化渲染：
 - 按 `[]` 中被标注文本高亮显示
 - 根据 `{}` 中标签稳定映射颜色
 - 悬浮提示显示标签内容（tooltip）
-2. 新增渲染器 [annotation_visualization.py](/Users/liyh/rosetta/app/ui/viewmodels/annotation_visualization.py)。
+2. 新增渲染器 [annotation_visualization.py](../app/ui/viewmodels/annotation_visualization.py)。
 3. 新增单测：`tests/unit/test_annotation_visualization.py`。
 4. 首页页脚版本更新为 `v2.4`。
 
@@ -109,9 +115,9 @@
 
 ### Feature / Debug mode
 
-1. 新增运行时开关解析 [runtime_flags.py](/Users/liyh/rosetta/app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
-2. 新增调试运行时模块 [runtime.py](/Users/liyh/rosetta/app/infrastructure/debug/runtime.py)，可留存操作日志与上传副本。
-3. 新增首次访问双语提示组件 [debug_notice.py](/Users/liyh/rosetta/app/ui/components/debug_notice.py)，5 秒倒计时后可关闭。
+1. 新增运行时开关解析 [runtime_flags.py](../app/infrastructure/config/runtime_flags.py)，支持 `--debug` 与 `ROSETTA_DEBUG_MODE=1`。
+2. 新增调试运行时模块 [runtime.py](../app/infrastructure/debug/runtime.py)，可留存操作日志与上传副本。
+3. 新增首次访问双语提示组件 [debug_notice.py](../app/ui/components/debug_notice.py)，5 秒倒计时后可关闭。
 4. 在 `streamlit_app.py` 接入 debug 初始化与提示展示逻辑。
 5. 标注与概念导入流程接入调试事件埋点，记录操作与中间结果（含导入文件副本）。
 6. 调试日志落盘到 `.runtime/logs/debug/*.jsonl`，上传副本保存到 `.runtime/data/debug_uploads/`。
@@ -129,23 +135,23 @@
 
 ### Reliability / State observability
 
-1. [app/state/session_state.py](/Users/liyh/rosetta/app/state/session_state.py) 为概念加载失败场景补充日志输出。
+1. [app/state/session_state.py](../app/state/session_state.py) 为概念加载失败场景补充日志输出。
 2. `load_concepts_from_file()` 不再静默吞掉异常，改为记录 warning/exception 后回退默认概念。
 
 ### Refactor / page relocation
 
-1. 页面目录由根目录 `pages/` 迁移到 [app/ui/pages/](/Users/liyh/rosetta/app/ui/pages/)。
+1. 页面目录由根目录 `pages/` 迁移到 [app/ui/pages/](../app/ui/pages/)。
 2. `streamlit_app.py` 的 `st.Page(...)` 路径全部更新为 `app/ui/pages/*`。
 3. 页面内 `st.switch_page(...)` 路径全部同步更新。
 4. 删除旧目录 `pages/`，实现 UI 层完全收敛到 `app/ui`。
-5. 更新 [ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md) 的目录结构与职责描述。
+5. 更新 [ARCHITECTURE.md](./developer/ARCHITECTURE.md) 的目录结构与职责描述。
 
 ### Refactor / api_utils relocation
 
-1. 新增 [app/infrastructure/llm/api_utils.py](/Users/liyh/rosetta/app/infrastructure/llm/api_utils.py) 作为正式 LLM 调用入口。
-2. [app/ui/pages/Annotation.py](/Users/liyh/rosetta/app/ui/pages/Annotation.py) 改为直接引用新位置的 `api_utils`。
+1. 新增 [app/infrastructure/llm/api_utils.py](../app/infrastructure/llm/api_utils.py) 作为正式 LLM 调用入口。
+2. [app/ui/pages/Annotation.py](../app/ui/pages/Annotation.py) 改为直接引用新位置的 `api_utils`。
 3. 删除根目录 `api_utils.py`，不再保留兼容 shim。
-4. 更新 [ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md) 以反映新模块位置。
+4. 更新 [ARCHITECTURE.md](./developer/ARCHITECTURE.md) 以反映新模块位置。
 
 ### Runtime Layout / Docs Clarity
 
@@ -156,7 +162,7 @@
 - `ROSETTA_LOG_DIR=${ROSETTA_RUNTIME_DIR}/logs`
 3. `.env.example` 重写为“主变量 + 可选覆盖”结构，减少配置理解成本。
 4. `.gitignore` 增加 `.runtime/` 整目录忽略规则，避免本地/服务器运行产物进入版本库。
-5. 更新 [SCRIPTS.md](/Users/liyh/rosetta/docs/developer/SCRIPTS.md)、[DEPLOYMENT.md](/Users/liyh/rosetta/docs/developer/DEPLOYMENT.md)、[README.md](/Users/liyh/rosetta/README.md)、[scripts/README.md](/Users/liyh/rosetta/scripts/README.md) 以匹配新目录约定。
+5. 更新 [SCRIPTS.md](./developer/SCRIPTS.md)、[DEPLOYMENT.md](./developer/DEPLOYMENT.md)、[README.md](../README.md)、[scripts/README.md](../scripts/README.md) 以匹配新目录约定。
 
 ## 2026-03-10
 

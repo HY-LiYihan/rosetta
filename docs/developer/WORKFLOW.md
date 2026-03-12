@@ -2,8 +2,8 @@
 
 ## 1. 开始任务前
 
-1. 阅读 [CLAUDE.md](/Users/liyh/rosetta/CLAUDE.md)。
-2. 阅读 [ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md)。
+1. 阅读 [CLAUDE.md](../../CLAUDE.md)。
+2. 阅读 [ARCHITECTURE.md](./ARCHITECTURE.md)。
 3. 确认本次改动属于哪个 Stage。
 
 ## 2. 开发步骤
@@ -20,8 +20,8 @@ for f in $(find scripts -type f -name '*.sh'); do bash -n "$f"; done
 
 ## 3. 提交检查清单
 
-1. [CHANGELOG.md](/Users/liyh/rosetta/docs/CHANGELOG.md) 是否更新。
-2. 如果影响用户使用，[README.md](/Users/liyh/rosetta/README.md) 是否更新。
+1. [CHANGELOG.md](../../docs/CHANGELOG.md) 是否更新。
+2. 如果影响用户使用，[README.md](../../README.md) 是否更新。
 3. 文档中的路径引用是否为可点击链接。
 4. `git status` 是否符合预期。
 

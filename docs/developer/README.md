@@ -13,12 +13,12 @@
 
 ## 推荐阅读顺序
 
-1. [ARCHITECTURE.md](/Users/liyh/rosetta/docs/developer/ARCHITECTURE.md)
-2. [WORKFLOW.md](/Users/liyh/rosetta/docs/developer/WORKFLOW.md)
-3. [ROADMAP.md](/Users/liyh/rosetta/docs/developer/ROADMAP.md)
-4. [DEPLOYMENT.md](/Users/liyh/rosetta/docs/developer/DEPLOYMENT.md)
-5. [SCRIPTS.md](/Users/liyh/rosetta/docs/developer/SCRIPTS.md)
-6. [ANNOTATION_FORMAT.md](/Users/liyh/rosetta/docs/developer/ANNOTATION_FORMAT.md)
+1. [ARCHITECTURE.md](./ARCHITECTURE.md)
+2. [WORKFLOW.md](./WORKFLOW.md)
+3. [ROADMAP.md](./ROADMAP.md)
+4. [DEPLOYMENT.md](./DEPLOYMENT.md)
+5. [SCRIPTS.md](./SCRIPTS.md)
+6. [ANNOTATION_FORMAT.md](./ANNOTATION_FORMAT.md)
 
 ## 当前状态
 

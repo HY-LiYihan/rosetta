@@ -27,11 +27,11 @@
 ## 4. 代码落点
 
 1. 标注格式解析/校验：
-- [annotation_format.py](/Users/liyh/rosetta/app/domain/annotation_format.py)
+- [annotation_format.py](../../app/domain/annotation_format.py)
 2. 导入校验（examples 强校验）：
-- [validators.py](/Users/liyh/rosetta/app/domain/validators.py)
+- [validators.py](../../app/domain/validators.py)
 3. 标注响应校验：
-- [annotation_service.py](/Users/liyh/rosetta/app/services/annotation_service.py)
+- [annotation_service.py](../../app/services/annotation_service.py)
 
 ## 5. 兼容策略
 

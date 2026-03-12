@@ -127,7 +127,7 @@ st.divider()
 st.markdown("""
 <div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
     <p><strong>Rosetta - 智能语言学概念标注系统</strong></p>
-    <p>版本: v2.9.2 | 最后更新: 2026年3月12日</p>
+    <p>版本: v2.9.3 | 最后更新: 2026年3月12日</p>
     <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a></p>
 </div>
 """, unsafe_allow_html=True)

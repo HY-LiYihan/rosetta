@@ -116,8 +116,8 @@ ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 - `首页`
 - `概念管理`
 - `智能标注`
-3. 详细的用户使用说明（概念管理、标注流程、API 密钥配置、常见问题）请查看：
-- [用户教程](/Users/liyh/rosetta/docs/user/TUTORIAL.md)
+3. 详细的用户使用说明（概念管理、标注流程、标注格式与常见问题）请查看：
+- [用户教程](./docs/user/TUTORIAL.md)
 
 ### 项目结构
 
@@ -156,10 +156,10 @@ rosetta/
 
 ## 📚 架构与运维文档
 
-- 文档总入口：[docs/README.md](/Users/liyh/rosetta/docs/README.md)
-- 开发文档入口：[docs/developer/README.md](/Users/liyh/rosetta/docs/developer/README.md)
-- 用户教程：[docs/user/TUTORIAL.md](/Users/liyh/rosetta/docs/user/TUTORIAL.md)
-- 变更记录：[docs/CHANGELOG.md](/Users/liyh/rosetta/docs/CHANGELOG.md)
+- 文档总入口：[docs/README.md](./docs/README.md)
+- 开发文档入口：[docs/developer/README.md](./docs/developer/README.md)
+- 用户教程：[docs/user/TUTORIAL.md](./docs/user/TUTORIAL.md)
+- 变更记录：[docs/CHANGELOG.md](./docs/CHANGELOG.md)
 
 ## 🙏 致谢
 
@@ -170,4 +170,4 @@ rosetta/
 
 ---
 
-**最后更新**: 2026年3月11日
+**最后更新**: 2026年3月12日
