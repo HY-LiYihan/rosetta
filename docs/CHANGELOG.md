@@ -17,6 +17,14 @@
 5. 更新 [README.md](../README.md)、[docs/user/TUTORIAL.md](./user/TUTORIAL.md)、[CORPUS_PIPELINE.md](./developer/CORPUS_PIPELINE.md)、[ARCHITECTURE.md](./developer/ARCHITECTURE.md) 以说明新的页面化工作流。
 6. 首页新增 `Corpus Studio` 快速入口，首页页脚版本更新为 `v2.13.0`，最后更新日期改为 `2026年4月22日`。
 
+### Fix / Corpus Studio JSON repair and judge completeness
+
+1. [corpus_studio_flow_service.py](../app/services/corpus_studio_flow_service.py) 新增 JSON repair fallback：当长批次生成返回非法 JSON 时，会自动发起一次“只修 JSON 不改语义”的修复调用，提升 `sample / corpus / judge` 阶段稳定性。
+2. [corpus_studio_service.py](../app/services/corpus_studio_service.py) 的 judge prompt 不再截断文章正文，改为基于完整文章评估，修复“较长文章被误判为中途截断”的系统性偏差。
+3. 新增与更新单测，覆盖 JSON repair fallback 与完整正文 judge prompt。
+4. 用真实 `Corpus Studio` flow 完成了 10 篇英文硬科学科普新闻语料的端到端测试，并确认修复后的 judge 结果可用。
+5. 首页页脚版本更新为 `v2.13.1`。
+
 ## 2026-04-21
 
 ### Feature / Corpusgen grounded corpus pipeline

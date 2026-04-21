@@ -94,6 +94,61 @@ class TestCorpusStudioFlowService(unittest.TestCase):
         self.assertEqual(sample_result["articles"][0]["language"], "en")
 
     @patch("app.services.corpus_studio_flow_service.get_chat_response")
+    def test_generate_sample_articles_repairs_invalid_json(self, mock_chat):
+        plan = {
+            "intent": {
+                "brief": "英文硬科学科普新闻",
+                "language": "en",
+                "genre": "science news",
+                "domain": "hard science",
+                "audience": "general readers",
+                "tone": "clear",
+                "total_articles": 4,
+                "target_words": 700,
+                "hard_constraints": "",
+                "extra_notes": "",
+            },
+            "refined_brief": "Generate English hard-science news articles.",
+            "strategy_summary": "Keep the corpus factual and readable.",
+            "generation_rules": ["Use concrete findings", "Avoid hype"],
+            "title_candidates": ["Dark Matter Map Reveals Hidden Cosmic Bridges"],
+            "sample_angles": [{"title": "Dark Matter Map Reveals Hidden Cosmic Bridges", "angle": "a", "why_it_works": "w"}],
+            "style_profile": ["Readable", "newsy"],
+            "judge_focus": ["brief alignment", "clarity", "scientific tone"],
+            "risk_notes": ["do not invent results"],
+        }
+        mock_chat.side_effect = [
+            '{"articles":[{"title":"Dark Matter Map Reveals Hidden Cosmic Bridges","summary":"Astronomers built a sharper dark matter map." "body":"broken json"}]}',
+            json.dumps(
+                {
+                    "articles": [
+                        {
+                            "title": "Dark Matter Map Reveals Hidden Cosmic Bridges",
+                            "summary": "Astronomers built a sharper dark matter map.",
+                            "body": "Astronomers combined lensing observations and simulation constraints to map hidden structures in several cosmic regions while explaining what remains uncertain.",
+                            "angle": "news lead",
+                            "keywords": ["dark matter"],
+                            "quality_notes": ["clear lead"],
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            ),
+        ]
+        result = generate_sample_articles(
+            plan=plan,
+            selected_titles=["Dark Matter Map Reveals Hidden Cosmic Bridges"],
+            target_words=700,
+            available_config=AVAILABLE_CONFIG,
+            selected_platform="zhipuai",
+            selected_model="glm-5",
+            temperature=0.7,
+        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["articles"][0]["title"], "Dark Matter Map Reveals Hidden Cosmic Bridges")
+        self.assertEqual(mock_chat.call_count, 2)
+
+    @patch("app.services.corpus_studio_flow_service.get_chat_response")
     def test_generate_corpus_and_judge(self, mock_chat):
         plan = {
             "intent": {

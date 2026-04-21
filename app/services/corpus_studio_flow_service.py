@@ -52,17 +52,14 @@ def generate_corpus_plan(
         )
         prompt = build_strategy_prompt(intent, current_plan=current_plan, feedback=feedback)
         log_debug_event("corpus_studio_plan_requested", {"intent": intent, "feedback": feedback})
-        raw_response = get_chat_response(
+        payload, raw_response = _request_json_payload(
             platform=selected_platform,
             api_key=api_key,
             model=selected_model,
-            messages=[
-                {"role": "system", "content": "你是一个严谨的语料策划助手，只能输出 JSON。"},
-                {"role": "user", "content": prompt},
-            ],
+            system_prompt="你是一个严谨的语料策划助手，只能输出 JSON。",
+            user_prompt=prompt,
             temperature=temperature,
         )
-        payload = parse_json_payload(raw_response)
         plan = normalize_strategy_plan(payload, intent)
         log_debug_event("corpus_studio_plan_received", {"plan": plan})
         return {
@@ -90,17 +87,14 @@ def generate_sample_articles(
         if not titles:
             raise CorpusStudioError("至少需要选择一个样稿标题")
         prompt = build_article_generation_prompt(plan, titles, target_words=target_words, stage="sample", feedback=feedback)
-        raw_response = get_chat_response(
+        payload, raw_response = _request_json_payload(
             platform=selected_platform,
             api_key=api_key,
             model=selected_model,
-            messages=[
-                {"role": "system", "content": "你是一个专业写作助手，只能输出 JSON。"},
-                {"role": "user", "content": prompt},
-            ],
+            system_prompt="你是一个专业写作助手，只能输出 JSON。",
+            user_prompt=prompt,
             temperature=temperature,
         )
-        payload = parse_json_payload(raw_response)
         articles = normalize_articles_payload(payload, plan=plan, titles=titles, stage="sample")
         if not articles:
             raise CorpusStudioError("模型没有返回可用的样稿")
@@ -149,17 +143,14 @@ def generate_corpus_collection(
         batch_runs: list[dict] = []
         for batch_titles in chunk_list(target_titles, batch_size):
             prompt = build_article_generation_prompt(plan, batch_titles, target_words=target_words, stage="batch", feedback=feedback)
-            raw_response = get_chat_response(
+            payload, raw_response = _request_json_payload(
                 platform=selected_platform,
                 api_key=api_key,
                 model=selected_model,
-                messages=[
-                    {"role": "system", "content": "你是一个专业写作助手，只能输出 JSON。"},
-                    {"role": "user", "content": prompt},
-                ],
+                system_prompt="你是一个专业写作助手，只能输出 JSON。",
+                user_prompt=prompt,
                 temperature=temperature,
             )
-            payload = parse_json_payload(raw_response)
             batch_articles = normalize_articles_payload(payload, plan=plan, titles=batch_titles, stage="batch")
             if len(batch_articles) < len(batch_titles):
                 missing_titles = batch_titles[len(batch_articles):]
@@ -171,17 +162,14 @@ def generate_corpus_collection(
                         stage="batch",
                         feedback=feedback,
                     )
-                    single_raw_response = get_chat_response(
+                    single_payload, single_raw_response = _request_json_payload(
                         platform=selected_platform,
                         api_key=api_key,
                         model=selected_model,
-                        messages=[
-                            {"role": "system", "content": "你是一个专业写作助手，只能输出 JSON。"},
-                            {"role": "user", "content": single_prompt},
-                        ],
+                        system_prompt="你是一个专业写作助手，只能输出 JSON。",
+                        user_prompt=single_prompt,
                         temperature=temperature,
                     )
-                    single_payload = parse_json_payload(single_raw_response)
                     batch_articles.extend(
                         normalize_articles_payload(single_payload, plan=plan, titles=[missing_title], stage="batch")
                     )
@@ -221,17 +209,14 @@ def judge_corpus_collection(
         for title_batch in judge_chunks:
             article_batch = [title_to_article[title] for title in title_batch]
             prompt = build_judge_prompt(plan, article_batch)
-            raw_response = get_chat_response(
+            payload, raw_response = _request_json_payload(
                 platform=selected_platform,
                 api_key=api_key,
                 model=selected_model,
-                messages=[
-                    {"role": "system", "content": "你是一个严格的质量评审助手，只能输出 JSON。"},
-                    {"role": "user", "content": prompt},
-                ],
+                system_prompt="你是一个严格的质量评审助手，只能输出 JSON。",
+                user_prompt=prompt,
                 temperature=temperature,
             )
-            payload = parse_json_payload(raw_response)
             chunk_results.append(
                 {
                     "raw_response": raw_response,
@@ -279,17 +264,14 @@ def _expand_titles(
     temperature: float,
 ) -> list[str]:
     prompt = build_title_expansion_prompt(plan, existing_titles, desired_count, feedback=feedback)
-    raw_response = get_chat_response(
+    payload, _raw_response = _request_json_payload(
         platform=selected_platform,
         api_key=api_key,
         model=selected_model,
-        messages=[
-            {"role": "system", "content": "你是一个选题编辑，只能输出 JSON。"},
-            {"role": "user", "content": prompt},
-        ],
+        system_prompt="你是一个选题编辑，只能输出 JSON。",
+        user_prompt=prompt,
         temperature=temperature,
     )
-    payload = parse_json_payload(raw_response)
     return normalize_title_expansion(payload, existing_titles, desired_count)
 
 
@@ -312,3 +294,55 @@ def _dedupe(items: list[str]) -> list[str]:
             seen.add(normalized)
             results.append(normalized)
     return results
+
+
+def _request_json_payload(
+    platform: str,
+    api_key: str,
+    model: str,
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float,
+) -> tuple[dict, str]:
+    raw_response = get_chat_response(
+        platform=platform,
+        api_key=api_key,
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=temperature,
+    )
+    try:
+        return parse_json_payload(raw_response), raw_response
+    except Exception as exc:
+        repair_prompt = _build_json_repair_prompt(raw_response, error_message=str(exc))
+        repaired_response = get_chat_response(
+            platform=platform,
+            api_key=api_key,
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "你是一个 JSON 修复助手。你只能输出修复后的合法 JSON，不要解释。",
+                },
+                {"role": "user", "content": repair_prompt},
+            ],
+            temperature=0.0,
+        )
+        return parse_json_payload(repaired_response), repaired_response
+
+
+def _build_json_repair_prompt(raw_response: str, error_message: str) -> str:
+    return f"""下面是一段本来应该是 JSON 的模型输出，但它当前不是合法 JSON。
+
+解析错误：
+{error_message}
+
+请你只做格式修复，不要改变原意，不要补充新的内容，不要解释。
+最终只输出一个合法 JSON 对象。
+
+原始内容：
+{raw_response}
+"""

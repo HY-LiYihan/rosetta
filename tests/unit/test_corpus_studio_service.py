@@ -2,6 +2,7 @@ import unittest
 
 from app.services.corpus_studio_service import (
     apply_plan_overrides,
+    build_judge_prompt,
     normalize_judge_payload,
     normalize_strategy_plan,
     parse_json_payload,
@@ -97,6 +98,15 @@ class TestCorpusStudioService(unittest.TestCase):
         judged = normalize_judge_payload(judge_payload, articles)
         self.assertEqual(judged["items"][0]["article_id"], "a1")
         self.assertEqual(judged["averages"]["usefulness"], 5.0)
+
+    def test_build_judge_prompt_keeps_full_body(self):
+        plan = {"refined_brief": "brief"}
+        body = "word " * 500
+        prompt = build_judge_prompt(
+            plan,
+            [{"title": "t1", "summary": "s1", "body": body}],
+        )
+        self.assertIn(body.strip(), prompt)
 
 
 if __name__ == "__main__":

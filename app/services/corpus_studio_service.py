@@ -270,7 +270,7 @@ def build_judge_prompt(plan: dict, articles: list[dict]) -> str:
         {
             "title": article["title"],
             "summary": article["summary"],
-            "body_excerpt": article["body"][:1800],
+            "body": article["body"],
         }
         for article in articles
     ]
