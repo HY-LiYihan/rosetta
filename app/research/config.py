@@ -94,13 +94,28 @@ def parse_research_config(payload: dict, source: str = "<memory>") -> ResearchCo
         raise ResearchConfigError(f"{source}: `output_contract` 至少要包含 {DEFAULT_OUTPUT_CONTRACT}")
 
     retrieval_strategy = str(payload.get("retrieval_strategy", "lexical")).strip().lower()
-    if retrieval_strategy not in {"lexical"}:
-        raise ResearchConfigError(f"{source}: 当前仅支持 `lexical` 检索策略")
+    if retrieval_strategy not in {"lexical", "embedding"}:
+        raise ResearchConfigError(f"{source}: `retrieval_strategy` 只能是 `lexical` 或 `embedding`")
 
     temperature = float(payload.get("temperature", 0.0))
     top_k_examples = int(payload.get("top_k_examples", 3))
     if top_k_examples < 1:
         raise ResearchConfigError(f"{source}: `top_k_examples` 必须 >= 1")
+
+    embedding_model = payload.get("embedding_model")
+    if embedding_model is not None:
+        if not isinstance(embedding_model, str) or not embedding_model.strip():
+            raise ResearchConfigError(f"{source}: `embedding_model` 必须是非空字符串")
+        embedding_model = embedding_model.strip()
+
+    embedding_dimensions = payload.get("embedding_dimensions")
+    if embedding_dimensions is not None:
+        embedding_dimensions = int(embedding_dimensions)
+        if embedding_dimensions < 1:
+            raise ResearchConfigError(f"{source}: `embedding_dimensions` 必须 > 0")
+
+    if retrieval_strategy == "embedding" and not embedding_model:
+        raise ResearchConfigError(f"{source}: `embedding` 检索需要配置 `embedding_model`")
 
     return ResearchConfig(
         name=_require_str(payload, "name", source),
@@ -108,6 +123,7 @@ def parse_research_config(payload: dict, source: str = "<memory>") -> ResearchCo
         platform=_require_str(payload, "platform", source),
         model=_require_str(payload, "model", source),
         api_key_env=_require_str(payload, "api_key_env", source),
+        api_key_secret=str(payload.get("api_key_secret", "")).strip() or None,
         system_prompt=str(payload.get("system_prompt", DEFAULT_SYSTEM_PROMPT)).strip() or DEFAULT_SYSTEM_PROMPT,
         definition=_require_str(payload, "definition", source),
         inclusion_rules=_read_str_list(payload, "inclusion_rules", source),
@@ -118,6 +134,9 @@ def parse_research_config(payload: dict, source: str = "<memory>") -> ResearchCo
         top_k_examples=top_k_examples,
         retrieval_strategy=retrieval_strategy,
         output_dir=str(payload.get("output_dir", ".runtime/research")).strip() or ".runtime/research",
+        index_dir=str(payload.get("index_dir", ".runtime/research/indexes")).strip() or ".runtime/research/indexes",
+        embedding_model=embedding_model,
+        embedding_dimensions=embedding_dimensions,
         canonical_examples=canonical_examples,
         hard_examples=hard_examples,
         conflict_rules=tuple(

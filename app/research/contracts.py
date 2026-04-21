@@ -36,6 +36,7 @@ class ResearchConfig:
     platform: str
     model: str
     api_key_env: str
+    api_key_secret: str | None
     system_prompt: str
     definition: str
     inclusion_rules: tuple[str, ...]
@@ -46,6 +47,9 @@ class ResearchConfig:
     top_k_examples: int
     retrieval_strategy: str
     output_dir: str
+    index_dir: str
+    embedding_model: str | None
+    embedding_dimensions: int | None
     canonical_examples: tuple[ResearchExample, ...]
     hard_examples: tuple[ResearchExample, ...]
     conflict_rules: tuple[ConflictRule, ...]

@@ -7,15 +7,18 @@ from pathlib import Path
 from typing import Callable
 
 from app.domain.annotation_format import extract_annotation_tokens
+from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.registry import get_provider
 from app.research.config import load_research_config
 from app.research.contracts import ResearchConfig, ResearchSample
+from app.research.indexing import build_example_index
 from app.research.prompting import build_prompt
 from app.research.retrieval import select_examples
 from app.research.verifier import issue_to_dict, verify_annotation_result
 from app.services.annotation_service import parse_annotation_response
 
 Predictor = Callable[[ResearchConfig, str], str]
+Embedder = Callable[[ResearchConfig, list[str]], list[list[float]]]
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -85,9 +88,11 @@ def _default_predictor(config: ResearchConfig, prompt: str) -> str:
     if provider is None:
         raise ValueError(f"未知平台: {config.platform}")
 
-    api_key = os.environ.get(config.api_key_env)
-    if not api_key:
-        raise RuntimeError(f"缺少环境变量 {config.api_key_env}，无法调用模型")
+    api_key = resolve_api_key(
+        platform_id=config.platform,
+        env_name=config.api_key_env,
+        secret_name=config.api_key_secret,
+    )
 
     return provider.chat(
         api_key=api_key,
@@ -100,11 +105,39 @@ def _default_predictor(config: ResearchConfig, prompt: str) -> str:
     )
 
 
+def _default_embedder(config: ResearchConfig, texts: list[str]) -> list[list[float]]:
+    provider = get_provider(config.platform)
+    if provider is None:
+        raise ValueError(f"未知平台: {config.platform}")
+    if not config.embedding_model:
+        raise ValueError("当前研究配置未设置 embedding_model")
+
+    api_key = resolve_api_key(
+        platform_id=config.platform,
+        env_name=config.api_key_env,
+        secret_name=config.api_key_secret,
+    )
+    vectors: list[list[float]] = []
+    batch_size = 64
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start : start + batch_size]
+        vectors.extend(
+            provider.embed(
+                api_key=api_key,
+                model=config.embedding_model,
+                inputs=batch,
+                dimensions=config.embedding_dimensions,
+            )
+        )
+    return vectors
+
+
 def preview_prompt(
     config_path: str | Path,
     dataset_path: str | Path,
     sample_id: str | None = None,
     sample_index: int = 0,
+    embedder: Embedder | None = None,
 ) -> dict:
     config = load_research_config(config_path)
     samples = load_samples(dataset_path)
@@ -121,7 +154,8 @@ def preview_prompt(
             raise ValueError(f"sample_index 超出范围: {sample_index}")
         sample = samples[sample_index]
 
-    examples = select_examples(config, sample)
+    resolved_embedder = embedder or _default_embedder
+    examples = select_examples(config, sample, embedder=resolved_embedder if config.retrieval_strategy == "embedding" else None)
     prompt = build_prompt(config, sample, examples)
     return {
         "config_name": config.name,
@@ -138,6 +172,7 @@ def run_pipeline(
     output_dir: str | Path | None = None,
     limit: int | None = None,
     predictor: Predictor | None = None,
+    embedder: Embedder | None = None,
 ) -> dict:
     config = load_research_config(config_path)
     samples = load_samples(dataset_path)
@@ -155,13 +190,18 @@ def run_pipeline(
     run_dir.mkdir(parents=True, exist_ok=True)
 
     resolved_predictor = predictor or _default_predictor
+    resolved_embedder = embedder or _default_embedder
+
+    index_manifest = None
+    if config.retrieval_strategy == "embedding":
+        index_manifest = build_example_index(config, embedder=resolved_embedder)
 
     predictions: list[dict] = []
     review_queue: list[dict] = []
     conflicts: list[dict] = []
 
     for sample in samples:
-        examples = select_examples(config, sample)
+        examples = select_examples(config, sample, embedder=resolved_embedder if config.retrieval_strategy == "embedding" else None)
         prompt = build_prompt(config, sample, examples)
         raw_response = resolved_predictor(config, prompt)
         parsed_result, parse_warning = parse_annotation_response(raw_response)
@@ -222,7 +262,22 @@ def run_pipeline(
         "temperature": config.temperature,
         "retrieval_strategy": config.retrieval_strategy,
         "top_k_examples": config.top_k_examples,
+        "embedding_model": config.embedding_model,
+        "embedding_dimensions": config.embedding_dimensions,
+        "index_manifest": index_manifest,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
     }
     (run_dir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return manifest
+
+
+def build_index(
+    config_path: str | Path,
+    embedder: Embedder | None = None,
+    force_rebuild: bool = False,
+) -> dict:
+    config = load_research_config(config_path)
+    resolved_embedder = embedder or _default_embedder
+    manifest = build_example_index(config, embedder=resolved_embedder, force_rebuild=force_rebuild)
+    manifest["config_name"] = config.name
     return manifest

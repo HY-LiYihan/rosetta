@@ -2,6 +2,24 @@
 
 ## 2026-04-21
 
+### Feature / GLM-5 + Embedding-3 CPU retrieval
+
+1. 新增本地凭据解析模块 [credentials.py](../app/infrastructure/llm/credentials.py)，研究流水线可在非 Streamlit 环境下自动读取 `.streamlit/secrets.toml` 中的 `zhipuai_api_key`。
+2. 扩展 [base.py](../app/infrastructure/llm/base.py)：
+- 新增 `embed()`，支持调用 `Embedding-3`
+- 优化 chat 响应提取逻辑，兼容 `GLM-5` 的 `reasoning_content`
+3. 更新 [providers.py](../app/infrastructure/llm/providers.py)，将智谱默认聊天模型更新为 `glm-5`，并默认关闭 `thinking` 以适配结构化科研标注输出。
+4. 新增 [indexing.py](../app/research/indexing.py)，实现基于 `numpy` 的 CPU 向量索引构建、缓存与 top-k 相似度检索。
+5. [retrieval.py](../app/research/retrieval.py) 从仅支持 `lexical` 扩展为支持 `lexical` 与 `embedding` 双检索策略。
+6. [runner.py](../app/research/runner.py) 新增：
+- `.streamlit/secrets.toml` 的 API Key 自动回退
+- `build_index()` 入口
+- `Embedding-3` 动态 few-shot 检索支持
+7. [run_pipeline.py](../scripts/research/run_pipeline.py) 新增 `build-index` 子命令。
+8. 新增智谱研究模板 [glm5_embedding3_template.json](../configs/research/glm5_embedding3_template.json)，默认使用 `GLM-5 + Embedding-3(512维)`。
+9. 更新 [RESEARCH_PIPELINE.md](./developer/RESEARCH_PIPELINE.md) 与 [ARCHITECTURE.md](./developer/ARCHITECTURE.md) 以说明 CPU index 与双检索策略。
+10. 首页页脚版本更新为 `v2.11.0`。
+
 ### Feature / Research lab pipeline bootstrap
 
 1. 新增研究流水线骨架目录 [app/research/](../app/research/)：

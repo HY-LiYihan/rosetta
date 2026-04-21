@@ -18,6 +18,7 @@ rosetta/
     research/
       contracts.py
       config.py
+      indexing.py
       prompting.py
       retrieval.py
       verifier.py
@@ -113,7 +114,8 @@ rosetta/
 - 负责科研流水线骨架，不直接依赖页面层。
 - `config.py`: 研究任务配置解析。
 - `prompting.py`: 操作化定义、负向约束与动态 few-shot prompt 组装。
-- `retrieval.py`: 当前提供 lexical 动态示例检索，后续可替换为向量检索。
+- `indexing.py`: 基于 CPU 的向量索引构建、缓存与查询。
+- `retrieval.py`: 提供 lexical/embedding 两种动态示例检索。
 - `verifier.py`: 研究批处理的规则验证与冲突检测。
 - `runner.py`: `preview/audit/batch` 级执行编排。
 

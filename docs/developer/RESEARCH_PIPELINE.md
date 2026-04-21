@@ -23,12 +23,14 @@
 3. `app/research/`
 - `config.py`: 研究配置加载与校验。
 - `prompting.py`: 研究 prompt 组装。
-- `retrieval.py`: 基于 lexical overlap 的动态 few-shot 示例选择。
+- `indexing.py`: 基于 CPU 的向量索引构建与缓存。
+- `retrieval.py`: 支持 lexical 与 embedding 两种动态 few-shot 检索。
 - `verifier.py`: 规则校验（格式、显性跨度、互斥标签）。
 - `runner.py`: `preview` / `batch` / `audit` 执行入口。
 
 4. `scripts/research/run_pipeline.py`
 - `preview`: 预览单条样本的动态 prompt。
+- `build-index`: 预构建 `embedding-3` 的 CPU 向量索引缓存。
 - `run --mode batch`: 面向未标注数据的批处理推断。
 - `run --mode audit`: 面向带 gold 标签数据的审查模式，导出冲突样本。
 
@@ -53,9 +55,9 @@
 
 ## 4. 当前约束与设计取舍
 
-1. 动态检索当前仅实现 `lexical` 策略。
-- 这是 embeddings/RAG 的低成本替代骨架，便于先把实验闭环跑通。
-- 后续可升级为 `embedding + FAISS/Milvus`。
+1. 动态检索当前支持两种策略：
+- `lexical`：零依赖、纯文本重叠召回
+- `embedding`：使用 `Embedding-3` 构建 CPU 向量索引，并缓存到 `.runtime/research/indexes/`
 
 2. 当前验证器专注“硬约束”：
 - JSON 可解析
@@ -71,6 +73,7 @@
 
 1. 先编辑 `configs/research/pilot_template.json`
 - 补齐你的任务定义、few-shot、负向约束与冲突规则。
+- 如果要直接使用智谱模型，优先参考 `configs/research/glm5_embedding3_template.json`
 
 2. 准备 pilot 样本集（建议 50-100 条）
 - 保存为 `jsonl`
@@ -82,6 +85,13 @@
 python scripts/research/run_pipeline.py preview \
   --config configs/research/pilot_template.json \
   --dataset configs/research/pilot_dataset.example.jsonl
+```
+
+如需先构建 `Embedding-3` 的 CPU 向量索引：
+
+```bash
+python scripts/research/run_pipeline.py build-index \
+  --config configs/research/glm5_embedding3_template.json
 ```
 
 4. 跑 pilot 审查
@@ -99,8 +109,8 @@ python scripts/research/run_pipeline.py run \
 
 ## 6. 下一步演进
 
-1. 增加 embeddings 与向量检索。
-2. 增加 self-consistency 不确定性估计（`k` 次采样 + 投票阈值）。
-3. 增加 blind review 与 Kappa 统计。
-4. 增加 discrepancy attribution 报告。
+1. 增加 self-consistency 不确定性估计（`k` 次采样 + 投票阈值）。
+2. 增加 blind review 与 Kappa 统计。
+3. 增加 discrepancy attribution 报告。
+4. 将 CPU index 扩展为更大规模的 FAISS/HNSW 方案。
 5. 累积 gold data 后接入 SFT / distillation 流程。

@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.research.runner import preview_prompt, run_pipeline
+from app.research.runner import build_index, preview_prompt, run_pipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,6 +22,10 @@ def build_parser() -> argparse.ArgumentParser:
     preview_parser.add_argument("--dataset", required=True, help="Path to dataset JSONL")
     preview_parser.add_argument("--sample-id", default=None, help="Sample id to preview")
     preview_parser.add_argument("--sample-index", type=int, default=0, help="Fallback sample index when sample id is omitted")
+
+    index_parser = subparsers.add_parser("build-index", help="Build the CPU vector index for embedding retrieval")
+    index_parser.add_argument("--config", required=True, help="Path to research config JSON")
+    index_parser.add_argument("--force", action="store_true", help="Force rebuilding the cached index")
 
     run_parser = subparsers.add_parser("run", help="Run the research pipeline in batch or audit mode")
     run_parser.add_argument("--config", required=True, help="Path to research config JSON")
@@ -42,6 +46,14 @@ def main() -> int:
             dataset_path=args.dataset,
             sample_id=args.sample_id,
             sample_index=args.sample_index,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "build-index":
+        result = build_index(
+            config_path=args.config,
+            force_rebuild=args.force,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0

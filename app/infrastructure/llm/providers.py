@@ -40,6 +40,7 @@ PLATFORM_CONFIGS: dict[str, PlatformConfig] = {
         name="Zhipu AI (GLM)",
         base_url="https://open.bigmodel.cn/api/paas/v4",
         key_name="zhipuai_api_key",
-        default_model="glm-4.7",
+        default_model="glm-5",
+        chat_extra_body={"thinking": {"type": "disabled"}},
     ),
 }

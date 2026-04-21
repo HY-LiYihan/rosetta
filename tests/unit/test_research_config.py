@@ -36,6 +36,26 @@ class TestResearchConfig(unittest.TestCase):
         with self.assertRaises(ResearchConfigError):
             parse_research_config(payload)
 
+    def test_parse_research_config_requires_embedding_model(self):
+        payload = {
+            "name": "demo",
+            "platform": "zhipuai",
+            "model": "glm-5",
+            "api_key_env": "ZHIPUAI_API_KEY",
+            "definition": "demo definition",
+            "retrieval_strategy": "embedding",
+            "canonical_examples": [
+                {
+                    "id": "ex-1",
+                    "text": "She said hello.",
+                    "annotation": "[said]{projection} hello.",
+                    "explanation": "speech process",
+                }
+            ],
+        }
+        with self.assertRaises(ResearchConfigError):
+            parse_research_config(payload)
+
 
 if __name__ == "__main__":
     unittest.main()
