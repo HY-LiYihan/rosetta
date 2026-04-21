@@ -4,13 +4,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-支持-blue)](https://www.docker.com/)
 
-**Rosetta** 是一个基于大语言模型的智能语言学概念标注系统，为语言学研究者和教育工作者提供高效的概念标注工具。
+**Rosetta** 是一个基于大语言模型的智能语言学概念标注与语料生成系统，为语言学研究者和教育工作者提供高效的科研工作流工具。
 
 ## ✨ 核心功能
 
 - **多平台模型支持**：支持 Kimi、DeepSeek 等多个 AI 平台，动态获取可用模型列表
 - **智能概念标注**：利用大语言模型自动标注复杂的语言学概念
 - **双科研流水线**：`research` 用于标注实验，`corpusgen` 用于指定领域/题材/语言的语料生成
+- **分步式 Corpus Studio**：从一句话 brief 出发，经标题确认、样稿确认、批量生成与 judge 评审，构建语料库
 - **交互式概念管理**：支持自定义概念定义、示例管理和分类
 - **数据持久化**：支持概念数据的导入导出和历史记录
 - **现代化界面**：基于 Streamlit 的响应式设计，支持深色主题
@@ -117,8 +118,20 @@ ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 - `首页`
 - `概念管理`
 - `智能标注`
+- `Corpus Studio`
 3. 详细的用户使用说明（概念管理、标注流程、标注格式与常见问题）请查看：
 - [用户教程](./docs/user/TUTORIAL.md)
+
+### Corpus Studio（分步式语料生成）
+
+现在网站内也提供独立的 `Corpus Studio` 页面，适合按步骤生成一个新语料库：
+
+1. 输入一句话 brief
+2. 生成标题候选与样稿方向
+3. 人工确认并微调策略
+4. 先生成 1-2 篇样稿
+5. 确认后批量生成完整语料
+6. 运行 judge 做质量评估
 
 ## 🧪 科研脚本流水线
 
@@ -197,4 +210,4 @@ rosetta/
 
 ---
 
-**最后更新**: 2026年4月21日
+**最后更新**: 2026年4月22日

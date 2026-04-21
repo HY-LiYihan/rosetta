@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-04-22
+
+### Feature / Corpus Studio step-by-step page
+
+1. 新增页面 [Corpus_Studio.py](../app/ui/pages/Corpus_Studio.py)，提供分步式语料生成工作台。
+2. 新增服务层 [corpus_studio_service.py](../app/services/corpus_studio_service.py) 与 [corpus_studio_flow_service.py](../app/services/corpus_studio_flow_service.py)，支持：
+- 一句话 brief 解析
+- 标题候选与样稿方向生成
+- 多轮策略重规划
+- 样稿生成
+- 批量语料生成
+- 独立 judge 评估
+3. 新增单测 [test_corpus_studio_service.py](../tests/unit/test_corpus_studio_service.py) 与 [test_corpus_studio_flow_service.py](../tests/unit/test_corpus_studio_flow_service.py)。
+4. 更新 [streamlit_app.py](../streamlit_app.py) 导航，新增 `Corpus Studio` 页面入口。
+5. 更新 [README.md](../README.md)、[docs/user/TUTORIAL.md](./user/TUTORIAL.md)、[CORPUS_PIPELINE.md](./developer/CORPUS_PIPELINE.md)、[ARCHITECTURE.md](./developer/ARCHITECTURE.md) 以说明新的页面化工作流。
+6. 首页新增 `Corpus Studio` 快速入口，首页页脚版本更新为 `v2.13.0`，最后更新日期改为 `2026年4月22日`。
+
 ## 2026-04-21
 
 ### Feature / Corpusgen grounded corpus pipeline

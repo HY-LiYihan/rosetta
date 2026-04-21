@@ -1,6 +1,6 @@
 # Corpus Pipeline (Developer)
 
-更新时间: 2026-04-21
+更新时间: 2026-04-22
 
 ## 1. 目标
 
@@ -42,6 +42,11 @@
 - `build_memory.py`
 - `plan_corpus.py`
 - `generate_corpus.py`
+
+5. `app/ui/pages/Corpus_Studio.py`
+- Streamlit 分步式页面入口。
+- 面向“一句话 brief -> 标题确认 -> 样稿确认 -> 批量生成 -> judge”的交互式工作流。
+- 页面逻辑通过 `app/services/corpus_studio_*` 调用模型，不直接依赖 `app/research/*`。
 
 ## 4. 上下文压缩设计
 
@@ -145,3 +150,15 @@ python scripts/corpusgen/generate_corpus.py \
 2. 增加多语言 seed mixing 与跨语言 parallel corpus 生成。
 3. 增加更稳健的重复检测与 topic coverage 统计。
 4. 将压缩包升级为可缓存的“主题 memory bank”。
+
+## 9. Streamlit 向导页
+
+除脚本式 pipeline 外，当前还提供一个面向人工确认的页面化入口：
+
+1. 第 1 步：输入一句话 brief 与基础参数。
+2. 第 2 步：生成标题候选与样稿方向，允许多轮重规划。
+3. 第 3 步：先生成样稿，人工确认风格。
+4. 第 4 步：批量生成完整语料库。
+5. 第 5 步：调用独立 judge，对每篇文章给出评分与修改建议。
+
+这个页面更适合“先探索，再定稿”的工作方式；脚本入口更适合固定配置下的批处理实验。

@@ -6,6 +6,7 @@ from app.state.keys import (
     AVAILABLE_CONFIG,
     CONCEPTS,
     CONCEPTS_DATA_VERSION,
+    CORPUS_STUDIO_WORKFLOW,
     SELECTED_MODEL,
     SELECTED_PLATFORM,
 )
@@ -33,6 +34,19 @@ def ensure_available_config(probe_func) -> None:
     """Ensure available platform config has been probed once in this session."""
     if AVAILABLE_CONFIG not in st.session_state:
         st.session_state[AVAILABLE_CONFIG] = probe_func()
+
+
+def ensure_corpus_studio_state() -> None:
+    """Ensure corpus studio workflow state exists for the Streamlit wizard page."""
+    if CORPUS_STUDIO_WORKFLOW not in st.session_state:
+        st.session_state[CORPUS_STUDIO_WORKFLOW] = {
+            "plan": None,
+            "confirmed_plan": None,
+            "samples": None,
+            "corpus": None,
+            "judge": None,
+            "plan_round": 0,
+        }
 
 
 def ensure_platform_selection(preferred_platform: str = "deepseek") -> None:

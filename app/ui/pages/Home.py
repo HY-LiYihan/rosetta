@@ -4,14 +4,14 @@ from app.state.session_state import ensure_core_state
 from app.ui.viewmodels.home_viewmodel import build_home_metrics
 
 # 页面标题
-st.title("🏠 Rosetta - 智能语义概念标注系统")
+st.title("🏠 Rosetta - 智能语义概念标注与语料生成系统")
 
 # 应用简介
 st.markdown("""
 <h3 style='color: var(--color-primary); margin-top: 0;'>欢迎使用 Rosetta</h3>
 <p style='color: var(--color-text); line-height: 1.6;'>
-    Rosetta 是一个基于大语言模型的智能语义概念标注系统，为语言学研究者、翻译工作者、文学研究者和教育工作者提供高效的概念标注工具。
-    系统支持多个 AI 平台，提供智能概念标注、交互式概念管理和数据持久化功能。
+    Rosetta 是一个基于大语言模型的智能语义概念标注与语料生成系统，为语言学研究者、翻译工作者、文学研究者和教育工作者提供高效的科研工作流。
+    系统支持多个 AI 平台，提供智能概念标注、交互式概念管理、分步式语料生成和数据持久化功能。
 </p>
 """, unsafe_allow_html=True)
 
@@ -91,6 +91,18 @@ with cols[2]:
       </div>
     """, unsafe_allow_html=True)
 
+st.subheader("🧪 科研生成")
+st.markdown("""
+<div style='padding: 1rem 1.2rem; background-color: rgba(99, 179, 237, 0.08); border-radius: 10px; border: 1px solid rgba(136, 212, 225, 0.2);'>
+  <p style='margin: 0 0 0.6rem 0; color: var(--color-primary); font-weight: 600;'>Corpus Studio</p>
+  <p style='margin: 0 0 0.8rem 0; color: var(--color-text); line-height: 1.6;'>
+    从一句话 brief 开始，按“策略规划 -> 标题确认 -> 样稿确认 -> 批量生成 -> judge”逐步完成语料库构建。
+  </p>
+</div>
+""", unsafe_allow_html=True)
+if st.button("进入 Corpus Studio", use_container_width=True, key="go_corpus_studio"):
+    st.switch_page("app/ui/pages/Corpus_Studio.py")
+
 # 最近概念列表
 st.subheader("📋 最近使用的概念")
 
@@ -127,7 +139,7 @@ st.divider()
 st.markdown("""
 <div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
     <p><strong>Rosetta - 智能语言学概念标注系统</strong></p>
-    <p>版本: v2.12.0 | 最后更新: 2026年4月21日</p>
+    <p>版本: v2.13.0 | 最后更新: 2026年4月22日</p>
     <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a></p>
 </div>
 """, unsafe_allow_html=True)

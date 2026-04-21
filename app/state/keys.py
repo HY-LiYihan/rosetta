@@ -9,7 +9,10 @@ EDITING_CONCEPT_INDEX = "editing_concept_index"
 REUSE_TEXT = "reuse_text"
 DEBUG_NOTICE_ACK = "debug_notice_ack"
 DEBUG_NOTICE_STARTED_AT = "debug_notice_started_at"
+CORPUS_STUDIO_WORKFLOW = "corpus_studio_workflow"
 
 # Widget keys
 PLATFORM_SELECTOR = "platform_selector"
 MODEL_SELECTOR = "model_selector"
+CORPUS_PLATFORM_SELECTOR = "corpus_platform_selector"
+CORPUS_MODEL_SELECTOR = "corpus_model_selector"

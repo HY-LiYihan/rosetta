@@ -1,6 +1,6 @@
 # Architecture (Developer)
 
-更新时间: 2026-04-21
+更新时间: 2026-04-22
 
 ## 1. 目标
 
@@ -42,6 +42,7 @@ rosetta/
         Home.py
         Concept_Management.py
         Annotation.py
+        Corpus_Studio.py
       viewmodels/
         home_viewmodel.py
     state/
@@ -56,6 +57,8 @@ rosetta/
       concept_flow_service.py
       annotation_service.py
       annotation_flow_service.py
+      corpus_studio_service.py
+      corpus_studio_flow_service.py
       platform_service.py
     repositories/
       base.py
@@ -109,6 +112,8 @@ rosetta/
 - `concept_flow_service`: 概念导入/创建的页面流程编排。
 - `annotation_service`: prompt 构建、响应解析、历史记录。
 - `annotation_flow_service`: 标注流程端到端执行编排。
+- `corpus_studio_service`: Streamlit 语料工作台的 prompt / 解析 / 规范化工具。
+- `corpus_studio_flow_service`: `brief -> titles -> samples -> corpus -> judge` 的页面化工作流编排。
 - `platform_service`: 平台探测、模型拉取、聊天编排。
 
 6. `app/repositories`
@@ -142,6 +147,11 @@ rosetta/
 - `generators.py`: 生成 prompt 与 JSON 解析。
 - `judges.py`: 规则检查与去重过滤。
 - `runner.py`: `prepare/memory/plan/generate` 级执行编排。
+
+11. `app/ui/pages/Corpus_Studio.py`
+- 面向人工在页面中逐步确认的语料生成工作台。
+- 不直接实现复杂业务规则，调用 `corpus_studio_* service`。
+- 适合“从一句话需求开始”的交互式语料构建。
 
 ## 3.1 科研流水线隔离约束
 

@@ -7,7 +7,7 @@ from app.ui.components.debug_notice import render_debug_notice
 
 # 页面配置
 st.set_page_config(
-    page_title="Rosetta - 智能标注系统",
+    page_title="Rosetta - 智能标注与语料生成系统",
     page_icon="assets/rosetta-icon-whiteback.png",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -108,9 +108,10 @@ home_page = st.Page("app/ui/pages/Home.py", title="首页", icon="🏠", default
 tutorial_page = st.Page("app/ui/pages/Tutorial.py", title="使用教程", icon="📘")
 concept_management_page = st.Page("app/ui/pages/Concept_Management.py", title="概念管理", icon="📚")
 annotation_page = st.Page("app/ui/pages/Annotation.py", title="智能标注", icon="✏️")
+corpus_studio_page = st.Page("app/ui/pages/Corpus_Studio.py", title="Corpus Studio", icon="🧪")
 
 navigation = st.navigation(
-    pages=[home_page, tutorial_page, concept_management_page, annotation_page],
+    pages=[home_page, tutorial_page, concept_management_page, annotation_page, corpus_studio_page],
     position="sidebar",
     expanded=True,
 )
