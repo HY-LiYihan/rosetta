@@ -2,6 +2,28 @@
 
 ## 2026-04-21
 
+### Feature / Corpusgen grounded corpus pipeline
+
+1. 新增独立语料生成流水线目录 [app/corpusgen/](../app/corpusgen/)：
+- `specs.py`: 语料 spec 解析
+- `seeds.py`: seed 文档切分
+- `planner.py`: 任务规划
+- `memory/*`: context memory 压缩与 CPU 向量检索
+- `generators.py`: 生成 prompt 与 JSON 解析
+- `judges.py`: 质量规则检查与去重
+- `runner.py`: `prepare / memory / plan / generate` 编排
+2. 新增独立脚本入口 [scripts/corpusgen/](../scripts/corpusgen/)：
+- `prepare_seeds.py`
+- `build_memory.py`
+- `plan_corpus.py`
+- `generate_corpus.py`
+3. 新增模板 [linguistics_zh_qa.json](../configs/corpusgen/domain/linguistics_zh_qa.json) 与 seed 示例 [linguistics_zh_seed.example.jsonl](../configs/corpusgen/domain/linguistics_zh_seed.example.jsonl)。
+4. `corpusgen` 与 `research` 明确保持平行隔离，仅共享 `app/infrastructure/llm/*` 的底层 provider / 凭据能力。
+5. 新增开发文档 [CORPUS_PIPELINE.md](./developer/CORPUS_PIPELINE.md)，并更新 [ARCHITECTURE.md](./developer/ARCHITECTURE.md)、[docs/README.md](./README.md)、[developer/README.md](./developer/README.md) 与 [README.md](../README.md)。
+6. 新增单测覆盖 spec、memory recall 与 corpus runner。
+7. 使用真实 `GLM-5 + Embedding-3` 完成了 1 个任务、2 条样本的 smoke run，验证 CPU index 与生成链路可运行。
+8. 首页页脚版本更新为 `v2.12.0`。
+
 ### Feature / GLM-5 + Embedding-3 CPU retrieval
 
 1. 新增本地凭据解析模块 [credentials.py](../app/infrastructure/llm/credentials.py)，研究流水线可在非 Streamlit 环境下自动读取 `.streamlit/secrets.toml` 中的 `zhipuai_api_key`。

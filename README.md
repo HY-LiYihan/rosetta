@@ -10,6 +10,7 @@
 
 - **多平台模型支持**：支持 Kimi、DeepSeek 等多个 AI 平台，动态获取可用模型列表
 - **智能概念标注**：利用大语言模型自动标注复杂的语言学概念
+- **双科研流水线**：`research` 用于标注实验，`corpusgen` 用于指定领域/题材/语言的语料生成
 - **交互式概念管理**：支持自定义概念定义、示例管理和分类
 - **数据持久化**：支持概念数据的导入导出和历史记录
 - **现代化界面**：基于 Streamlit 的响应式设计，支持深色主题
@@ -119,12 +120,38 @@ ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 3. 详细的用户使用说明（概念管理、标注流程、标注格式与常见问题）请查看：
 - [用户教程](./docs/user/TUTORIAL.md)
 
+## 🧪 科研脚本流水线
+
+当前仓库提供两条独立的科研脚本 pipeline，二者不共用 runner：
+
+1. `research`
+- 面向标注实验、pilot audit、冲突导出。
+- 入口文档：[docs/developer/RESEARCH_PIPELINE.md](./docs/developer/RESEARCH_PIPELINE.md)
+- 入口脚本：`python scripts/research/run_pipeline.py ...`
+
+2. `corpusgen`
+- 面向指定领域 / 题材 / 语言的语料生成。
+- 采用 `GLM-5 + Embedding-3 + numpy CPU index` 的压缩上下文流程。
+- 入口文档：[docs/developer/CORPUS_PIPELINE.md](./docs/developer/CORPUS_PIPELINE.md)
+- 入口脚本：
+
+```bash
+python scripts/corpusgen/prepare_seeds.py --config configs/corpusgen/domain/linguistics_zh_qa.json --dataset configs/corpusgen/domain/linguistics_zh_seed.example.jsonl
+python scripts/corpusgen/build_memory.py --config configs/corpusgen/domain/linguistics_zh_qa.json --chunks <seed_chunks.jsonl>
+python scripts/corpusgen/plan_corpus.py --config configs/corpusgen/domain/linguistics_zh_qa.json --memory <memory_records.jsonl>
+python scripts/corpusgen/generate_corpus.py --config configs/corpusgen/domain/linguistics_zh_qa.json --memory <memory_records.jsonl> --plan <tasks.jsonl>
+```
+
 ### 项目结构
 
 ```
 rosetta/
 ├── streamlit_app.py          # 主应用文件
+├── app/corpusgen/            # 语料生成流水线
+├── app/research/             # 标注研究流水线
 ├── app/infrastructure/llm/api_utils.py  # LLM 统一调用入口
+├── configs/corpusgen/        # corpus generation 配置模板
+├── configs/research/         # research 配置模板
 ├── assets/concepts.json      # 默认概念数据
 ├── requirements.txt         # Python 依赖
 ├── Dockerfile              # Docker 构建文件
@@ -170,4 +197,4 @@ rosetta/
 
 ---
 
-**最后更新**: 2026年3月12日
+**最后更新**: 2026年4月21日

@@ -1,0 +1,73 @@
+{
+  "name": "linguistics-zh-qa",
+  "description": "基于压缩上下文的语言学中文问答语料生成初版模板",
+  "platform": "zhipuai",
+  "model": "glm-5",
+  "api_key_env": "ZHIPUAI_API_KEY",
+  "api_key_secret": "zhipuai_api_key",
+  "embedding_model": "embedding-3",
+  "embedding_dimensions": 512,
+  "output_dir": ".runtime/corpusgen",
+  "index_dir": ".runtime/corpusgen/indexes",
+  "domain": "linguistics",
+  "language": "zh",
+  "target_schema": "qa",
+  "total_samples": 8,
+  "samples_per_task": 2,
+  "seed_chunk_size": 520,
+  "seed_chunk_overlap": 80,
+  "memory_summary_chars": 240,
+  "max_context_chunks": 4,
+  "max_source_chars": 1400,
+  "temperature": 0.4,
+  "style_requirements": [
+    "问题要自然，避免模板化。",
+    "回答要保留术语，但要让研究生级读者可以理解。",
+    "尽量覆盖定义、判据、对比和例子四种知识面。"
+  ],
+  "failure_modes": [
+    "不要生成无法追溯到证据包的实验数据或作者观点。",
+    "不要将相近概念混为一谈。",
+    "不要连续复用同一问句模板。"
+  ],
+  "banned_terms": [
+    "As an AI",
+    "作为AI"
+  ],
+  "compression": {
+    "brief_max_chars": 360,
+    "evidence_max_items": 4,
+    "term_max_items": 10,
+    "style_max_items": 6,
+    "failure_max_items": 6
+  },
+  "quality_filters": {
+    "min_prompt_chars": 10,
+    "min_response_chars": 48,
+    "max_similarity": 0.92,
+    "require_term_overlap": true
+  },
+  "genres": [
+    {
+      "name": "definition_qa",
+      "weight": 0.45,
+      "instruction": "生成适合课程知识库的定义型问答，重点解释概念边界和判据。",
+      "style": "学术说明型",
+      "difficulty": "basic"
+    },
+    {
+      "name": "contrast_qa",
+      "weight": 0.35,
+      "instruction": "生成对比型问答，明确至少两个近邻概念之间的差异。",
+      "style": "概念辨析型",
+      "difficulty": "intermediate"
+    },
+    {
+      "name": "case_qa",
+      "weight": 0.2,
+      "instruction": "生成实例分析型问答，用简短例句解释概念如何在语料中出现。",
+      "style": "案例讲解型",
+      "difficulty": "intermediate"
+    }
+  ]
+}

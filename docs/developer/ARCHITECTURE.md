@@ -1,6 +1,6 @@
 # Architecture (Developer)
 
-更新时间: 2026-03-11
+更新时间: 2026-04-21
 
 ## 1. 目标
 
@@ -15,6 +15,18 @@
 rosetta/
   streamlit_app.py
   app/
+    corpusgen/
+      contracts.py
+      specs.py
+      seeds.py
+      planner.py
+      generators.py
+      judges.py
+      runner.py
+      memory/
+        layers.py
+        recall.py
+        compression.py
     research/
       contracts.py
       config.py
@@ -59,6 +71,7 @@ rosetta/
         providers.py
         registry.py
   scripts/
+    corpusgen/
     deploy/
     ops/
     data/
@@ -66,6 +79,7 @@ rosetta/
     research/
     lib/
   configs/
+    corpusgen/
     research/
   tests/
     unit/
@@ -118,6 +132,22 @@ rosetta/
 - `retrieval.py`: 提供 lexical/embedding 两种动态示例检索。
 - `verifier.py`: 研究批处理的规则验证与冲突检测。
 - `runner.py`: `preview/audit/batch` 级执行编排。
+
+10. `app/corpusgen`
+- 负责语料生成流水线骨架，不直接依赖页面层，也不依赖 `app/research/*`。
+- `specs.py`: 语料 spec 解析。
+- `seeds.py`: seed 文档切分。
+- `planner.py`: 体裁与主题任务规划。
+- `memory/*`: memory record、CPU index 与压缩上下文打包。
+- `generators.py`: 生成 prompt 与 JSON 解析。
+- `judges.py`: 规则检查与去重过滤。
+- `runner.py`: `prepare/memory/plan/generate` 级执行编排。
+
+## 3.1 科研流水线隔离约束
+
+1. `app/research/*` 与 `app/corpusgen/*` 保持平行，不互相 import。
+2. 允许共享的模块仅限通用基础设施，如 `app/infrastructure/llm/*`。
+3. 运行目录、脚本入口、配置模板、文档说明分别独立维护。
 
 ## 4. 核心数据流
 
