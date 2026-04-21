@@ -1,0 +1,2 @@
+{"id":"pilot-001","text":"She said that the results were surprising.","gold_annotation":"[said]{projection} that the results were surprising.","gold_explanation":"said 引入了被说出的命题内容。","metadata":{"source":"example","split":"pilot"}}
+{"id":"pilot-002","text":"The committee believed that the trial should continue.","gold_annotation":"The committee [believed]{projection} that the trial should continue.","gold_explanation":"believed 是心理过程，触发后续命题。","metadata":{"source":"example","split":"pilot"}}

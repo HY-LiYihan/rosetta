@@ -1,9 +1,10 @@
 # Rosetta Docs
 
-文档已按两类拆分：
+文档已按三类拆分：
 
 1. 开发文档：用于架构维护、代码更新、发布运维。
 2. 用户教程：用于使用系统功能与快速上手。
+3. Skill 集成文档：用于 Codex skill 的安装、边界与工作流。
 
 ## 1) 开发文档（Developer）
 
@@ -12,6 +13,8 @@
 - [developer/WORKFLOW.md](./developer/WORKFLOW.md)
 - [developer/ROADMAP.md](./developer/ROADMAP.md)
 - [developer/DEPLOYMENT.md](./developer/DEPLOYMENT.md)
+- [developer/RESEARCH_PIPELINE.md](./developer/RESEARCH_PIPELINE.md)
+- [developer/SKILL_INTEGRATION.md](./developer/SKILL_INTEGRATION.md)
 
 ## 2) 用户教程（User）
 

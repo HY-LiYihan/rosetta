@@ -12,6 +12,8 @@
 - **智能概念标注**：利用大语言模型自动标注复杂的语言学概念
 - **交互式概念管理**：支持自定义概念定义、示例管理和分类
 - **数据持久化**：支持概念数据的导入导出和历史记录
+- **研究流水线**：支持 `preview`、`build-index`、`batch`、`audit` 四类实验执行模式
+- **Codex Skill 集成**：可将研究流水线安装为本地 Codex skill，由代理直接驱动实验与复核
 - **现代化界面**：基于 Streamlit 的响应式设计，支持深色主题
 
 ## 🚀 部署方式
@@ -109,6 +111,25 @@ streamlit run streamlit_app.py -- --debug
 ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 ```
 
+## 🤖 Codex Skill 集成
+
+本分支额外提供仓库内 skill 包 [skills/rosetta-research](./skills/rosetta-research/SKILL.md)，用于让 Codex 直接操作 Rosetta 的研究流水线。
+
+安装到本机 Codex 技能目录：
+
+```bash
+./scripts/skill/install_rosetta_research_skill.sh
+```
+
+安装后可在 Codex 中直接使用 `$rosetta-research`，典型场景包括：
+
+- 调整 `configs/research/*.json` 中的定义、few-shot、冲突规则
+- 预览动态 prompt：`python scripts/research/run_pipeline.py preview ...`
+- 构建 `Embedding-3` CPU 索引：`python scripts/research/run_pipeline.py build-index ...`
+- 运行 `audit` 并复核 `.runtime/research/*/review_queue.jsonl` 与 `conflicts.jsonl`
+
+研究流水线说明见 [docs/developer/RESEARCH_PIPELINE.md](./docs/developer/RESEARCH_PIPELINE.md)，skill 集成边界见 [docs/developer/SKILL_INTEGRATION.md](./docs/developer/SKILL_INTEGRATION.md)。
+
 ## 🎯 使用入口
 
 1. 访问应用：`http://localhost:8501`
@@ -124,13 +145,18 @@ ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 ```
 rosetta/
 ├── streamlit_app.py          # 主应用文件
+├── app/research/             # 研究流水线核心
 ├── app/infrastructure/llm/api_utils.py  # LLM 统一调用入口
+├── configs/research/         # 研究配置模板与样本
+├── scripts/research/         # 研究流水线 CLI
+├── scripts/skill/            # Codex skill 安装脚本
+├── skills/rosetta-research/  # 仓库内 skill 包
 ├── assets/concepts.json      # 默认概念数据
-├── requirements.txt         # Python 依赖
-├── Dockerfile              # Docker 构建文件
-├── docker-compose.yml      # Docker Compose 配置
-├── README.md              # 项目文档
-└── assets/                # 静态资源
+├── requirements.txt          # Python 依赖
+├── Dockerfile                # Docker 构建文件
+├── docker-compose.yml        # Docker Compose 配置
+├── README.md                 # 项目文档
+└── assets/                  # 静态资源
     ├── rosetta-icon.png
     └── rosetta-icon-whiteback.png
 ```
@@ -170,4 +196,4 @@ rosetta/
 
 ---
 
-**最后更新**: 2026年3月12日
+**最后更新**: 2026年4月21日

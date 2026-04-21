@@ -1,0 +1,7 @@
+interface:
+  display_name: "Rosetta Research"
+  short_description: "Run Rosetta lab audits and pipeline tuning"
+  default_prompt: "Use $rosetta-research to tune a Rosetta research config, preview prompts, run an audit, and summarize the review queue."
+
+policy:
+  allow_implicit_invocation: true

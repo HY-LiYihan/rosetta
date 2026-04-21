@@ -1,6 +1,6 @@
 # Architecture (Developer)
 
-更新时间: 2026-03-11
+更新时间: 2026-04-21
 
 ## 1. 目标
 
@@ -15,6 +15,14 @@
 rosetta/
   streamlit_app.py
   app/
+    research/
+      contracts.py
+      config.py
+      indexing.py
+      prompting.py
+      retrieval.py
+      verifier.py
+      runner.py
     ui/
       components/
         debug_notice.py
@@ -48,6 +56,7 @@ rosetta/
       llm/
         api_utils.py
         base.py
+        credentials.py
         providers.py
         registry.py
   scripts/
@@ -55,7 +64,13 @@ rosetta/
     ops/
     data/
     cron/
+    research/
+    skill/
     lib/
+  configs/
+    research/
+  skills/
+    rosetta-research/
   tests/
     unit/
     integration/
@@ -93,11 +108,26 @@ rosetta/
 7. `app/infrastructure/llm`
 - 平台配置注册。
 - OpenAI 兼容 provider。
+- `credentials.py` 负责脚本环境下的 API Key 解析与 `.streamlit/secrets.toml` 回退。
 - `api_utils.py` 放在该层，作为页面侧统一调用入口。
 
 8. `app/infrastructure/config + debug`
 - `runtime_flags.py` 解析运行开关（如 `--debug` / `ROSETTA_DEBUG_MODE`）。
 - `debug/runtime.py` 负责调试日志与上传副本落盘。
+
+9. `app/research`
+- 负责科研流水线骨架，不直接依赖页面层。
+- `config.py`: 研究任务配置解析。
+- `prompting.py`: 操作化定义、负向约束与动态 few-shot prompt 组装。
+- `indexing.py`: 基于 CPU 的向量索引构建、缓存与查询。
+- `retrieval.py`: 提供 lexical/embedding 两种动态示例检索。
+- `verifier.py`: 研究批处理的规则验证与冲突检测。
+- `runner.py`: `preview/audit/batch` 级执行编排。
+
+10. `skills/rosetta-research`
+- 负责 Codex skill 包装层。
+- 只提供触发条件、工作流和命令入口，不复制 `app/research` 的业务逻辑。
+- 通过 `scripts/skill/install_rosetta_research_skill.sh` 安装到 `$CODEX_HOME/skills`。
 
 ## 4. 核心数据流
 
@@ -123,5 +153,6 @@ rosetta/
 ## 6. 更新项目建议
 
 1. 先读 [WORKFLOW.md](./WORKFLOW.md)。
-2. 再改 `app/services` / `app/domain`。
-3. 最后才动 `app/ui/pages/*`。
+2. 研究流水线优先改 `app/research` / `configs/research` / `scripts/research`。
+3. Skill 集成优先改 [SKILL_INTEGRATION.md](./SKILL_INTEGRATION.md) 涉及的 `skills/` 与 `scripts/skill/`。
+4. 最后才动 `app/ui/pages/*`。
