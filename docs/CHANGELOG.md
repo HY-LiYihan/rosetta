@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-04-21
+
+### Feature / Research lab pipeline bootstrap
+
+1. 新增研究流水线骨架目录 [app/research/](../app/research/)：
+- `config.py`: 研究配置加载与校验
+- `prompting.py`: 研究 prompt 组装
+- `retrieval.py`: lexical 动态 few-shot 检索
+- `verifier.py`: 规则验证与逻辑冲突检测
+- `runner.py`: `preview` / `batch` / `audit` 执行编排
+2. 新增脚本 [scripts/research/run_pipeline.py](../scripts/research/run_pipeline.py)，支持：
+- `preview`：预览单条样本的动态 prompt
+- `run --mode batch`：执行批处理推断
+- `run --mode audit`：执行带 gold 标签的审查流程并导出冲突样本
+3. 新增研究配置模板 [configs/research/pilot_template.json](../configs/research/pilot_template.json) 与示例数据 [configs/research/pilot_dataset.example.jsonl](../configs/research/pilot_dataset.example.jsonl)。
+4. 新增开发文档 [RESEARCH_PIPELINE.md](./developer/RESEARCH_PIPELINE.md)，说明当前研究流水线范围、运行方式与下一步演进方向。
+5. 更新 [docs/README.md](./README.md)、[docs/developer/README.md](./developer/README.md)、[docs/developer/ARCHITECTURE.md](./developer/ARCHITECTURE.md) 以纳入研究流水线入口。
+6. 新增单测覆盖研究配置、prompt 组装、验证器与批处理 runner。
+7. 首页页脚版本更新为 `v2.10.0`，最后更新日期改为 `2026年4月21日`。
+
 ## 2026-03-12
 
 ### Docs / Markdown links fix

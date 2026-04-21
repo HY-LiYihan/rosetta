@@ -12,6 +12,7 @@
 - [developer/WORKFLOW.md](./developer/WORKFLOW.md)
 - [developer/ROADMAP.md](./developer/ROADMAP.md)
 - [developer/DEPLOYMENT.md](./developer/DEPLOYMENT.md)
+- [developer/RESEARCH_PIPELINE.md](./developer/RESEARCH_PIPELINE.md)
 
 ## 2) 用户教程（User）
 

@@ -15,6 +15,13 @@
 rosetta/
   streamlit_app.py
   app/
+    research/
+      contracts.py
+      config.py
+      prompting.py
+      retrieval.py
+      verifier.py
+      runner.py
     ui/
       components/
         debug_notice.py
@@ -55,7 +62,10 @@ rosetta/
     ops/
     data/
     cron/
+    research/
     lib/
+  configs/
+    research/
   tests/
     unit/
     integration/
@@ -98,6 +108,14 @@ rosetta/
 8. `app/infrastructure/config + debug`
 - `runtime_flags.py` 解析运行开关（如 `--debug` / `ROSETTA_DEBUG_MODE`）。
 - `debug/runtime.py` 负责调试日志与上传副本落盘。
+
+9. `app/research`
+- 负责科研流水线骨架，不直接依赖页面层。
+- `config.py`: 研究任务配置解析。
+- `prompting.py`: 操作化定义、负向约束与动态 few-shot prompt 组装。
+- `retrieval.py`: 当前提供 lexical 动态示例检索，后续可替换为向量检索。
+- `verifier.py`: 研究批处理的规则验证与冲突检测。
+- `runner.py`: `preview/audit/batch` 级执行编排。
 
 ## 4. 核心数据流
 

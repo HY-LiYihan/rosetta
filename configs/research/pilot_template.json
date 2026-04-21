@@ -1,0 +1,68 @@
+{
+  "name": "projection-pilot",
+  "description": "Pilot pipeline for LLM-assisted iterative annotation with dynamic few-shot retrieval and review queues.",
+  "platform": "deepseek",
+  "model": "deepseek-chat",
+  "api_key_env": "DEEPSEEK_API_KEY",
+  "system_prompt": "你是一个严谨的语言学科研标注助手，必须严格遵守定义、负向约束与 JSON 输出要求。",
+  "definition": "Projection 指一个小句通过言语过程或心理过程引入另一个被说出、被想出或被感知的命题内容。只有当文本中存在可识别的投射触发器与被投射内容时，才进行标注。",
+  "inclusion_rules": [
+    "优先识别明确的言语过程，如 say, argue, report, mention。",
+    "优先识别明确的心理过程，如 think, believe, suspect。",
+    "当一个片段同时包含投射触发器和其承载内容时，保留最小但完整的投射证据。"
+  ],
+  "exclusion_rules": [
+    "纯粹的事实陈述、叙述性补充或原因状语不属于 projection。",
+    "如果只是引用名词短语而无被投射命题，不进行标注。"
+  ],
+  "negative_constraints": [
+    "不能因为句子里出现 that 就自动判定为 projection。",
+    "不能把普通从句嵌入误判为投射。",
+    "显性标注片段必须真实出现在原文中。"
+  ],
+  "output_contract": [
+    "text",
+    "annotation",
+    "explanation"
+  ],
+  "temperature": 0.0,
+  "top_k_examples": 3,
+  "retrieval_strategy": "lexical",
+  "output_dir": ".runtime/research",
+  "canonical_examples": [
+    {
+      "id": "can-001",
+      "text": "She said that the results were surprising.",
+      "annotation": "[said]{projection} that the results were surprising.",
+      "explanation": "said 明确引入后续被说出的命题内容，因此构成投射。",
+      "rationale": "这是标准的言语过程触发 projection 的例子。"
+    },
+    {
+      "id": "can-002",
+      "text": "The committee believed that the trial should continue.",
+      "annotation": "The committee [believed]{projection} that the trial should continue.",
+      "explanation": "believed 是心理过程，后续 that 从句承载被相信的命题内容。",
+      "rationale": "这是标准的心理过程 projection。"
+    }
+  ],
+  "hard_examples": [
+    {
+      "id": "hard-001",
+      "text": "The report, however, that the sample had degraded during storage, prompted a review.",
+      "annotation": "The [report]{projection}, however, that the sample had degraded during storage, prompted a review.",
+      "explanation": "虽然 however 容易造成误导，但真正的触发器是 report，其后内容是被报告的命题。",
+      "rationale": "这是边界案例，强调不要把转折信号词误当成标签依据。",
+      "example_type": "hard"
+    }
+  ],
+  "conflict_rules": [
+    {
+      "name": "projection-vs-background",
+      "labels": [
+        "projection",
+        "background"
+      ],
+      "message": "同一条 annotation 中不应同时出现 projection 与 background 标签。"
+    }
+  ]
+}
