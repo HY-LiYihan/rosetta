@@ -18,7 +18,7 @@ AVAILABLE_CONFIG = {
 
 
 class TestCorpusStudioFlowService(unittest.TestCase):
-    @patch("app.services.corpus_studio_flow_service.get_chat_response")
+    @patch("app.services.platform_service.get_chat_response")
     def test_generate_plan_and_samples(self, mock_chat):
         mock_chat.side_effect = [
             json.dumps(
@@ -93,7 +93,7 @@ class TestCorpusStudioFlowService(unittest.TestCase):
         self.assertTrue(sample_result["ok"])
         self.assertEqual(sample_result["articles"][0]["language"], "en")
 
-    @patch("app.services.corpus_studio_flow_service.get_chat_response")
+    @patch("app.services.platform_service.get_chat_response")
     def test_generate_sample_articles_repairs_invalid_json(self, mock_chat):
         plan = {
             "intent": {
@@ -148,7 +148,7 @@ class TestCorpusStudioFlowService(unittest.TestCase):
         self.assertEqual(result["articles"][0]["title"], "Dark Matter Map Reveals Hidden Cosmic Bridges")
         self.assertEqual(mock_chat.call_count, 2)
 
-    @patch("app.services.corpus_studio_flow_service.get_chat_response")
+    @patch("app.services.platform_service.get_chat_response")
     def test_generate_corpus_and_judge(self, mock_chat):
         plan = {
             "intent": {

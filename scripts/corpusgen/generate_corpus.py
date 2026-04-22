@@ -20,6 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--plan", required=True, help="Path to tasks.jsonl")
     parser.add_argument("--output-dir", default=None, help="Optional output directory override")
     parser.add_argument("--limit-tasks", type=int, default=None, help="Optional task limit for pilot runs")
+    parser.add_argument("--resume-dir", default=None, help="Resume from a previous run directory (reads checkpoint.jsonl)")
     return parser
 
 
@@ -31,6 +32,7 @@ def main() -> int:
         plan_path=args.plan,
         output_dir=args.output_dir,
         limit_tasks=args.limit_tasks,
+        resume_dir=args.resume_dir,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0

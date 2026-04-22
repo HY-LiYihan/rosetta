@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.corpusgen.contracts import CorpusSpec, GenerationTask, RetrievalHit
 from app.corpusgen.memory.layers import shorten_text
+from app.corpusgen.utils import dedupe_strings
 
 
 def build_context_pack(
@@ -11,11 +12,11 @@ def build_context_pack(
 ) -> dict:
     evidence_hits = hits[: spec.compression.evidence_max_items]
     term_pack = _collect_terms(task, evidence_hits, spec.compression.term_max_items)
-    style_pack = _dedupe(
+    style_pack = dedupe_strings(
         [task.style, task.instruction, *spec.style_requirements],
         limit=spec.compression.style_max_items,
     )
-    failure_pack = _dedupe(
+    failure_pack = dedupe_strings(
         [
             *spec.failure_modes,
             *(f"避免使用禁用词：{term}" for term in spec.banned_terms),
@@ -64,7 +65,7 @@ def _collect_terms(task: GenerationTask, hits: list[RetrievalHit], limit: int) -
     for hit in hits:
         candidates.extend(hit.record.terminology)
         candidates.extend(hit.record.tags)
-    return _dedupe(candidates, limit=limit)
+    return dedupe_strings(candidates, limit=limit)
 
 
 def _format_context(
@@ -98,16 +99,3 @@ def _format_context(
         ]
     )
     return "\n".join(lines)
-
-
-def _dedupe(items: list[str], limit: int) -> list[str]:
-    seen: set[str] = set()
-    results: list[str] = []
-    for item in items:
-        normalized = str(item).strip()
-        if normalized and normalized not in seen:
-            seen.add(normalized)
-            results.append(normalized)
-        if len(results) >= limit:
-            break
-    return results

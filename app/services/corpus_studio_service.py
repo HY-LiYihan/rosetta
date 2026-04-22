@@ -4,6 +4,8 @@ import json
 import math
 from datetime import datetime
 
+from app.corpusgen.utils import dedupe_strings, strip_markdown_fences
+
 
 class CorpusStudioError(ValueError):
     """Raised when corpus studio payloads are invalid or incomplete."""
@@ -85,14 +87,7 @@ def build_strategy_prompt(intent: dict, current_plan: dict | None = None, feedba
 
 
 def parse_json_payload(raw_response: str) -> dict:
-    cleaned = raw_response.strip()
-    if cleaned.startswith("```json"):
-        cleaned = cleaned[7:]
-    if cleaned.startswith("```"):
-        cleaned = cleaned[3:]
-    if cleaned.endswith("```"):
-        cleaned = cleaned[:-3]
-    cleaned = cleaned.strip()
+    cleaned = strip_markdown_fences(raw_response)
     payload = json.loads(cleaned)
     if not isinstance(payload, dict):
         raise CorpusStudioError("模型输出不是 JSON 对象")
@@ -465,21 +460,14 @@ def _text_block_to_list(text: str, minimum: int) -> list[str]:
         for line in text.splitlines()
         if line.strip()
     ]
-    deduped = _dedupe(items)
+    deduped = dedupe_strings(items)
     if minimum > 0 and len(deduped) < minimum:
         return []
     return deduped
 
 
 def _dedupe(items: list[str]) -> list[str]:
-    seen: set[str] = set()
-    results: list[str] = []
-    for item in items:
-        normalized = item.strip()
-        if normalized and normalized not in seen:
-            seen.add(normalized)
-            results.append(normalized)
-    return results
+    return dedupe_strings(items)
 
 
 def chunk_list(items: list[str], size: int) -> list[list[str]]:

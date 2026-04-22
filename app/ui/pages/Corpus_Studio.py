@@ -415,10 +415,18 @@ if samples:
         height=110,
         placeholder="例如：后半批次增加气候科学与材料科学；标题不要太接近前面的样稿；保持新闻感",
     )
+    with st.expander("断点续跑（可选）", expanded=False):
+        st.text_input(
+            "会话目录路径",
+            key="corpus_session_dir",
+            placeholder="例如：.runtime/corpus_sessions/my_run（留空则不持久化）",
+            help="指定后，每批生成结果会写入该目录的 batches.jsonl，重新运行时自动跳过已完成批次。",
+        )
     generate_corpus_clicked = st.button("开始批量生成语料库", type="primary", use_container_width=True)
 
     if generate_corpus_clicked:
         with st.spinner("正在批量生成语料库..."):
+            session_dir_val = st.session_state.get("corpus_session_dir", "").strip() or None
             result = generate_corpus_collection(
                 plan=confirmed_plan,
                 selected_titles=st.session_state.get("corpus_batch_title_selector", []),
@@ -430,6 +438,7 @@ if samples:
                 selected_model=selected_model,
                 temperature=sample_temperature,
                 feedback=st.session_state.get("corpus_batch_feedback", ""),
+                session_dir=session_dir_val,
             )
         if result["ok"]:
             workflow["corpus"] = result

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
+from app.corpusgen.utils import dedupe_strings
 from app.infrastructure.debug import log_debug_event
 from app.services.corpus_studio_service import (
     CorpusStudioError,
@@ -15,7 +18,7 @@ from app.services.corpus_studio_service import (
     normalize_title_expansion,
     parse_json_payload,
 )
-from app.services.platform_service import get_chat_response
+from app.services.platform_service import call_llm_with_repair
 
 
 def generate_corpus_plan(
@@ -119,7 +122,11 @@ def generate_corpus_collection(
     selected_model: str | None,
     temperature: float,
     feedback: str = "",
+    session_dir: str | None = None,
 ) -> dict:
+    import json as _json
+    from pathlib import Path as _Path
+
     try:
         api_key = _resolve_api_key(available_config, selected_platform)
         title_pool = [title.strip() for title in selected_titles if title.strip()]
@@ -139,49 +146,52 @@ def generate_corpus_collection(
             )
 
         target_titles = title_pool[:total_articles]
+
+        # Load checkpoint if session_dir provided
+        completed_titles: set[str] = set()
         articles: list[dict] = []
         batch_runs: list[dict] = []
-        for batch_titles in chunk_list(target_titles, batch_size):
-            prompt = build_article_generation_prompt(plan, batch_titles, target_words=target_words, stage="batch", feedback=feedback)
-            payload, raw_response = _request_json_payload(
-                platform=selected_platform,
-                api_key=api_key,
-                model=selected_model,
-                system_prompt="你是一个专业写作助手，只能输出 JSON。",
-                user_prompt=prompt,
-                temperature=temperature,
-            )
-            batch_articles = normalize_articles_payload(payload, plan=plan, titles=batch_titles, stage="batch")
-            if len(batch_articles) < len(batch_titles):
-                missing_titles = batch_titles[len(batch_articles):]
-                for missing_title in missing_titles:
-                    single_prompt = build_article_generation_prompt(
-                        plan,
-                        [missing_title],
-                        target_words=target_words,
-                        stage="batch",
-                        feedback=feedback,
-                    )
-                    single_payload, single_raw_response = _request_json_payload(
-                        platform=selected_platform,
-                        api_key=api_key,
-                        model=selected_model,
-                        system_prompt="你是一个专业写作助手，只能输出 JSON。",
-                        user_prompt=single_prompt,
-                        temperature=temperature,
-                    )
-                    batch_articles.extend(
-                        normalize_articles_payload(single_payload, plan=plan, titles=[missing_title], stage="batch")
-                    )
+        session_path = _Path(session_dir) if session_dir else None
+        if session_path is not None:
+            session_path.mkdir(parents=True, exist_ok=True)
+            batches_file = session_path / "batches.jsonl"
+            if batches_file.exists():
+                for line in batches_file.read_text(encoding="utf-8").splitlines():
+                    if not line.strip():
+                        continue
+                    row = _json.loads(line)
+                    completed_titles.update(row.get("titles", []))
+                    articles.extend(row.get("articles", []))
+                    batch_runs.append(row)
 
+        pending_titles = [t for t in target_titles if t not in completed_titles]
+        pending_batches = chunk_list(pending_titles, batch_size)
+
+        max_workers = min(4, len(pending_batches)) if pending_batches else 1
+        futures_order: list = []
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            for batch_titles in pending_batches:
+                future = pool.submit(
+                    _generate_batch,
+                    plan, batch_titles, target_words, feedback,
+                    selected_platform, api_key, selected_model, temperature,
+                )
+                futures_order.append((future, batch_titles))
+
+        for future, batch_titles in futures_order:
+            batch_articles, raw_response = future.result()
+            batch_run = {
+                "titles": batch_titles,
+                "raw_response": raw_response,
+                "article_count": len(batch_articles),
+                "articles": batch_articles,
+            }
             articles.extend(batch_articles)
-            batch_runs.append(
-                {
-                    "titles": batch_titles,
-                    "raw_response": raw_response,
-                    "article_count": len(batch_articles),
-                }
-            )
+            batch_runs.append(batch_run)
+
+            if session_path is not None:
+                with (session_path / "batches.jsonl").open("a", encoding="utf-8") as f:
+                    f.write(_json.dumps(batch_run, ensure_ascii=False) + "\n")
 
         return {
             "ok": True,
@@ -244,13 +254,53 @@ def judge_corpus_collection(
         return {
             "ok": True,
             "summary": " ".join(summaries).strip(),
-            "global_issues": _dedupe(global_issues),
+            "global_issues": dedupe_strings(global_issues),
             "items": merged_items,
             "averages": averages,
             "chunk_results": chunk_results,
         }
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
+
+
+def _generate_batch(
+    plan: dict,
+    batch_titles: list[str],
+    target_words: int,
+    feedback: str,
+    selected_platform: str,
+    api_key: str,
+    selected_model: str,
+    temperature: float,
+) -> tuple[list[dict], str]:
+    prompt = build_article_generation_prompt(plan, batch_titles, target_words=target_words, stage="batch", feedback=feedback)
+    payload, raw_response = _request_json_payload(
+        platform=selected_platform,
+        api_key=api_key,
+        model=selected_model,
+        system_prompt="你是一个专业写作助手，只能输出 JSON。",
+        user_prompt=prompt,
+        temperature=temperature,
+    )
+    batch_articles = normalize_articles_payload(payload, plan=plan, titles=batch_titles, stage="batch")
+    if len(batch_articles) < len(batch_titles):
+        missing_titles = batch_titles[len(batch_articles):]
+        for missing_title in missing_titles:
+            single_prompt = build_article_generation_prompt(
+                plan, [missing_title], target_words=target_words, stage="batch", feedback=feedback,
+            )
+            single_payload, _ = _request_json_payload(
+                platform=selected_platform,
+                api_key=api_key,
+                model=selected_model,
+                system_prompt="你是一个专业写作助手，只能输出 JSON。",
+                user_prompt=single_prompt,
+                temperature=temperature,
+            )
+            batch_articles.extend(
+                normalize_articles_payload(single_payload, plan=plan, titles=[missing_title], stage="batch")
+            )
+    return batch_articles, raw_response
 
 
 def _expand_titles(
@@ -285,17 +335,6 @@ def _resolve_api_key(available_config: dict, selected_platform: str | None) -> s
     return api_key
 
 
-def _dedupe(items: list[str]) -> list[str]:
-    seen: set[str] = set()
-    results: list[str] = []
-    for item in items:
-        normalized = item.strip()
-        if normalized and normalized not in seen:
-            seen.add(normalized)
-            results.append(normalized)
-    return results
-
-
 def _request_json_payload(
     platform: str,
     api_key: str,
@@ -304,45 +343,12 @@ def _request_json_payload(
     user_prompt: str,
     temperature: float,
 ) -> tuple[dict, str]:
-    raw_response = get_chat_response(
+    raw_response, _ = call_llm_with_repair(
         platform=platform,
         api_key=api_key,
         model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
         temperature=temperature,
     )
-    try:
-        return parse_json_payload(raw_response), raw_response
-    except Exception as exc:
-        repair_prompt = _build_json_repair_prompt(raw_response, error_message=str(exc))
-        repaired_response = get_chat_response(
-            platform=platform,
-            api_key=api_key,
-            model=model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "你是一个 JSON 修复助手。你只能输出修复后的合法 JSON，不要解释。",
-                },
-                {"role": "user", "content": repair_prompt},
-            ],
-            temperature=0.0,
-        )
-        return parse_json_payload(repaired_response), repaired_response
-
-
-def _build_json_repair_prompt(raw_response: str, error_message: str) -> str:
-    return f"""下面是一段本来应该是 JSON 的模型输出，但它当前不是合法 JSON。
-
-解析错误：
-{error_message}
-
-请你只做格式修复，不要改变原意，不要补充新的内容，不要解释。
-最终只输出一个合法 JSON 对象。
-
-原始内容：
-{raw_response}
-"""
+    return parse_json_payload(raw_response), raw_response

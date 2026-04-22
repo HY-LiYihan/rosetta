@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from app.corpusgen.contracts import CorpusSpec, GenerationTask
+from app.corpusgen.utils import strip_markdown_fences
 
 
 def build_generation_prompt(
@@ -48,14 +49,7 @@ JSON 模板：
 
 
 def parse_generation_response(raw_response: str) -> tuple[list[dict], str | None]:
-    cleaned = raw_response.strip()
-    if cleaned.startswith("```json"):
-        cleaned = cleaned[7:]
-    if cleaned.startswith("```"):
-        cleaned = cleaned[3:]
-    if cleaned.endswith("```"):
-        cleaned = cleaned[:-3]
-    cleaned = cleaned.strip()
+    cleaned = strip_markdown_fences(raw_response)
 
     try:
         payload = json.loads(cleaned)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
@@ -119,6 +120,7 @@ def generate_corpus(
     limit_tasks: int | None = None,
     predictor: Predictor | None = None,
     embedder: Embedder | None = None,
+    resume_dir: str | Path | None = None,
 ) -> dict:
     spec = load_corpus_spec(spec_path)
     memory_records = [memory_record_from_dict(row) for row in _read_jsonl(Path(memory_path))]
@@ -130,58 +132,84 @@ def generate_corpus(
     resolved_predictor = predictor or _default_predictor
     resolved_embedder = embedder or _default_embedder
 
-    index_manifest = build_memory_index(spec, memory_records, embedder=resolved_embedder)
-    task_runs: list[dict] = []
+    # Load checkpoint if resuming
+    completed_task_ids: set[str] = set()
     accepted_items: list[dict] = []
     review_items: list[dict] = []
+    task_runs: list[dict] = []
+    if resume_dir is not None:
+        checkpoint_path = Path(resume_dir) / "checkpoint.jsonl"
+        if checkpoint_path.exists():
+            for row in _read_jsonl(checkpoint_path):
+                completed_task_ids.add(row["task_id"])
+                accepted_items.extend(row.get("accepted_items", []))
+                review_items.extend(row.get("review_items", []))
+                task_runs.append(row.get("task_run", {}))
 
-    for task in tasks:
-        hits = query_memory_index(spec, memory_records, task.query, embedder=resolved_embedder)
-        context_pack = build_context_pack(spec, task, hits)
-        prompt = build_generation_prompt(spec, task, context_pack)
-        raw_response = resolved_predictor(spec, prompt)
-        raw_items, parse_warning = parse_generation_response(raw_response)
+    pending_tasks = [t for t in tasks if t.task_id not in completed_task_ids]
+    checkpoint_path = run_dir / "checkpoint.jsonl"
+
+    index_manifest = build_memory_index(spec, memory_records, embedder=resolved_embedder)
+
+    max_workers = min(8, len(pending_tasks)) if pending_tasks else 1
+    futures_map: dict = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        for task in pending_tasks:
+            future = pool.submit(
+                _run_single_task,
+                spec, task, memory_records, resolved_predictor, resolved_embedder,
+            )
+            futures_map[future] = task
+
+    ordered_results: list[tuple] = [None] * len(pending_tasks)
+    task_index = {task.task_id: i for i, task in enumerate(pending_tasks)}
+    for future, task in futures_map.items():
+        ordered_results[task_index[task.task_id]] = future.result()
+
+    for task_run, raw_items, parse_warning, context_pack, prompt, hits, task in ordered_results:
         normalized_items = normalize_generated_items(spec, task, context_pack, raw_items)
         judged = judge_generated_items(spec, task, context_pack, normalized_items, accepted_items)
 
+        task_accepted: list[dict] = []
+        task_review: list[dict] = []
         if parse_warning and not normalized_items:
-            review_items.append(
+            task_review.append(
                 {
                     "task_id": task.task_id,
                     "query": task.query,
                     "judge_issues": [{"code": "parse_failure", "message": parse_warning}],
-                    "raw_response": raw_response,
+                    "raw_response": task_run["raw_response"],
                 }
             )
 
         for row in judged:
             if row["status"] == "accepted":
                 accepted_items.append(row["item"])
+                task_accepted.append(row["item"])
             else:
                 review_row = dict(row["item"])
                 review_row["judge_issues"] = row["issues"]
                 review_items.append(review_row)
+                task_review.append(review_row)
 
-        task_runs.append(
-            {
-                "task_id": task.task_id,
-                "query": task.query,
-                "prompt": prompt,
-                "retrieved_chunks": [
+        task_run["accepted_count"] = len(task_accepted)
+        task_run["review_count"] = len(task_review)
+        task_runs.append(task_run)
+
+        # Append checkpoint entry for this task
+        with checkpoint_path.open("a", encoding="utf-8") as ckpt:
+            ckpt.write(
+                json.dumps(
                     {
-                        "chunk_id": hit.record.chunk_id,
-                        "score": round(hit.score, 4),
-                        "title": hit.record.title,
-                    }
-                    for hit in hits
-                ],
-                "context_pack": context_pack,
-                "raw_response": raw_response,
-                "parse_warning": parse_warning,
-                "accepted_count": sum(1 for row in judged if row["status"] == "accepted"),
-                "review_count": sum(1 for row in judged if row["status"] == "review"),
-            }
-        )
+                        "task_id": task.task_id,
+                        "accepted_items": task_accepted,
+                        "review_items": task_review,
+                        "task_run": task_run,
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
 
     _write_jsonl(run_dir / "task_runs.jsonl", task_runs)
     _write_jsonl(run_dir / "accepted.jsonl", accepted_items)
@@ -202,6 +230,33 @@ def generate_corpus(
     }
     _write_json(run_dir / "manifest.json", manifest)
     return manifest
+
+
+def _run_single_task(
+    spec,
+    task,
+    memory_records: list,
+    predictor: Predictor,
+    embedder: Embedder,
+) -> tuple:
+    hits = query_memory_index(spec, memory_records, task.query, embedder=embedder)
+    context_pack = build_context_pack(spec, task, hits)
+    prompt = build_generation_prompt(spec, task, context_pack)
+    raw_response = predictor(spec, prompt)
+    raw_items, parse_warning = parse_generation_response(raw_response)
+    task_run = {
+        "task_id": task.task_id,
+        "query": task.query,
+        "prompt": prompt,
+        "retrieved_chunks": [
+            {"chunk_id": hit.record.chunk_id, "score": round(hit.score, 4), "title": hit.record.title}
+            for hit in hits
+        ],
+        "context_pack": context_pack,
+        "raw_response": raw_response,
+        "parse_warning": parse_warning,
+    }
+    return task_run, raw_items, parse_warning, context_pack, prompt, hits, task
 
 
 def _default_predictor(spec, prompt: str) -> str:

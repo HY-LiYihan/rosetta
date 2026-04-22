@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-23
+
+### Refactor / Corpus pipeline unification — shared infra, concurrency, checkpoint
+
+1. 新增 [app/corpusgen/utils.py](../app/corpusgen/utils.py)，提取 `strip_markdown_fences` 与 `dedupe_strings` 两个共享工具，消除 `generators.py`、`compression.py`、`corpus_studio_service.py`、`corpus_studio_flow_service.py` 中的重复实现。
+2. [app/services/platform_service.py](../app/services/platform_service.py) 新增 `call_llm_with_repair()`，将 JSON 修复逻辑集中到 service 层；`corpus_studio_flow_service.py` 的 `_request_json_payload` 改为调用该函数，删除本地 `_build_json_repair_prompt`。
+3. [app/corpusgen/runner.py](../app/corpusgen/runner.py) 提取 `_run_single_task()`，用 `ThreadPoolExecutor(max_workers=8)` 并行执行 LLM 生成任务，judge 阶段保持串行以保证去重确定性。
+4. [app/corpusgen/runner.py](../app/corpusgen/runner.py) 新增 `resume_dir` 参数与 `checkpoint.jsonl` 断点续跑机制；[scripts/corpusgen/generate_corpus.py](../scripts/corpusgen/generate_corpus.py) 新增 `--resume-dir` 参数。
+5. [app/services/corpus_studio_flow_service.py](../app/services/corpus_studio_flow_service.py) 提取 `_generate_batch()`，用 `ThreadPoolExecutor(max_workers=4)` 并行执行批次生成；新增 `session_dir` 参数，每批结果 append 写入 `batches.jsonl`。
+6. [app/ui/pages/Corpus_Studio.py](../app/ui/pages/Corpus_Studio.py) 新增"断点续跑"折叠区，允许用户指定会话目录。
+7. 更新单测 [test_corpus_studio_flow_service.py](../tests/unit/test_corpus_studio_flow_service.py)，将 mock 目标从 `flow_service.get_chat_response` 更新为 `platform_service.get_chat_response`。
+
 ## 2026-04-22
 
 ### Feature / Corpus Studio step-by-step page
