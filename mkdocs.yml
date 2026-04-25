@@ -1,0 +1,60 @@
+site_name: Rosetta
+site_description: LLM 辅助语言学概念标注与语料生成系统
+site_url: https://hy-liyihan.github.io/rosetta/
+repo_url: https://github.com/HY-LiYihan/rosetta
+repo_name: HY-LiYihan/rosetta
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: zh
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 切换到暗色模式
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 切换到亮色模式
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - content.action.edit
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - 首页: README.md
+  - 用户教程:
+      - 快速上手: user/TUTORIAL.md
+  - 开发文档:
+      - 开发者概览: developer/README.md
+      - 架构: developer/ARCHITECTURE.md
+      - 工作流: developer/WORKFLOW.md
+      - 科研流水线: developer/RESEARCH_PIPELINE.md
+      - 语料生成流水线: developer/CORPUS_PIPELINE.md
+      - 标注格式规范: developer/ANNOTATION_FORMAT.md
+      - 部署: developer/DEPLOYMENT.md
+      - 脚本说明: developer/SCRIPTS.md
+      - 路线图: developer/ROADMAP.md
+  - 变更记录: CHANGELOG.md
+
+docs_dir: docs
+
+# Links to source code files outside docs/ are intentional (GitHub-only).
+# Suppress validation errors so the build doesn't fail on them.
+validation:
+  links:
+    not_found: ignore
+    unrecognized_links: ignore

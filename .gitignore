@@ -36,3 +36,6 @@ AGENTS.md
 
 # Temporary files
 tmp/
+
+# MkDocs build output
+site/
