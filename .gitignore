@@ -28,3 +28,11 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Claude Code and agent config
+.claude/
+CLAUDE.md
+AGENTS.md
+
+# Temporary files
+tmp/
