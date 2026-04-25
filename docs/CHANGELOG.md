@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-04-26
+
+### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)
+
+1. 新增 [app/domain/annotation_doc.py](../app/domain/annotation_doc.py)，提供结构化标注文档类型：
+   - `legacy_string_to_spans()`：将 `[原文]{标签}` 字符串转换为带字符偏移量的 span 列表
+   - `make_annotation_doc()`：组装完整 AnnotationDoc（version、text、layers、meta）
+   - `validate_annotation_doc()`：校验 AnnotationDoc 结构合法性
+   - `spans_to_legacy_string()`：将 spans 反向转为 `[原文]{标签}` 字符串（供 LLM prompt 注入）
+2. [app/services/annotation_service.py](../app/services/annotation_service.py)：`parse_annotation_response()` 在验证 LLM 输出字符串后自动调用 `make_annotation_doc()` 将 annotation 字段转换为 AnnotationDoc；`build_annotation_prompt()` 支持 few-shot examples 的 annotation 字段为 dict 时自动转回字符串。
+3. [app/domain/validators.py](../app/domain/validators.py)：`normalize_example()` 同时接受 str（legacy）和 dict（AnnotationDoc）两种格式，自动迁移 legacy 字符串。
+4. [app/domain/schemas.py](../app/domain/schemas.py)：`DATA_VERSION` 从 `"2.0"` 升级到 `"3.0"`。
+5. [app/ui/viewmodels/annotation_visualization.py](../app/ui/viewmodels/annotation_visualization.py)：`annotation_to_colored_html()` 支持 dict 输入，自动转换后渲染。
+6. [app/ui/pages/Annotation.py](../app/ui/pages/Annotation.py)：新增 `_annotation_tokens()` 和 `_annotation_display_str()` helper，替换对 `extract_annotation_tokens` 的直接调用。
+7. [app/research/runner.py](../app/research/runner.py)：`_annotation_signature()` 支持 AnnotationDoc dict 输入。
+8. 新增 [scripts/migrate_annotation_format.py](../scripts/migrate_annotation_format.py)：一次性迁移脚本，将 `assets/concepts.json` 中所有 `annotation: str` 转换为 AnnotationDoc dict，并将 `version` 升级为 `"3.0"`。
+9. 新增 [tests/unit/test_annotation_doc.py](../tests/unit/test_annotation_doc.py)，覆盖 4 个核心函数的 13 个测试用例。
+10. 首页页脚版本更新为 `v3.0.0`，最后更新日期改为 `2026年4月26日`。
+
 ## 2026-04-23
 
 ### Refactor / Corpus pipeline unification — shared infra, concurrency, checkpoint

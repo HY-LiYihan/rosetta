@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+from app.domain.annotation_doc import spans_to_legacy_string
 from app.domain.annotation_format import extract_annotation_tokens
 from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.registry import get_provider
@@ -74,9 +75,11 @@ def load_samples(path: str | Path) -> list[ResearchSample]:
     return [_parse_sample(row, index) for index, row in enumerate(_read_jsonl(dataset_path), start=1)]
 
 
-def _annotation_signature(annotation: str | None) -> list[tuple[str, str, bool]]:
+def _annotation_signature(annotation) -> list[tuple[str, str, bool]]:
     if not annotation:
         return []
+    if isinstance(annotation, dict):
+        annotation = spans_to_legacy_string(annotation.get("layers", {}).get("spans", []))
     return sorted(
         (token["text"], token["label"], token["implicit"])
         for token in extract_annotation_tokens(annotation)

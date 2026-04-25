@@ -48,7 +48,12 @@ def _build_label_color_map(labels: list[str]) -> dict[str, tuple[str, str]]:
     return mapping
 
 
-def annotation_to_colored_html(annotation_text: str) -> str:
+def annotation_to_colored_html(annotation_text) -> str:
+    if not annotation_text:
+        return ""
+    if isinstance(annotation_text, dict):
+        from app.domain.annotation_doc import spans_to_legacy_string
+        annotation_text = spans_to_legacy_string(annotation_text.get("layers", {}).get("spans", []))
     if not annotation_text:
         return ""
 

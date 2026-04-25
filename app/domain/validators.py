@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.domain.annotation_doc import make_annotation_doc, validate_annotation_doc
 from app.domain.annotation_format import validate_annotation_markup
 from app.domain.schemas import (
     DATA_VERSION,
@@ -41,14 +42,32 @@ def normalize_example(example: dict, path_prefix: str) -> dict:
                 reason="缺少必需字段",
                 hint=f"在该示例补充 `{field}` 字段",
             )
-        _assert_type(example[field], expected_type, f"{path_prefix}.{field}")
+        if field != "annotation":
+            _assert_type(example[field], expected_type, f"{path_prefix}.{field}")
 
-    ok, reason = validate_annotation_markup(example["annotation"])
-    if not ok:
+    annotation = example["annotation"]
+    if isinstance(annotation, str):
+        ok, reason = validate_annotation_markup(annotation)
+        if not ok:
+            _raise_validation(
+                field=f"{path_prefix}.annotation",
+                reason=f"标注格式不合法: {reason}",
+                hint="使用 [原文]{概念标签}；隐含义使用 [!隐含义]{概念标签}",
+            )
+        annotation = make_annotation_doc(example["text"], annotation)
+    elif isinstance(annotation, dict):
+        ok, reason = validate_annotation_doc(annotation)
+        if not ok:
+            _raise_validation(
+                field=f"{path_prefix}.annotation",
+                reason=f"AnnotationDoc 格式不合法: {reason}",
+                hint="annotation 必须为合法的 AnnotationDoc dict",
+            )
+    else:
         _raise_validation(
             field=f"{path_prefix}.annotation",
-            reason=f"标注格式不合法: {reason}",
-            hint="使用 [原文]{概念标签}；隐含义使用 [!隐含义]{概念标签}",
+            reason="类型错误，必须为 str 或 dict",
+            hint="使用 [原文]{概念标签} 字符串，或合法的 AnnotationDoc dict",
         )
 
     if not example["explanation"].strip():
@@ -58,13 +77,11 @@ def normalize_example(example: dict, path_prefix: str) -> dict:
             hint="每个示例必须提供 explanation，用于说明标注依据",
         )
 
-    normalized = {
+    return {
         "text": example["text"],
-        "annotation": example["annotation"],
+        "annotation": annotation,
         "explanation": example["explanation"],
     }
-
-    return normalized
 
 
 def normalize_concept(concept: dict, index: int) -> dict:

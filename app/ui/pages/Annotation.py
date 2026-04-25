@@ -6,6 +6,7 @@ from app.infrastructure.llm.api_utils import (
     probe_available_platforms,
 )
 from app.domain.annotation_format import extract_annotation_tokens
+from app.domain.annotation_doc import spans_to_legacy_string
 from app.services.annotation_service import (
     build_history_export_filename,
     build_history_export_json,
@@ -27,6 +28,19 @@ from app.state.keys import (
     SELECTED_PLATFORM,
 )
 from app.ui.viewmodels.annotation_visualization import annotation_to_colored_html
+
+
+def _annotation_tokens(annotation) -> list[dict]:
+    if isinstance(annotation, dict):
+        return [{"text": s["text"], "label": s["label"], "implicit": s["implicit"]}
+                for s in annotation.get("layers", {}).get("spans", [])]
+    return extract_annotation_tokens(annotation)
+
+
+def _annotation_display_str(annotation) -> str:
+    if isinstance(annotation, dict):
+        return spans_to_legacy_string(annotation.get("layers", {}).get("spans", []))
+    return annotation or ""
 
 
 def _render_json_copy_button(json_text: str) -> None:
@@ -246,8 +260,8 @@ else:
                         )
                         st.json(parsed_result, expanded=False)
 
-                        annotation_text = parsed_result.get("annotation", "")
-                        tokens = extract_annotation_tokens(annotation_text)
+                        annotation_val = parsed_result.get("annotation", "")
+                        tokens = _annotation_tokens(annotation_val)
                         label_counter = Counter(t["label"] for t in tokens)
                         implicit_count = sum(1 for t in tokens if t["implicit"])
 
@@ -261,7 +275,7 @@ else:
                             st.metric("隐含标注数", implicit_count)
 
                         st.markdown("**标注可视化：**")
-                        visual_html = annotation_to_colored_html(annotation_text)
+                        visual_html = annotation_to_colored_html(annotation_val)
                         st.markdown(
                             f"<div style='line-height:1.9;font-size:1rem'>{visual_html}</div>",
                             unsafe_allow_html=True,
@@ -278,7 +292,7 @@ else:
                         # 显示详细内容
                         with st.expander("查看详细内容", expanded=True):
                             st.markdown(f"**文本：** {parsed_result.get('text', '')}")
-                            st.markdown(f"**标注分析：** {parsed_result.get('annotation', '')}")
+                            st.markdown(f"**标注分析：** {_annotation_display_str(annotation_val)}")
                             st.markdown(f"**解释说明：** {parsed_result.get('explanation', '')}")
                     else:
                         # 显示原始响应

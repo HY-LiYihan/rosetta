@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from app.domain.annotation_doc import make_annotation_doc, spans_to_legacy_string
 from app.domain.annotation_format import validate_annotation_markup
 
 
@@ -17,9 +18,12 @@ def build_annotation_prompt(concept: dict, input_text: str) -> str:
 
     examples_json = []
     for example in concept.get("examples", []):
+        ann = example["annotation"]
+        if isinstance(ann, dict):
+            ann = spans_to_legacy_string(ann.get("layers", {}).get("spans", []))
         example_dict = {
             "text": example["text"],
-            "annotation": example["annotation"],
+            "annotation": ann,
             "explanation": example.get("explanation", ""),
         }
         examples_json.append(json.dumps(example_dict, ensure_ascii=False))
@@ -75,6 +79,7 @@ def parse_annotation_response(raw_response: str) -> tuple[dict | None, str | Non
     if not ok:
         return None, f"标注格式不符合规范：{reason}，显示原始响应"
 
+    parsed["annotation"] = make_annotation_doc(parsed["text"], parsed["annotation"])
     return parsed, None
 
 

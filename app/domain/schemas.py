@@ -1,4 +1,4 @@
-DATA_VERSION = "2.0"
+DATA_VERSION = "3.0"
 
 REQUIRED_CONCEPT_FIELDS = {
     "name": str,
@@ -10,6 +10,6 @@ REQUIRED_CONCEPT_FIELDS = {
 
 REQUIRED_EXAMPLE_FIELDS = {
     "text": str,
-    "annotation": str,
+    "annotation": object,  # str (legacy) or dict (AnnotationDoc) — validated separately
     "explanation": str,
 }
