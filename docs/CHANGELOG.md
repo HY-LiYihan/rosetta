@@ -45,6 +45,13 @@
 3. 新增 [tests/unit/test_contrastive_retrieval.py](../tests/unit/test_contrastive_retrieval.py)，覆盖相似度、query 排除、similar/boundary 选择和字典化输出。
 4. 首页页脚版本更新为 `v3.6.0`。
 
+### Feature / Bootstrap label statistics and reflection plan
+
+1. 新增 [app/research/label_statistics.py](../app/research/label_statistics.py)，从 gold / high-confidence 样本统计 token 的 entity/context/other 分布。
+2. 新增 [app/research/reflection.py](../app/research/reflection.py)，基于统计结果生成 unseen token、possible false negative 与 boundary token 反思计划。
+3. 新增 [tests/unit/test_label_statistics.py](../tests/unit/test_label_statistics.py) 与 [tests/unit/test_reflection.py](../tests/unit/test_reflection.py)。
+4. 首页页脚版本更新为 `v3.7.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)

@@ -296,3 +296,14 @@ manifest.json
 - 基于轻量 lexical similarity 选择最相似样例。
 - 从剩余低相似样例中选择少量 boundary examples。
 - 输出结构区分 `similar` 与 `boundary`，后续可替换为 Embedding-3 检索而不改变上层接口。
+
+`v3.7.0` 已完成标签统计与反思计划层：
+
+1. `app/research/label_statistics.py`
+- 从 gold / high-confidence 样本统计 token 的 entity/context/other 分布。
+- 输出 entity/context/other probability，为 DEER 风格 label-guided retrieval 做准备。
+
+2. `app/research/reflection.py`
+- 基于统计结果生成反思计划。
+- 当前覆盖 unseen token、possible false negative、boundary token 三类风险。
+- 该层只生成计划，不直接调用模型，避免自动反思失控。
