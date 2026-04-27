@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-28
+
+### Docs / Core research idea archive
+
+1. 新增 [docs/ideas/CORE_ANNOTATION_BOOTSTRAP.md](./ideas/CORE_ANNOTATION_BOOTSTRAP.md)，单独记录“15 个金样例 + 一句话概念描述 + 自洽性主动 refinement + 对比式检索”的核心科研设想。
+2. 更新 [docs/README.md](./README.md)，新增 `Ideas` 文档入口，避免核心想法散落在对话中。
+3. 补充 human-in-the-loop uncertainty triage：低自洽 / 低自评样本优先进入专家批改队列，并以多候选选择题降低人工标注成本。
+4. 首页页脚版本更新为 `v3.1.0`，最后更新日期改为 `2026年4月28日`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)

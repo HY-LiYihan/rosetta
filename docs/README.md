@@ -19,11 +19,15 @@
 
 - [user/TUTORIAL.md](./user/TUTORIAL.md)
 
-## 3) 变更记录
+## 3) 核心想法（Ideas）
+
+- [ideas/CORE_ANNOTATION_BOOTSTRAP.md](./ideas/CORE_ANNOTATION_BOOTSTRAP.md)
+
+## 4) 变更记录
 
 - [CHANGELOG.md](./CHANGELOG.md)
 
-## 4) 规则
+## 5) 规则
 
 1. 先文档后代码。
 2. 代码改动必须同步更新文档。
