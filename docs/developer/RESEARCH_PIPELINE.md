@@ -7,6 +7,7 @@
 1. 将 PDF 中提出的“LLM-Assisted Iterative Annotation Framework”落为可执行的研究工程骨架。
 2. 优先支持 prompt 迭代、pilot audit、批处理推断、规则验证与冲突导出。
 3. 保证实验可复现：配置、prompt、检索示例、模型输出与验证结果全部落盘。
+4. 新增 Concept Bootstrap Pipeline，将“一句话概念描述 + 15 个金样例”扩展为可复核的大规模标注研究流程。
 
 ## 2. 当前实现范围（Initial Lab Build）
 
@@ -33,6 +34,10 @@
 - `build-index`: 预构建 `embedding-3` 的 CPU 向量索引缓存。
 - `run --mode batch`: 面向未标注数据的批处理推断。
 - `run --mode audit`: 面向带 gold 标签数据的审查模式，导出冲突样本。
+
+5. Concept Bootstrap Pipeline
+- 入口文档：[BOOTSTRAP_PIPELINE.md](./BOOTSTRAP_PIPELINE.md)
+- 面向低资源概念校准、自洽性估计、专家复核队列和实验报告。
 
 ## 3. 运行产物
 
@@ -109,7 +114,7 @@ python scripts/research/run_pipeline.py run \
 
 ## 6. 下一步演进
 
-1. 增加 self-consistency 不确定性估计（`k` 次采样 + 投票阈值）。
+1. 按 [BOOTSTRAP_PIPELINE.md](./BOOTSTRAP_PIPELINE.md) 推进 concept bootstrap。
 2. 增加 blind review 与 Kappa 统计。
 3. 增加 discrepancy attribution 报告。
 4. 将 CPU index 扩展为更大规模的 FAISS/HNSW 方案。

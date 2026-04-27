@@ -28,6 +28,14 @@ rosetta/
         recall.py
         compression.py
     research/
+      bootstrap_contracts.py
+      bootstrap_io.py
+      consistency.py
+      human_review.py
+      contrastive_retrieval.py
+      label_statistics.py
+      reflection.py
+      bootstrap_runner.py
       contracts.py
       config.py
       indexing.py
@@ -131,6 +139,7 @@ rosetta/
 
 9. `app/research`
 - 负责科研流水线骨架，不直接依赖页面层。
+- `bootstrap_*`: 负责“15 个金样例 + 概念描述 + 自洽性 + 专家复核”的 concept bootstrap 研究主线。
 - `config.py`: 研究任务配置解析。
 - `prompting.py`: 操作化定义、负向约束与动态 few-shot prompt 组装。
 - `indexing.py`: 基于 CPU 的向量索引构建、缓存与查询。
@@ -158,6 +167,7 @@ rosetta/
 1. `app/research/*` 与 `app/corpusgen/*` 保持平行，不互相 import。
 2. 允许共享的模块仅限通用基础设施，如 `app/infrastructure/llm/*`。
 3. 运行目录、脚本入口、配置模板、文档说明分别独立维护。
+4. Concept Bootstrap Pipeline 属于 `research` 增强，不允许反向依赖 `corpusgen`。
 
 ## 4. 核心数据流
 

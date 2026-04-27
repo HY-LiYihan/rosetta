@@ -9,6 +9,14 @@
 3. 补充 human-in-the-loop uncertainty triage：低自洽 / 低自评样本优先进入专家批改队列，并以多候选选择题降低人工标注成本。
 4. 首页页脚版本更新为 `v3.1.0`，最后更新日期改为 `2026年4月28日`。
 
+### Docs / Concept Bootstrap pipeline blueprint
+
+1. 新增 [docs/developer/BOOTSTRAP_PIPELINE.md](./developer/BOOTSTRAP_PIPELINE.md)，将核心想法抽象为项目级研究流水线。
+2. 更新 [docs/developer/ARCHITECTURE.md](./developer/ARCHITECTURE.md) 与 [docs/developer/RESEARCH_PIPELINE.md](./developer/RESEARCH_PIPELINE.md)，明确 bootstrap 属于 `research` 增强，且不依赖 `corpusgen`。
+3. 更新 [README.md](../README.md)、[docs/README.md](./README.md) 与 [docs/developer/README.md](./developer/README.md)，加入 Concept Bootstrap 入口。
+4. 明确 LLM prompt 标注格式与最终存储格式解耦：prompt 可用行内 `[span]{label}`，落盘统一为参考 Prodigy / spaCy span 表达的 JSONL。
+5. 首页页脚版本更新为 `v3.2.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)

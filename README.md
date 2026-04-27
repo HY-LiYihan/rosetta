@@ -11,6 +11,7 @@
 - **多平台模型支持**：支持 Kimi、DeepSeek 等多个 AI 平台，动态获取可用模型列表
 - **智能概念标注**：利用大语言模型自动标注复杂的语言学概念
 - **双科研流水线**：`research` 用于标注实验，`corpusgen` 用于指定领域/题材/语言的语料生成
+- **Concept Bootstrap**：用一句话概念描述和少量金样例迭代出可复核的大规模标注流程
 - **分步式 Corpus Studio**：从一句话 brief 出发，经标题确认、样稿确认、批量生成与 judge 评审，构建语料库
 - **交互式概念管理**：支持自定义概念定义、示例管理和分类
 - **数据持久化**：支持概念数据的导入导出和历史记录
@@ -140,6 +141,7 @@ ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 1. `research`
 - 面向标注实验、pilot audit、冲突导出。
 - 入口文档：[docs/developer/RESEARCH_PIPELINE.md](./docs/developer/RESEARCH_PIPELINE.md)
+- Concept Bootstrap 文档：[docs/developer/BOOTSTRAP_PIPELINE.md](./docs/developer/BOOTSTRAP_PIPELINE.md)
 - 入口脚本：`python scripts/research/run_pipeline.py ...`
 
 2. `corpusgen`
@@ -210,4 +212,4 @@ rosetta/
 
 ---
 
-**最后更新**: 2026年4月22日
+**最后更新**: 2026年4月28日

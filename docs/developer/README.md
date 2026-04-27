@@ -11,7 +11,8 @@
 5. [脚本职责](./SCRIPTS.md)
 6. [标注格式规范](./ANNOTATION_FORMAT.md)
 7. [研究流水线](./RESEARCH_PIPELINE.md)
-8. [语料生成流水线](./CORPUS_PIPELINE.md)
+8. [Concept Bootstrap Pipeline](./BOOTSTRAP_PIPELINE.md)
+9. [语料生成流水线](./CORPUS_PIPELINE.md)
 
 ## 推荐阅读顺序
 
@@ -22,10 +23,12 @@
 5. [SCRIPTS.md](./SCRIPTS.md)
 6. [ANNOTATION_FORMAT.md](./ANNOTATION_FORMAT.md)
 7. [RESEARCH_PIPELINE.md](./RESEARCH_PIPELINE.md)
-8. [CORPUS_PIPELINE.md](./CORPUS_PIPELINE.md)
+8. [BOOTSTRAP_PIPELINE.md](./BOOTSTRAP_PIPELINE.md)
+9. [CORPUS_PIPELINE.md](./CORPUS_PIPELINE.md)
 
 ## 当前状态
 
 1. Stage 1-5 已完成。
-2. Stage 6（可选存储升级）未开始。
-3. 默认协作策略：本地 commit，不 push（除非用户明确要求）。
+2. Stage 6 研究增强正在推进：Concept Bootstrap Pipeline。
+3. Stage 7（可选存储升级）未开始。
+4. 默认协作策略：本地 commit，不 push（除非用户明确要求）。

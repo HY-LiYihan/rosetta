@@ -116,6 +116,32 @@
 
 这个设计的核心是假设：好的标注 prompt 不是纯相似检索，而是“概念定义 + 相似支持 + 边界约束 + 失败记忆”的组合。
 
+## 4.1 标注输出格式与存储格式解耦
+
+模型实际标注时，不要求直接输出最终存储 JSONL。对于术语、实体、概念 span 这类任务，行内标注通常更适合模型：
+
+```text
+[heart failure]{Specific_Term}
+```
+
+最终落盘时再统一解析成 span JSONL：
+
+```json
+{
+  "text": "Patients with heart failure may receive ventricular assist devices.",
+  "spans": [
+    {
+      "start": 14,
+      "end": 27,
+      "text": "heart failure",
+      "label": "Specific_Term"
+    }
+  ]
+}
+```
+
+这个格式对齐已有 span annotation 工具生态，尤其是 Prodigy 的 `text + spans[start/end/label]` 设计，也和 spaCy 的字符 offset span 数据表达相近。Rosetta 不需要发明复杂格式，只需要坚持“prompt 友好、存储标准、转换可校验”。
+
 ## 5. 与 ALLabel 的关系
 
 ALLabel 的关键启发是：在标注预算有限时，不应该随机选择 demonstration pool，而应该主动选择最有价值的样本。
