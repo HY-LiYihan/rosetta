@@ -38,6 +38,13 @@
 3. 新增 [tests/unit/test_human_review.py](../tests/unit/test_human_review.py)，覆盖低置信队列、高置信跳过、任务字典化和候选排序。
 4. 首页页脚版本更新为 `v3.5.0`。
 
+### Feature / Bootstrap contrastive retrieval
+
+1. 新增 [app/research/contrastive_retrieval.py](../app/research/contrastive_retrieval.py)，支持对每条 query 同时选择相似样例与少量边界远例。
+2. 当前实现使用轻量 lexical similarity，保持可解释、低依赖；接口保留后续替换为 Embedding-3 CPU index 的空间。
+3. 新增 [tests/unit/test_contrastive_retrieval.py](../tests/unit/test_contrastive_retrieval.py)，覆盖相似度、query 排除、similar/boundary 选择和字典化输出。
+4. 首页页脚版本更新为 `v3.6.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)

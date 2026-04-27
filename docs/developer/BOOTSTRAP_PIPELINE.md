@@ -289,3 +289,10 @@ manifest.json
 - 将 `medium / low` 路由样本转成 `HumanReviewTask`。
 - 每个复核任务包含候选 A/B/C... 与固定手动修正选项。
 - 按 route 和 uncertainty score 生成优先级，低置信样本排在前面。
+
+`v3.6.0` 已完成对比式检索层：
+
+1. `app/research/contrastive_retrieval.py`
+- 基于轻量 lexical similarity 选择最相似样例。
+- 从剩余低相似样例中选择少量 boundary examples。
+- 输出结构区分 `similar` 与 `boundary`，后续可替换为 Embedding-3 检索而不改变上层接口。
