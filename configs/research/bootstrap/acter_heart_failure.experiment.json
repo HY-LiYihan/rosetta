@@ -1,0 +1,51 @@
+{
+  "name": "acter-heart-failure-bootstrap",
+  "dataset": {
+    "source": "ACTER",
+    "url": "https://termeval.ugent.be/acter-dataset/",
+    "language": "en",
+    "domain": "heart_failure",
+    "task": "term span annotation",
+    "labels": [
+      "Specific_Term",
+      "Common_Term",
+      "OOD_Term",
+      "Named_Entity"
+    ]
+  },
+  "storage_format": {
+    "name": "span_jsonl",
+    "reference_style": "Prodigy / spaCy span offsets",
+    "fields": ["id", "text", "spans", "metadata"]
+  },
+  "model_plan": {
+    "primary_platforms": ["kimi", "zhipuai"],
+    "sample_runs_per_item": 5,
+    "temperature_grid": [0.3, 0.7],
+    "judge_temperature": 0.2
+  },
+  "review_strategies": [
+    "random_review",
+    "uncertainty_first",
+    "hybrid_review"
+  ],
+  "baselines": [
+    "zero_shot_definition_only",
+    "fixed_15_shot_icl",
+    "similarity_only_retrieval",
+    "majority_vote_self_consistency",
+    "allabel_style_uncertainty_sampling",
+    "deer_style_label_guided_retrieval"
+  ],
+  "metrics": [
+    "span_precision",
+    "span_recall",
+    "span_f1",
+    "boundary_exact_match",
+    "label_exact_match",
+    "expert_review_rate",
+    "candidate_accept_rate",
+    "manual_rewrite_rate",
+    "high_confidence_audit_error_rate"
+  ]
+}

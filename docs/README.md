@@ -14,6 +14,7 @@
 - [developer/DEPLOYMENT.md](./developer/DEPLOYMENT.md)
 - [developer/RESEARCH_PIPELINE.md](./developer/RESEARCH_PIPELINE.md)
 - [developer/BOOTSTRAP_PIPELINE.md](./developer/BOOTSTRAP_PIPELINE.md)
+- [developer/BOOTSTRAP_EXPERIMENTS.md](./developer/BOOTSTRAP_EXPERIMENTS.md)
 - [developer/CORPUS_PIPELINE.md](./developer/CORPUS_PIPELINE.md)
 
 ## 2) 用户教程（User）

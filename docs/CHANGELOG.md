@@ -60,6 +60,16 @@
 4. 新增 [tests/unit/test_bootstrap_runner.py](../tests/unit/test_bootstrap_runner.py)。
 5. 首页页脚版本更新为 `v3.8.0`。
 
+### Feature / Bootstrap experiment templates
+
+1. 新增 ACTER heart failure 风格实验入口：
+- [acter_heart_failure.experiment.json](../configs/research/bootstrap/acter_heart_failure.experiment.json)
+- [acter_heart_failure.samples.example.jsonl](../configs/research/bootstrap/acter_heart_failure.samples.example.jsonl)
+- [acter_heart_failure.candidates.example.jsonl](../configs/research/bootstrap/acter_heart_failure.candidates.example.jsonl)
+2. 新增 [docs/developer/BOOTSTRAP_EXPERIMENTS.md](./developer/BOOTSTRAP_EXPERIMENTS.md)，记录 ACTER 优先实验、baselines、指标和真实实验建议。
+3. 更新 [docs/README.md](./README.md) 与 [docs/developer/README.md](./developer/README.md)，加入实验文档入口。
+4. 首页页脚版本更新为 `v3.9.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)
