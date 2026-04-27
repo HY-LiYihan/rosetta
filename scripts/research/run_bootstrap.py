@@ -21,6 +21,7 @@ def main() -> None:
     analyze.add_argument("--candidates", required=True, help="Path to candidate runs JSONL.")
     analyze.add_argument("--output-dir", default=".runtime/research/bootstrap", help="Output root directory.")
     analyze.add_argument("--run-name", default="bootstrap", help="Run name.")
+    analyze.add_argument("--experiment", default=None, help="Optional experiment config JSON.")
 
     args = parser.parse_args()
     if args.command == "analyze":
@@ -29,6 +30,7 @@ def main() -> None:
             candidates_path=args.candidates,
             output_dir=args.output_dir,
             run_name=args.run_name,
+            experiment_path=args.experiment,
         )
         print(json.dumps(manifest, ensure_ascii=False, indent=2))
 

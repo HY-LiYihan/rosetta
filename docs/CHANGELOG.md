@@ -70,6 +70,14 @@
 3. 更新 [docs/README.md](./README.md) 与 [docs/developer/README.md](./developer/README.md)，加入实验文档入口。
 4. 首页页脚版本更新为 `v3.9.0`。
 
+### Feature / Bootstrap report generation
+
+1. 新增 [app/research/bootstrap_report.py](../app/research/bootstrap_report.py)，将离线分析产物汇总为 `report.md`。
+2. 更新 [app/research/bootstrap_runner.py](../app/research/bootstrap_runner.py)，每次分析自动输出 `report.md`，并在 manifest 中记录 `report_path`。
+3. 更新 [scripts/research/run_bootstrap.py](../scripts/research/run_bootstrap.py)，`analyze` 子命令新增 `--experiment` 参数。
+4. 新增 [tests/unit/test_bootstrap_report.py](../tests/unit/test_bootstrap_report.py)，并更新 runner 测试确认报告落盘。
+5. 首页页脚版本更新为 `v3.10.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)

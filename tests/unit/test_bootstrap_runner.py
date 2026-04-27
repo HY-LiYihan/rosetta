@@ -55,6 +55,7 @@ class TestBootstrapRunner(unittest.TestCase):
             run_dir = Path(manifest["output_dir"])
 
             self.assertTrue((run_dir / "manifest.json").exists())
+            self.assertTrue((run_dir / "report.md").exists())
             self.assertTrue((run_dir / "consistency_scores.jsonl").exists())
             self.assertTrue((run_dir / "human_review_queue.jsonl").exists())
             self.assertGreater(manifest["review_task_count"], 0)

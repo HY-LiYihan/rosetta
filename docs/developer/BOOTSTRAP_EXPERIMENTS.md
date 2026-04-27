@@ -23,6 +23,7 @@ configs/research/bootstrap/
 python scripts/research/run_bootstrap.py analyze \
   --samples configs/research/bootstrap/acter_heart_failure.samples.example.jsonl \
   --candidates configs/research/bootstrap/acter_heart_failure.candidates.example.jsonl \
+  --experiment configs/research/bootstrap/acter_heart_failure.experiment.json \
   --run-name acter-heart-failure
 ```
 

@@ -324,3 +324,12 @@ python scripts/research/run_bootstrap.py analyze \
   --candidates path/to/candidate_runs.jsonl \
   --run-name acter-heart-failure
 ```
+
+`v3.10.0` 已完成报告生成：
+
+1. `app/research/bootstrap_report.py`
+- 根据 manifest、consistency scores、review queue、label statistics 和 reflection plans 生成 `report.md`。
+- 报告包含 consistency route 分布、专家复核队列规模、top entity tokens、reflection item 类型统计、计划 baselines 与 metrics。
+
+2. `scripts/research/run_bootstrap.py`
+- `analyze` 子命令新增 `--experiment`，用于把实验配置中的 baselines / metrics 写入报告。

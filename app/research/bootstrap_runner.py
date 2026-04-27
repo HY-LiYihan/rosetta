@@ -11,6 +11,7 @@ from app.research.bootstrap_io import (
     read_samples_jsonl,
     sample_to_dict,
 )
+from app.research.bootstrap_report import build_bootstrap_report
 from app.research.consistency import consistency_score_to_dict, score_candidate_groups
 from app.research.contrastive_retrieval import contrastive_selection_to_dict, select_contrastive_examples
 from app.research.human_review import build_human_review_queue, human_review_task_to_dict
@@ -23,6 +24,7 @@ def run_bootstrap_analysis(
     candidates_path: str | Path,
     output_dir: str | Path = ".runtime/research/bootstrap",
     run_name: str = "bootstrap",
+    experiment_path: str | Path | None = None,
 ) -> dict:
     samples = read_samples_jsonl(samples_path)
     candidates = read_candidates_jsonl(candidates_path)
@@ -38,6 +40,7 @@ def run_bootstrap_analysis(
     label_stats = build_label_statistics(stats_samples)
     reflection_plans = _build_reflection_plans(sample_by_id, candidates, label_stats)
     retrieval_traces = _build_retrieval_traces(samples, stats_samples)
+    experiment = _read_optional_experiment(experiment_path)
 
     _write_jsonl(run_dir / "samples.normalized.jsonl", [sample_to_dict(sample) for sample in samples])
     _write_jsonl(run_dir / "candidate_runs.normalized.jsonl", [candidate_to_dict(candidate) for candidate in candidates])
@@ -51,6 +54,7 @@ def run_bootstrap_analysis(
         "run_name": run_name,
         "samples_path": str(Path(samples_path)),
         "candidates_path": str(Path(candidates_path)),
+        "experiment_path": str(Path(experiment_path)) if experiment_path else None,
         "output_dir": str(run_dir),
         "sample_count": len(samples),
         "candidate_count": len(candidates),
@@ -60,6 +64,16 @@ def run_bootstrap_analysis(
         "reflection_plan_count": len(reflection_plans),
         "generated_at": datetime.now().isoformat(timespec="seconds"),
     }
+    report = build_bootstrap_report(
+        manifest=manifest,
+        scores=scores,
+        review_queue=review_queue,
+        label_stats=label_stats,
+        reflection_plans=reflection_plans,
+        experiment=experiment,
+    )
+    (run_dir / "report.md").write_text(report, encoding="utf-8")
+    manifest["report_path"] = str(run_dir / "report.md")
     _write_json(run_dir / "manifest.json", manifest)
     return manifest
 
@@ -116,3 +130,9 @@ def _write_jsonl(path: Path, rows: list[dict]) -> None:
 def _write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _read_optional_experiment(path: str | Path | None) -> dict | None:
+    if path is None:
+        return None
+    return json.loads(Path(path).read_text(encoding="utf-8"))
