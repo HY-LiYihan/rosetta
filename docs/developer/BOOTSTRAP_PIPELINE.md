@@ -282,3 +282,10 @@ manifest.json
 - 计算 exact-match rate。
 - 汇总模型自评 confidence。
 - 输出 `high / medium / low` 路由，用于后续专家复核队列。
+
+`v3.5.0` 已完成专家复核队列层：
+
+1. `app/research/human_review.py`
+- 将 `medium / low` 路由样本转成 `HumanReviewTask`。
+- 每个复核任务包含候选 A/B/C... 与固定手动修正选项。
+- 按 route 和 uncertainty score 生成优先级，低置信样本排在前面。

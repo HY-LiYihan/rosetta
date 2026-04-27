@@ -31,6 +31,13 @@
 3. 新增 [tests/unit/test_consistency.py](../tests/unit/test_consistency.py)，覆盖空标注、部分重叠、完全一致、低一致性和分组评分。
 4. 首页页脚版本更新为 `v3.4.0`。
 
+### Feature / Bootstrap human review queue
+
+1. 新增 [app/research/human_review.py](../app/research/human_review.py)，将低自洽 / 中自洽候选组转换为专家复核任务。
+2. 每个复核任务包含候选 A/B/C... 与固定 `__manual__` 手动修正选项，把专家工作从开放式标注转为选择题优先。
+3. 新增 [tests/unit/test_human_review.py](../tests/unit/test_human_review.py)，覆盖低置信队列、高置信跳过、任务字典化和候选排序。
+4. 首页页脚版本更新为 `v3.5.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)
