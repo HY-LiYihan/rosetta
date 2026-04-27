@@ -259,3 +259,18 @@ manifest.json
 8. `v3.8.0`: Bootstrap runner 与 CLI。
 9. `v3.9.0`: ACTER / EMNLP 实验模板。
 10. `v3.10.0`: 报告生成、对比表与最终文档串联。
+
+## 11. 当前实现状态
+
+`v3.3.0` 已完成最小数据层：
+
+1. `app/research/bootstrap_contracts.py`
+- 定义 `BootstrapSpan`、`BootstrapSample`、`BootstrapCandidate`。
+- 校验 span offset 与原文一致。
+- 校验模型自评 confidence 必须在 `0-1`。
+
+2. `app/research/bootstrap_io.py`
+- 支持读取 span JSONL。
+- 支持从旧行内 `[span]{label}` gold annotation 迁移到 `spans`。
+- 写出时统一落盘为 span JSONL。
+- 支持候选标注记录的 JSONL 读写。

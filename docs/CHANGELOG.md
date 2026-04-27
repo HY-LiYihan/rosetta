@@ -17,6 +17,13 @@
 4. 明确 LLM prompt 标注格式与最终存储格式解耦：prompt 可用行内 `[span]{label}`，落盘统一为参考 Prodigy / spaCy span 表达的 JSONL。
 5. 首页页脚版本更新为 `v3.2.0`。
 
+### Feature / Bootstrap span JSONL contracts
+
+1. 新增 [app/research/bootstrap_contracts.py](../app/research/bootstrap_contracts.py)，定义 concept bootstrap 的 `BootstrapSpan`、`BootstrapSample` 与 `BootstrapCandidate` 数据契约。
+2. 新增 [app/research/bootstrap_io.py](../app/research/bootstrap_io.py)，支持 span JSONL 读写，并兼容旧的 `[span]{label}` 行内 gold annotation 输入。
+3. 新增 [tests/unit/test_bootstrap_io.py](../tests/unit/test_bootstrap_io.py)，覆盖 offset 校验、legacy markup 转 span、JSONL 往返和 candidate confidence 校验。
+4. 首页页脚版本更新为 `v3.3.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)
