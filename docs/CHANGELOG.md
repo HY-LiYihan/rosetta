@@ -52,6 +52,14 @@
 3. 新增 [tests/unit/test_label_statistics.py](../tests/unit/test_label_statistics.py) 与 [tests/unit/test_reflection.py](../tests/unit/test_reflection.py)。
 4. 首页页脚版本更新为 `v3.7.0`。
 
+### Feature / Bootstrap offline runner and CLI
+
+1. 新增 [app/research/bootstrap_runner.py](../app/research/bootstrap_runner.py)，将 normalized samples 与 candidate runs 串联成离线分析产物。
+2. 新增 [scripts/research/run_bootstrap.py](../scripts/research/run_bootstrap.py)，提供 `analyze` 子命令。
+3. Runner 当前输出 normalized samples、candidate runs、consistency scores、human review queue、label statistics、reflection plans、retrieval traces 与 manifest。
+4. 新增 [tests/unit/test_bootstrap_runner.py](../tests/unit/test_bootstrap_runner.py)。
+5. 首页页脚版本更新为 `v3.8.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)

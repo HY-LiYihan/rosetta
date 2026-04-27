@@ -38,6 +38,7 @@
 5. Concept Bootstrap Pipeline
 - 入口文档：[BOOTSTRAP_PIPELINE.md](./BOOTSTRAP_PIPELINE.md)
 - 面向低资源概念校准、自洽性估计、专家复核队列和实验报告。
+- 离线分析入口：`python scripts/research/run_bootstrap.py analyze --samples ... --candidates ...`
 
 ## 3. 运行产物
 

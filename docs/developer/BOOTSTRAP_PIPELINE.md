@@ -307,3 +307,20 @@ manifest.json
 - 基于统计结果生成反思计划。
 - 当前覆盖 unseen token、possible false negative、boundary token 三类风险。
 - 该层只生成计划，不直接调用模型，避免自动反思失控。
+
+`v3.8.0` 已完成离线 runner 与 CLI：
+
+1. `app/research/bootstrap_runner.py`
+- 输入 normalized samples 与 candidate runs。
+- 输出 consistency scores、human review queue、label statistics、reflection plans 与 retrieval traces。
+- 当前 runner 不直接调用模型，适合作为真实模型调用后的分析与实验汇总层。
+
+2. `scripts/research/run_bootstrap.py`
+- 提供 `analyze` 子命令：
+
+```bash
+python scripts/research/run_bootstrap.py analyze \
+  --samples path/to/samples.jsonl \
+  --candidates path/to/candidate_runs.jsonl \
+  --run-name acter-heart-failure
+```
