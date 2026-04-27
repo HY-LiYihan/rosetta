@@ -24,6 +24,13 @@
 3. 新增 [tests/unit/test_bootstrap_io.py](../tests/unit/test_bootstrap_io.py)，覆盖 offset 校验、legacy markup 转 span、JSONL 往返和 candidate confidence 校验。
 4. 首页页脚版本更新为 `v3.3.0`。
 
+### Feature / Bootstrap consistency scoring
+
+1. 新增 [app/research/consistency.py](../app/research/consistency.py)，基于多候选 span set 计算 pairwise span-F1、exact-match rate、平均模型自评 confidence 与 uncertainty score。
+2. 自洽性结果输出 `high / medium / low` 路由，为后续“低置信样本优先专家批改”提供稳定输入。
+3. 新增 [tests/unit/test_consistency.py](../tests/unit/test_consistency.py)，覆盖空标注、部分重叠、完全一致、低一致性和分组评分。
+4. 首页页脚版本更新为 `v3.4.0`。
+
 ## 2026-04-26
 
 ### Feature / Annotation format migration — `[原文]{标签}` → AnnotationDoc (v3.0)

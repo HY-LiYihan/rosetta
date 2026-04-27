@@ -274,3 +274,11 @@ manifest.json
 - 支持从旧行内 `[span]{label}` gold annotation 迁移到 `spans`。
 - 写出时统一落盘为 span JSONL。
 - 支持候选标注记录的 JSONL 读写。
+
+`v3.4.0` 已完成自洽性评分层：
+
+1. `app/research/consistency.py`
+- 计算同一样本多次候选之间的 pairwise span-F1。
+- 计算 exact-match rate。
+- 汇总模型自评 confidence。
+- 输出 `high / medium / low` 路由，用于后续专家复核队列。
