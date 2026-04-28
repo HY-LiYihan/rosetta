@@ -4,53 +4,81 @@ site_url: https://hy-liyihan.github.io/rosetta/
 repo_url: https://github.com/HY-LiYihan/rosetta
 repo_name: HY-LiYihan/rosetta
 edit_uri: edit/main/docs/
+docs_dir: docs
+site_dir: site
+use_directory_urls: true
 
 theme:
   name: material
   language: zh
+  features:
+    - content.action.edit
+    - content.code.copy
+    - navigation.indexes
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
   palette:
     - scheme: default
-      primary: indigo
-      accent: indigo
+      primary: teal
+      accent: cyan
       toggle:
         icon: material/brightness-7
         name: 切换到暗色模式
     - scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: teal
+      accent: cyan
       toggle:
         icon: material/brightness-4
         name: 切换到亮色模式
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.top
-    - search.suggest
-    - content.action.edit
 
 markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
   - toc:
       permalink: true
-  - pymdownx.highlight
+      toc_depth: 3
+  - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+plugins:
+  - search:
+      lang:
+        - zh
+        - en
 
 nav:
   - 首页: README.md
-  - 用户教程:
-      - 快速上手: user/TUTORIAL.md
-  - 开发文档:
+  - 快速使用:
+      - 用户教程: user/TUTORIAL.md
+  - 科研流程:
+      - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
+      - Concept Bootstrap: developer/BOOTSTRAP_PIPELINE.md
+      - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
+      - Research Pipeline: developer/RESEARCH_PIPELINE.md
+      - Corpus Pipeline: developer/CORPUS_PIPELINE.md
+  - 标注格式:
+      - 运行时标注格式: developer/ANNOTATION_FORMAT.md
+      - JSONL 存储格式: developer/ANNOTATION_JSONL_FORMAT.md
+  - 开发维护:
       - 开发者概览: developer/README.md
-      - 架构: developer/ARCHITECTURE.md
+      - 架构总览: developer/ARCHITECTURE.md
       - 工作流: developer/WORKFLOW.md
-      - 科研流水线: developer/RESEARCH_PIPELINE.md
-      - 语料生成流水线: developer/CORPUS_PIPELINE.md
-      - 标注格式规范: developer/ANNOTATION_FORMAT.md
-      - 部署: developer/DEPLOYMENT.md
       - 脚本说明: developer/SCRIPTS.md
       - 路线图: developer/ROADMAP.md
+  - 部署运维:
+      - Docker / Conda 部署: developer/DEPLOYMENT.md
   - 变更记录: CHANGELOG.md
-
-docs_dir: docs
 
 # Links to source code files outside docs/ are intentional (GitHub-only).
 # Suppress validation errors so the build doesn't fail on them.

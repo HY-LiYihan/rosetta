@@ -1,62 +1,109 @@
-# Rosetta: 智能语言学概念标注系统
+<div align="center">
 
-[![GitHub](https://img.shields.io/github/stars/HY-LiYihan/rosetta?style=social)](https://github.com/HY-LiYihan/rosetta)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docker](https://img.shields.io/badge/Docker-支持-blue)](https://www.docker.com/)
+# Rosetta
 
-**Rosetta** 是一个基于大语言模型的智能语言学概念标注与语料生成系统，为语言学研究者和教育工作者提供高效的科研工作流工具。
+面向语言学与术语研究的 LLM 辅助概念标注、语料生成与可复核实验流水线。
 
-## ✨ 核心功能
+<p>
+  <a href="https://hy-liyihan.github.io/rosetta/">
+    <img src="https://img.shields.io/badge/Docs-%E6%96%87%E6%A1%A3%E7%AB%99-c2410c?style=flat-square" alt="Docs">
+  </a>
+  <a href="https://github.com/HY-LiYihan/rosetta">
+    <img src="https://img.shields.io/badge/GitHub-HY--LiYihan%2Frosetta-111111?style=flat-square&logo=github" alt="GitHub">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11">
+  <img src="https://img.shields.io/badge/Streamlit-UI-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit">
+  <img src="https://img.shields.io/badge/Docker-%E6%94%AF%E6%8C%81-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
+</p>
 
-- **多平台模型支持**：支持 Kimi、DeepSeek 等多个 AI 平台，动态获取可用模型列表
-- **智能概念标注**：利用大语言模型自动标注复杂的语言学概念
-- **双科研流水线**：`research` 用于标注实验，`corpusgen` 用于指定领域/题材/语言的语料生成
-- **Concept Bootstrap**：用一句话概念描述和少量金样例迭代出可复核的大规模标注流程
-- **分步式 Corpus Studio**：从一句话 brief 出发，经标题确认、样稿确认、批量生成与 judge 评审，构建语料库
-- **交互式概念管理**：支持自定义概念定义、示例管理和分类
-- **数据持久化**：支持概念数据的导入导出和历史记录
-- **现代化界面**：基于 Streamlit 的响应式设计，支持深色主题
+</div>
 
-## 🚀 部署方式
+## 项目定位
 
-### 环境要求
-- Python 3.11（推荐）
-- 2GB+ 可用内存
-- 服务器环境需要 Docker + Docker Compose
+Rosetta 不是单一标注脚本，而是一个面向科研实验的轻量系统。它把“概念描述、少量金样例、LLM 多轮标注、人工复核、语义检索、语料生成、实验报告”拆成可确认、可回放、可评测的步骤。
 
-下方两种方式都统一从 `/opt/streamlit` 开始。
+当前重点支持两条彼此隔离的 pipeline：
+
+| Pipeline | 目标 | 入口 |
+| --- | --- | --- |
+| Concept Bootstrap / Research | 用一句话概念描述和少量金样例，迭代出可用于大规模标注的概念定义与标注流程 | [Concept Bootstrap](./docs/developer/BOOTSTRAP_PIPELINE.md) |
+| Corpus Generation / Corpus Studio | 从一句话需求开始，分步生成指定领域、题材、语言的语料库，并用 judge 做质量检查 | [Corpus Pipeline](./docs/developer/CORPUS_PIPELINE.md) |
+
+## 快速入口
+
+| 入口 | 地址 | 用途 |
+| --- | --- | --- |
+| 文档站首页 | [hy-liyihan.github.io/rosetta](https://hy-liyihan.github.io/rosetta/) | 所有文档的主入口，适合从这里开始 |
+| 本地文档索引 | [docs/README.md](./docs/README.md) | 在仓库内查看文档层级 |
+| 用户教程 | [docs/user/TUTORIAL.md](./docs/user/TUTORIAL.md) | 页面功能、概念管理、标注与 Corpus Studio 使用说明 |
+| 标注存储格式 | [docs/developer/ANNOTATION_JSONL_FORMAT.md](./docs/developer/ANNOTATION_JSONL_FORMAT.md) | Prodigy-compatible JSONL profile，长期数据格式 |
+| LLM 运行时标注格式 | [docs/developer/ANNOTATION_FORMAT.md](./docs/developer/ANNOTATION_FORMAT.md) | `[原文]{标签}` 与 `[!隐含义]{标签}`，用于 prompt 和解析 |
+| 开发者入口 | [docs/developer/README.md](./docs/developer/README.md) | 架构、工作流、脚本、部署、路线图 |
+| 变更记录 | [docs/CHANGELOG.md](./docs/CHANGELOG.md) | 每个阶段的功能、文档与版本变化 |
+
+## 核心能力
+
+| 能力 | 说明 |
+| --- | --- |
+| 多平台模型调用 | 支持 Kimi、DeepSeek、Qwen、Zhipu AI / BigModel 等 OpenAI-compatible API |
+| GLM-5 标注与生成 | 默认支持 `glm-5`，并关闭 thinking 以提升结构化输出稳定性 |
+| Embedding-3 CPU 检索 | 使用 `embedding-3` 生成向量，配合 numpy CPU index 做相似样例检索 |
+| Concept Bootstrap | 以 15 个左右金样例为起点，结合自洽性、低置信复核和对比式检索改写概念定义 |
+| Corpus Studio | Streamlit 页面中按 brief、标题、样稿、批量生成、judge 逐步确认 |
+| Prodigy-compatible JSONL | 长期标注存储沿用 `text / tokens / spans / relations / label / options / accept / answer / meta` |
+| Docker 与 Conda 双环境 | 生产环境优先 Docker，本地开发优先 Conda |
+
+## 系统结构
+
+| 层级 | 主要目录 | 职责 |
+| --- | --- | --- |
+| UI 层 | `app/ui/`, `streamlit_app.py` | Streamlit 页面、组件、viewmodel，不承载复杂业务规则 |
+| Service 层 | `app/services/` | 页面流程编排、LLM 调用、导入导出、Corpus Studio 工作流 |
+| Domain 层 | `app/domain/` | 数据 schema、标注格式解析、校验与迁移 |
+| Research 层 | `app/research/` | Concept Bootstrap、动态 few-shot、CPU index、复核队列、报告 |
+| Corpusgen 层 | `app/corpusgen/` | 独立语料生成 pipeline、memory 压缩、规划、生成、judge |
+| Infrastructure 层 | `app/infrastructure/` | 平台配置、凭据读取、OpenAI-compatible provider、运行开关 |
+| Scripts 层 | `scripts/` | 部署、运维、数据备份、research / corpusgen CLI |
+
+关键边界：`app/research/*` 与 `app/corpusgen/*` 平行隔离，不互相 import；二者只共享底层 LLM provider、配置和通用基础设施。
+
+## 快速开始
 
 ### 方式 A：服务器部署（Docker，推荐生产）
 
+环境要求：
+
+- Python 3.11 镜像环境由 Docker 构建提供
+- Docker + Docker Compose
+- 2GB+ 可用内存
+
 ```bash
-# 1) 创建目录（如果不存在）
 sudo mkdir -p /opt/streamlit
 cd /opt/streamlit
 
-# 2) 获取代码（目录不存在时 clone，存在时更新）
 if [ ! -d rosetta ]; then
   git clone https://github.com/HY-LiYihan/rosetta.git
 else
   git -C rosetta fetch --all --prune
   git -C rosetta pull --ff-only origin main
 fi
+
 cd /opt/streamlit/rosetta
-
-# 3) 准备环境变量（首次）
 cp -n .env.example .env
-# 默认运行目录：/opt/rosetta/runtime（含 data/backups/logs）
-
-# 4) 启动服务
 ./scripts/deploy/deploy.sh
-
-# 5) 健康检查
 ./scripts/ops/healthcheck.sh
 curl -f http://localhost:8501/_stcore/health
 ```
 
-访问地址：http://localhost:8501
+访问地址：
 
-日常运维命令：
+- 本机访问：`http://localhost:8501`
+- 服务器访问：`http://<server-ip>:8501`
+
+常用运维命令：
 
 ```bash
 cd /opt/streamlit/rosetta
@@ -70,147 +117,161 @@ ls -la /opt/rosetta/runtime
 ### 方式 B：本地开发（Conda，推荐开发）
 
 ```bash
-# 1) 创建目录（如果不存在）
-mkdir -p /opt/streamlit
-cd /opt/streamlit
+git clone https://github.com/HY-LiYihan/rosetta.git
+cd rosetta
 
-# 2) 获取代码（目录不存在时 clone，存在时更新）
-if [ ! -d rosetta ]; then
-  git clone https://github.com/HY-LiYihan/rosetta.git
-else
-  git -C rosetta fetch --all --prune
-  git -C rosetta pull --ff-only origin main
-fi
-cd /opt/streamlit/rosetta
-
-# 3) 创建并激活开发环境
 conda env create -f environment.yml
 conda activate rosetta-dev
 
-# 4) 运行测试（建议）
 python -m compileall app streamlit_app.py
 python -m unittest discover -s tests -p 'test_*.py'
 
-# 5) 启动应用
 streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 ```
 
-### Debug 模式（可选）
-
-用于在一段时间内留存操作轨迹与中间结果，便于排查问题。开启后：
-1. 首次访问会显示中英双语调试提示（5 秒倒计时后可关闭）。
-2. 操作与中间结果写入 `.runtime/logs/debug/*.jsonl`。
-3. 导入文件副本保存到 `.runtime/data/debug_uploads/`。
-
-启动方式（二选一）：
+如果本机已经有 `rosetta-dev` 环境，直接执行：
 
 ```bash
-# 方式 1：脚本参数（arg parse）
-streamlit run streamlit_app.py -- --debug
+conda activate rosetta-dev
+streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+```
 
-# 方式 2：环境变量
+### Debug 模式
+
+Debug 模式用于短期留存操作轨迹和中间结果，便于排查模型输出、JSON repair、导入文件和页面流程问题。
+
+```bash
+streamlit run streamlit_app.py -- --debug
+```
+
+也可以用环境变量启动：
+
+```bash
 ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 ```
 
-## 🎯 使用入口
+开启后会写入：
 
-1. 访问应用：`http://localhost:8501`
-2. 主要页面：
-- `首页`
-- `概念管理`
-- `智能标注`
-- `Corpus Studio`
-3. 详细的用户使用说明（概念管理、标注流程、标注格式与常见问题）请查看：
-- [用户教程](./docs/user/TUTORIAL.md)
+- `.runtime/logs/debug/*.jsonl`
+- `.runtime/data/debug_uploads/`
 
-### Corpus Studio（分步式语料生成）
+## 页面入口
 
-现在网站内也提供独立的 `Corpus Studio` 页面，适合按步骤生成一个新语料库：
+| 页面 | 用途 |
+| --- | --- |
+| 首页 | 查看系统状态、快速入口和项目概览 |
+| 概念管理 | 导入、创建、合并、替换概念与示例 |
+| 智能标注 | 选择概念和模型，对输入文本进行 LLM 辅助标注 |
+| Corpus Studio | 从一句话 brief 开始，分步确认并生成语料库 |
 
-1. 输入一句话 brief
-2. 生成标题候选与样稿方向
-3. 人工确认并微调策略
-4. 先生成 1-2 篇样稿
-5. 确认后批量生成完整语料
-6. 运行 judge 做质量评估
+## 科研脚本入口
 
-## 🧪 科研脚本流水线
+### Concept Bootstrap / Research
 
-当前仓库提供两条独立的科研脚本 pipeline，二者不共用 runner：
-
-1. `research`
-- 面向标注实验、pilot audit、冲突导出。
-- 入口文档：[docs/developer/RESEARCH_PIPELINE.md](./docs/developer/RESEARCH_PIPELINE.md)
-- Concept Bootstrap 文档：[docs/developer/BOOTSTRAP_PIPELINE.md](./docs/developer/BOOTSTRAP_PIPELINE.md)
-- 标注数据长期存储使用 `rosetta.prodigy_jsonl.v1`：每行保留 `id/text/tokens/spans/relations/label/options/accept/answer/meta`，具体规范见 [docs/developer/ANNOTATION_JSONL_FORMAT.md](./docs/developer/ANNOTATION_JSONL_FORMAT.md)。
-- 入口脚本：`python scripts/research/run_pipeline.py ...`
-
-2. `corpusgen`
-- 面向指定领域 / 题材 / 语言的语料生成。
-- 采用 `GLM-5 + Embedding-3 + numpy CPU index` 的压缩上下文流程。
-- 入口文档：[docs/developer/CORPUS_PIPELINE.md](./docs/developer/CORPUS_PIPELINE.md)
-- 入口脚本：
+面向标注实验、pilot audit、自洽性分析、低置信人工复核和报告输出。
 
 ```bash
-python scripts/corpusgen/prepare_seeds.py --config configs/corpusgen/domain/linguistics_zh_qa.json --dataset configs/corpusgen/domain/linguistics_zh_seed.example.jsonl
-python scripts/corpusgen/build_memory.py --config configs/corpusgen/domain/linguistics_zh_qa.json --chunks <seed_chunks.jsonl>
-python scripts/corpusgen/plan_corpus.py --config configs/corpusgen/domain/linguistics_zh_qa.json --memory <memory_records.jsonl>
-python scripts/corpusgen/generate_corpus.py --config configs/corpusgen/domain/linguistics_zh_qa.json --memory <memory_records.jsonl> --plan <tasks.jsonl>
+conda activate rosetta-dev
+python scripts/research/run_bootstrap.py analyze \
+  --experiment configs/research/bootstrap/acter_heart_failure.experiment.json
 ```
 
-### 项目结构
+继续阅读：
 
+- [Concept Bootstrap Pipeline](./docs/developer/BOOTSTRAP_PIPELINE.md)
+- [Bootstrap Experiments](./docs/developer/BOOTSTRAP_EXPERIMENTS.md)
+- [Research Pipeline](./docs/developer/RESEARCH_PIPELINE.md)
+
+### Corpus Generation / Corpusgen
+
+面向指定领域、题材、语言的语料生成，脚本 pipeline 与 `research` runner 分离。
+
+```bash
+conda activate rosetta-dev
+python scripts/corpusgen/prepare_seeds.py \
+  --config configs/corpusgen/domain/linguistics_zh_qa.json \
+  --dataset configs/corpusgen/domain/linguistics_zh_seed.example.jsonl
 ```
+
+完整流程见：
+
+- [Corpus Pipeline](./docs/developer/CORPUS_PIPELINE.md)
+
+## 数据与标注格式
+
+Rosetta 区分“LLM 运行时格式”和“长期存储格式”：
+
+| 格式 | 用途 | 文档 |
+| --- | --- | --- |
+| Inline markup | 给大模型输出和人工快速阅读，形如 `[heart failure]{Specific_Term}` | [ANNOTATION_FORMAT.md](./docs/developer/ANNOTATION_FORMAT.md) |
+| Prodigy-compatible JSONL | 长期存储、评测、导入导出和人工复核，支持 span、relation、分类与选择题 | [ANNOTATION_JSONL_FORMAT.md](./docs/developer/ANNOTATION_JSONL_FORMAT.md) |
+
+## 仓库结构
+
+```text
 rosetta/
-├── streamlit_app.py          # 主应用文件
-├── app/corpusgen/            # 语料生成流水线
-├── app/research/             # 标注研究流水线
-├── app/infrastructure/llm/api_utils.py  # LLM 统一调用入口
-├── configs/corpusgen/        # corpus generation 配置模板
-├── configs/research/         # research 配置模板
-├── assets/concepts.json      # 默认概念数据
-├── requirements.txt         # Python 依赖
-├── Dockerfile              # Docker 构建文件
-├── docker-compose.yml      # Docker Compose 配置
-├── README.md              # 项目文档
-└── assets/                # 静态资源
-    ├── rosetta-icon.png
-    └── rosetta-icon-whiteback.png
+├── streamlit_app.py
+├── app/
+│   ├── ui/                 # Streamlit 页面、组件、viewmodel
+│   ├── services/           # 页面流程和业务编排
+│   ├── domain/             # 数据结构、校验与标注格式
+│   ├── research/           # 标注科研 pipeline
+│   ├── corpusgen/          # 语料生成 pipeline
+│   └── infrastructure/     # LLM provider、凭据、运行配置
+├── configs/
+│   ├── research/           # research / bootstrap 配置模板
+│   └── corpusgen/          # corpusgen 配置模板
+├── scripts/
+│   ├── research/           # 标注实验 CLI
+│   ├── corpusgen/          # 语料生成 CLI
+│   ├── deploy/             # Docker 部署脚本
+│   ├── ops/                # 运维检查脚本
+│   └── data/               # 备份与恢复脚本
+├── docs/                   # MkDocs 文档站源文件
+├── tests/                  # 单元测试与集成测试
+├── Dockerfile
+├── docker-compose.yml
+├── environment.yml
+└── mkdocs.yml
 ```
 
-## 📄 许可证
+## 文档导航
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+| 文档 | 说明 |
+| --- | --- |
+| [文档站首页](https://hy-liyihan.github.io/rosetta/) | 在线文档入口 |
+| [用户教程](./docs/user/TUTORIAL.md) | 页面使用、概念管理、标注和 Corpus Studio |
+| [Concept Bootstrap](./docs/developer/BOOTSTRAP_PIPELINE.md) | 核心研究流程 |
+| [标注 JSONL 格式](./docs/developer/ANNOTATION_JSONL_FORMAT.md) | 长期存储格式来源、字段和示例 |
+| [架构总览](./docs/developer/ARCHITECTURE.md) | 分层边界与代码职责 |
+| [部署与运维](./docs/developer/DEPLOYMENT.md) | Docker 部署、更新、回滚、备份 |
+| [变更记录](./docs/CHANGELOG.md) | 版本演进与每阶段改动 |
 
-## 🤝 贡献
+## 开发协作
 
-欢迎提交 Issue 和 Pull Request！
+默认协作流程：
 
-1. Fork 本项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+```text
+branch -> small commit -> local validation -> review -> push / PR
+```
 
-## 📞 联系方式
+提交前至少执行：
 
-- 项目地址：https://github.com/HY-LiYihan/rosetta
-- 问题反馈：通过 GitHub Issues 提交
+```bash
+python -m compileall app streamlit_app.py
+python -m unittest discover -s tests -p 'test_*.py'
+for f in $(find scripts -type f -name '*.sh'); do bash -n "$f"; done
+```
 
-## 📚 架构与运维文档
+开发约束见：
 
-- 文档总入口：[docs/README.md](./docs/README.md)
-- 开发文档入口：[docs/developer/README.md](./docs/developer/README.md)
-- 用户教程：[docs/user/TUTORIAL.md](./docs/user/TUTORIAL.md)
-- 变更记录：[docs/CHANGELOG.md](./docs/CHANGELOG.md)
+- [docs/developer/WORKFLOW.md](./docs/developer/WORKFLOW.md)
+- [docs/developer/ARCHITECTURE.md](./docs/developer/ARCHITECTURE.md)
 
-## 🙏 致谢
+## License
 
-感谢以下开源项目和技术：
-- [Streamlit](https://streamlit.io/) - 优秀的交互式应用框架
-- [Kimi](https://www.moonshot.cn/) - 月之暗面大语言模型
-- [DeepSeek](https://www.deepseek.com/) - DeepSeek 大语言模型
+本项目采用 MIT 许可证，详见 [LICENSE](./LICENSE)。
 
 ---
 
-**最后更新**: 2026年4月28日
+最后更新：2026-04-28

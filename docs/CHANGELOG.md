@@ -2,6 +2,13 @@
 
 ## 2026-04-28
 
+### Docs / README and docs navigation refresh
+
+1. 重写 [README.md](../README.md)，参考 `venom_vnv` 的入口组织方式，将文档站地址、快速入口、系统结构、快速开始、pipeline 和文档导航前置。
+2. 重写 [docs/README.md](./README.md)，按用户路径、科研路径、数据格式、开发维护和当前阶段组织文档站首页。
+3. 重写 [docs/developer/README.md](./developer/README.md)，按工程架构、标注格式、科研流水线、部署运维分组开发文档。
+4. 更新 [mkdocs.yml](../mkdocs.yml)，补齐 Concept Bootstrap、Bootstrap Experiments、Annotation JSONL、核心想法等文档站导航入口，并启用更清晰的 Material 导航特性。
+
 ### Docs / Prodigy-compatible annotation JSONL format
 
 1. 新增 [docs/developer/ANNOTATION_JSONL_FORMAT.md](./developer/ANNOTATION_JSONL_FORMAT.md)，系统记录 Rosetta 标注 JSONL 的来源、字段语义、约束和多类型标注示例。
