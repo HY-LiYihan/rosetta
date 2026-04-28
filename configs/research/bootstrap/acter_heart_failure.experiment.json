@@ -14,10 +14,10 @@
     ]
   },
   "storage_format": {
-    "name": "annotation_jsonl",
-    "schema_version": "rosetta.annotation_jsonl.v1",
-    "reference_style": "AnnotationDoc layers with Prodigy / spaCy-style span offsets",
-    "fields": ["schema_version", "id", "text", "annotation.layers", "metadata"]
+    "name": "prodigy_compatible_jsonl",
+    "schema_version": "rosetta.prodigy_jsonl.v1",
+    "reference_style": "Prodigy task JSON with spaCy-style span offsets",
+    "fields": ["schema_version", "id", "text", "tokens", "spans", "relations", "label", "options", "accept", "answer", "meta"]
   },
   "model_plan": {
     "primary_platforms": ["kimi", "zhipuai"],

@@ -114,7 +114,7 @@ rosetta/
 - 维护数据 schema 与验证器。
 - 导入错误返回结构化字段：`field/reason/hint`。
 - 标注字符串格式由 [ANNOTATION_FORMAT.md](./ANNOTATION_FORMAT.md) 约束（`[原文]{标签}` / `[!隐含义]{标签}`）。
-- 长期存储格式使用 Annotation JSONL：`id/text/annotation.layers/metadata`。
+- 长期存储格式使用 Prodigy-compatible JSONL：`id/text/tokens/spans/relations/label/options/accept/answer/meta`。
 
 5. `app/services`
 - `concept_service`: 导入导出、预检摘要、合并替换。
@@ -141,7 +141,7 @@ rosetta/
 9. `app/research`
 - 负责科研流水线骨架，不直接依赖页面层。
 - `bootstrap_*`: 负责“15 个金样例 + 概念描述 + 自洽性 + 专家复核”的 concept bootstrap 研究主线。
-- `bootstrap_io.py`: 负责 Annotation JSONL 读写，并兼容旧顶层 `spans` 与行内 markup。
+- `bootstrap_io.py`: 负责 Prodigy-compatible JSONL 读写，并兼容旧顶层 `spans`、旧 `annotation.layers` 与行内 markup。
 - `config.py`: 研究任务配置解析。
 - `prompting.py`: 操作化定义、负向约束与动态 few-shot prompt 组装。
 - `indexing.py`: 基于 CPU 的向量索引构建、缓存与查询。

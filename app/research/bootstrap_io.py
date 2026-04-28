@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.domain.annotation_doc import ANNOTATION_DOC_VERSION, legacy_string_to_spans, spans_to_legacy_string
+from app.domain.annotation_doc import legacy_string_to_spans, spans_to_legacy_string
 from app.research.bootstrap_contracts import (
     BootstrapCandidate,
     BootstrapDataError,
@@ -31,20 +31,18 @@ def span_from_dict(payload: dict, source_text: str) -> BootstrapSpan:
 
 
 def span_to_dict(span: BootstrapSpan) -> dict:
-    row = {
+    return {
         "start": span.start,
         "end": span.end,
         "text": span.text,
         "label": span.label,
         "implicit": span.implicit,
     }
-    return row
 
 
-def span_to_layer_dict(span: BootstrapSpan, index: int) -> dict:
+def span_to_prodigy_dict(span: BootstrapSpan, index: int) -> dict:
     row = {"id": f"T{index + 1}"}
     row.update(span_to_dict(span))
-    row["features"] = {}
     return row
 
 
@@ -72,7 +70,7 @@ def sample_from_dict(payload: dict, index: int = 1) -> BootstrapSample:
         raise BootstrapDataError(f"line {index}: text 不能为空")
 
     sample_id = str(payload.get("id") or f"sample-{index:04d}").strip()
-    metadata = payload.get("metadata") or {}
+    metadata = payload.get("meta") or payload.get("metadata") or {}
     if not isinstance(metadata, dict):
         raise BootstrapDataError(f"line {index}: metadata 必须是对象")
 
@@ -90,11 +88,14 @@ def sample_from_dict(payload: dict, index: int = 1) -> BootstrapSample:
 
 def sample_to_dict(sample: BootstrapSample) -> dict:
     return {
-        "schema_version": "rosetta.annotation_jsonl.v1",
+        "schema_version": "rosetta.prodigy_jsonl.v1",
         "id": sample.id,
         "text": sample.text,
-        "annotation": annotation_doc_from_spans(sample.text, sample.spans),
-        "metadata": sample.metadata,
+        "tokens": [],
+        "spans": [span_to_prodigy_dict(span, index) for index, span in enumerate(sample.spans)],
+        "relations": [],
+        "answer": "accept",
+        "meta": sample.metadata,
     }
 
 
@@ -136,45 +137,31 @@ def candidate_from_dict(payload: dict, index: int = 1) -> BootstrapCandidate:
         model_confidence=normalize_confidence(payload.get("model_confidence")),
         uncertainty_reason=str(payload.get("uncertainty_reason", "")).strip(),
         raw_response=str(payload.get("raw_response", "")),
-        metadata=dict(payload.get("metadata") or {}),
+        metadata=dict(payload.get("meta") or payload.get("metadata") or {}),
     )
 
 
 def candidate_to_dict(candidate: BootstrapCandidate) -> dict:
     row = {
-        "schema_version": "rosetta.annotation_candidate.v1",
+        "schema_version": "rosetta.prodigy_candidate.v1",
         "sample_id": candidate.sample_id,
         "candidate_id": candidate.candidate_id,
+        "text": candidate.text,
+        "tokens": [],
+        "spans": [span_to_prodigy_dict(span, index) for index, span in enumerate(candidate.spans)],
+        "relations": [],
+        "answer": None,
         "runtime_annotation": {
             "format": "inline_markup.v1",
             "annotation_markup": candidate.annotation_markup,
         },
-        "annotation": annotation_doc_from_spans(candidate.text, candidate.spans),
         "explanation": candidate.explanation,
         "model_confidence": candidate.model_confidence,
         "uncertainty_reason": candidate.uncertainty_reason,
         "raw_response": candidate.raw_response,
-        "metadata": candidate.metadata,
+        "meta": candidate.metadata,
     }
-    if candidate.text:
-        row["text"] = candidate.text
     return row
-
-
-def annotation_doc_from_spans(source_text: str, spans: tuple[BootstrapSpan, ...]) -> dict:
-    return {
-        "version": ANNOTATION_DOC_VERSION,
-        "kind": "document_annotation",
-        "text": source_text,
-        "layers": {
-            "spans": [span_to_layer_dict(span, index) for index, span in enumerate(spans)],
-            "relations": [],
-            "attributes": [],
-            "comments": [],
-            "document_labels": [],
-        },
-        "provenance": {},
-    }
 
 
 def read_samples_jsonl(path: str | Path) -> list[BootstrapSample]:

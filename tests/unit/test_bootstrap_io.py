@@ -53,9 +53,11 @@ class TestBootstrapSamples(unittest.TestCase):
         sample = sample_from_dict({"id": "s1", "text": "heart failure", "gold_annotation": "[heart failure]{Term}"})
 
         row = sample_to_dict(sample)
-        self.assertEqual(row["schema_version"], "rosetta.annotation_jsonl.v1")
-        self.assertEqual(row["annotation"]["layers"]["spans"][0]["label"], "Term")
-        self.assertIn("relations", row["annotation"]["layers"])
+        self.assertEqual(row["schema_version"], "rosetta.prodigy_jsonl.v1")
+        self.assertEqual(row["spans"][0]["label"], "Term")
+        self.assertIn("relations", row)
+        self.assertEqual(row["answer"], "accept")
+        self.assertIn("meta", row)
         self.assertNotIn("gold_annotation", sample_to_dict(sample))
 
     def test_sample_accepts_annotation_doc_jsonl(self):
@@ -120,7 +122,7 @@ class TestBootstrapCandidates(unittest.TestCase):
         self.assertEqual(candidate.model_confidence, 0.75)
         self.assertEqual(candidate.spans[0].label, "Term")
 
-    def test_candidate_outputs_extensible_annotation_doc(self):
+    def test_candidate_outputs_prodigy_compatible_task(self):
         candidate = candidate_from_dict(
             {
                 "sample_id": "s1",
@@ -133,8 +135,12 @@ class TestBootstrapCandidates(unittest.TestCase):
             }
         )
 
-        row = candidate_from_dict(candidate_to_dict(candidate))
-        self.assertEqual(row.spans[0].label, "Term")
+        row = candidate_to_dict(candidate)
+        self.assertEqual(row["schema_version"], "rosetta.prodigy_candidate.v1")
+        self.assertEqual(row["spans"][0]["label"], "Term")
+        self.assertIn("relations", row)
+        self.assertIsNone(row["answer"])
+        self.assertEqual(candidate_from_dict(row).spans[0].label, "Term")
 
     def test_candidate_rejects_invalid_confidence(self):
         with self.assertRaises(BootstrapDataError):

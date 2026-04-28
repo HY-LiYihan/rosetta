@@ -2,6 +2,14 @@
 
 ## 2026-04-28
 
+### Docs / Prodigy-compatible annotation JSONL format
+
+1. 新增 [docs/developer/ANNOTATION_JSONL_FORMAT.md](./developer/ANNOTATION_JSONL_FORMAT.md)，系统记录 Rosetta 标注 JSONL 的来源、字段语义、约束和多类型标注示例。
+2. 将 Concept Bootstrap 新写出格式收敛为 `rosetta.prodigy_jsonl.v1` / `rosetta.prodigy_candidate.v1`，顶层沿用 `text / tokens / spans / relations / label / options / accept / answer / meta`。
+3. 更新 [app/research/bootstrap_io.py](../app/research/bootstrap_io.py) 与 ACTER 示例，使 normalized samples / candidates 写出 Prodigy-compatible JSONL，并继续兼容旧 `annotation.layers` 输入。
+4. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[docs/developer/README.md](./developer/README.md)、[BOOTSTRAP_PIPELINE.md](./developer/BOOTSTRAP_PIPELINE.md) 和 [ANNOTATION_FORMAT.md](./developer/ANNOTATION_FORMAT.md)。
+5. 首页页脚版本更新为 `v3.12.0`。
+
 ### Feature / Extensible annotation JSONL storage
 
 1. 将 Concept Bootstrap 新写出格式从顶层 `spans` 升级为 `rosetta.annotation_jsonl.v1`，使用 `annotation.layers.spans` 存储 span，并预留 `relations / attributes / comments / document_labels` 扩展层。

@@ -17,47 +17,9 @@
 2. 不再接受旧格式 `[...] (...)`。
 3. `!` 仅用于隐含语义，且 `!` 后必须有内容。
 
-## 2.1 存储格式（Annotation JSONL）
+## 2.1 长期存储格式
 
-LLM 运行时仍优先输出行内标注字符串，但长期存储统一使用可扩展 JSONL。每行一条文档：
-
-```json
-{
-  "schema_version": "rosetta.annotation_jsonl.v1",
-  "id": "sample-001",
-  "text": "Patients with heart failure may receive ventricular assist devices.",
-  "annotation": {
-    "version": "3.1",
-    "kind": "document_annotation",
-    "text": "Patients with heart failure may receive ventricular assist devices.",
-    "layers": {
-      "spans": [
-        {
-          "id": "T1",
-          "start": 14,
-          "end": 27,
-          "text": "heart failure",
-          "label": "Specific_Term",
-          "implicit": false,
-          "features": {}
-        }
-      ],
-      "relations": [],
-      "attributes": [],
-      "comments": [],
-      "document_labels": []
-    },
-    "provenance": {}
-  },
-  "metadata": {}
-}
-```
-
-约束：
-1. `annotation.layers.spans[*].start` 包含，`end` 不包含。
-2. 显性 span 必须满足 `text[start:end] == span.text`。
-3. `relations / attributes / comments / document_labels` 先允许为空数组，用于后续扩展。
-4. 旧的顶层 `spans` JSONL 只作为兼容输入，不再作为新写出格式。
+LLM 运行时仍优先输出行内标注字符串，但长期存储统一使用 Prodigy-compatible JSONL profile。完整规范见 [ANNOTATION_JSONL_FORMAT.md](./ANNOTATION_JSONL_FORMAT.md)。
 
 ## 3. 示例数据规范
 
