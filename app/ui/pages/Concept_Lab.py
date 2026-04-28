@@ -12,6 +12,7 @@ from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.providers import PLATFORM_CONFIGS
 from app.infrastructure.llm.registry import get_provider
 from app.runtime.store import RuntimeStore
+from app.ui.components.busy import busy_button, clear_busy
 from app.ui.examples import HARD_SCIENCE_TERM_EXAMPLE, hard_science_gold_jsonl
 from app.ui.i18n import t
 from app.workflows.bootstrap import gold_task_from_markup, revise_guideline, save_guideline_package, validate_gold_examples
@@ -20,6 +21,18 @@ st.title(t("concept_lab.title"))
 st.caption(t("concept_lab.caption"))
 
 store = RuntimeStore()
+
+
+def _set_flash(kind: str, message: str) -> None:
+    st.session_state["concept_lab_flash"] = {"kind": kind, "message": message}
+
+
+def _render_flash() -> None:
+    flash = st.session_state.pop("concept_lab_flash", None)
+    if not flash:
+        return
+    renderer = getattr(st, flash.get("kind", "info"), st.info)
+    renderer(flash.get("message", ""))
 
 
 def _lines(value: str) -> list[str]:
@@ -124,6 +137,8 @@ if st.session_state.get("concept_lab_project_mode") not in {"existing", "new"}:
     st.session_state["concept_lab_project_mode"] = "existing"
 if st.session_state.get("concept_validation_mode") not in {None, "local", "llm"}:
     st.session_state["concept_validation_mode"] = "local"
+
+_render_flash()
 
 if st.button(t("concept_lab.load_example"), use_container_width=True):
     _fill_example()
@@ -267,18 +282,33 @@ else:
             disabled=validation_mode == "local",
         )
 
-    if st.button(t("concept_lab.validate"), type="primary", use_container_width=True):
-        predictor = _make_predictor(platform_id, model_name) if validation_mode == "llm" else None
-        result = validate_gold_examples(store, selected_guideline, predictor=predictor)
-        st.session_state["concept_lab_validation_result"] = result
-        st.success(
-            t(
-                "concept_lab.validation_summary",
-                passed=len(result["passed"]),
-                failed=len(result["failed"]),
-                unstable=len(result["unstable"]),
+    validate_button_key = "concept_lab_validate_button"
+    if busy_button(
+        t("concept_lab.validate"),
+        key=validate_button_key,
+        pending_label=t("common.processing"),
+        type="primary",
+        use_container_width=True,
+    ):
+        try:
+            with st.spinner(t("concept_lab.validating_status")):
+                predictor = _make_predictor(platform_id, model_name) if validation_mode == "llm" else None
+                result = validate_gold_examples(store, selected_guideline, predictor=predictor)
+            st.session_state["concept_lab_validation_result"] = result
+            _set_flash(
+                "success",
+                t(
+                    "concept_lab.validation_summary",
+                    passed=len(result["passed"]),
+                    failed=len(result["failed"]),
+                    unstable=len(result["unstable"]),
+                ),
             )
-        )
+        except Exception as exc:
+            _set_flash("error", t("common.action_failed", error=exc))
+        finally:
+            clear_busy(validate_button_key)
+            st.rerun()
 
     result = st.session_state.get("concept_lab_validation_result")
     if result:
@@ -287,42 +317,70 @@ else:
         metrics[1].metric(t("common.failed"), len(result["failed"]))
         metrics[2].metric(t("concept_lab.unstable"), len(result["unstable"]))
         st.json(result)
-        if st.button(t("concept_lab.revise"), use_container_width=True):
-            revised = revise_guideline(guideline_payload, result)
-            st.session_state["concept_lab_revised_text"] = revised
+        revise_button_key = "concept_lab_revise_button"
+        if busy_button(
+            t("concept_lab.revise"),
+            key=revise_button_key,
+            pending_label=t("common.processing"),
+            use_container_width=True,
+        ):
+            try:
+                with st.spinner(t("concept_lab.revising_status")):
+                    revised = revise_guideline(guideline_payload, result)
+                st.session_state["concept_lab_revised_text"] = revised
+                st.session_state["concept_lab_revised_text_editor"] = revised
+                _set_flash("success", t("concept_lab.revised_ready"))
+            except Exception as exc:
+                _set_flash("error", t("common.action_failed", error=exc))
+            finally:
+                clear_busy(revise_button_key)
+                st.rerun()
 
     revised_text = st.session_state.get("concept_lab_revised_text")
     if revised_text:
-        revised_text = st.text_area(t("concept_lab.revised_draft"), value=revised_text, height=220)
-        if st.button(t("concept_lab.save_revised"), use_container_width=True):
-            updated = ConceptGuideline(
-                id=guideline_payload["id"],
-                project_id=guideline_payload["project_id"],
-                name=guideline_payload["name"],
-                brief=guideline_payload["brief"],
-                labels=tuple(guideline_payload.get("labels", [])),
-                boundary_rules=tuple(guideline_payload.get("boundary_rules", [])),
-                negative_rules=tuple(guideline_payload.get("negative_rules", [])),
-                output_format=guideline_payload.get("output_format", "[原文]{标签}"),
-                stable_description=revised_text,
-                status="draft",
-                metadata=dict(guideline_payload.get("metadata", {})),
-                created_at=guideline_payload.get("created_at", ""),
-            )
-            store.upsert_guideline(updated)
-            versions = store.list_concept_versions(guideline_id=selected_guideline, limit=1000)
-            next_version = max((int(row["payload"].get("version", 0)) for row in versions), default=0) + 1
-            store.upsert_concept_version(
-                ConceptVersion(
-                    id=f"concept-version-{uuid.uuid4().hex[:10]}",
-                    guideline_id=selected_guideline,
-                    version=next_version,
-                    description=revised_text,
-                    notes="manual revision draft",
-                )
-            )
-            st.success(t("concept_lab.revised_saved"))
-            st.rerun()
+        st.session_state.setdefault("concept_lab_revised_text_editor", revised_text)
+        revised_text = st.text_area(t("concept_lab.revised_draft"), height=220, key="concept_lab_revised_text_editor")
+        save_revision_button_key = "concept_lab_save_revision_button"
+        if busy_button(
+            t("concept_lab.save_revised"),
+            key=save_revision_button_key,
+            pending_label=t("common.processing"),
+            use_container_width=True,
+        ):
+            try:
+                with st.spinner(t("concept_lab.saving_revision_status")):
+                    updated = ConceptGuideline(
+                        id=guideline_payload["id"],
+                        project_id=guideline_payload["project_id"],
+                        name=guideline_payload["name"],
+                        brief=guideline_payload["brief"],
+                        labels=tuple(guideline_payload.get("labels", [])),
+                        boundary_rules=tuple(guideline_payload.get("boundary_rules", [])),
+                        negative_rules=tuple(guideline_payload.get("negative_rules", [])),
+                        output_format=guideline_payload.get("output_format", "[原文]{标签}"),
+                        stable_description=revised_text,
+                        status="draft",
+                        metadata=dict(guideline_payload.get("metadata", {})),
+                        created_at=guideline_payload.get("created_at", ""),
+                    )
+                    store.upsert_guideline(updated)
+                    versions = store.list_concept_versions(guideline_id=selected_guideline, limit=1000)
+                    next_version = max((int(row["payload"].get("version", 0)) for row in versions), default=0) + 1
+                    store.upsert_concept_version(
+                        ConceptVersion(
+                            id=f"concept-version-{uuid.uuid4().hex[:10]}",
+                            guideline_id=selected_guideline,
+                            version=next_version,
+                            description=revised_text,
+                            notes="manual revision draft",
+                        )
+                    )
+                _set_flash("success", t("concept_lab.revised_saved"))
+            except Exception as exc:
+                _set_flash("error", t("common.action_failed", error=exc))
+            finally:
+                clear_busy(save_revision_button_key)
+                st.rerun()
 
     st.divider()
     st.subheader(t("concept_lab.section_export"))

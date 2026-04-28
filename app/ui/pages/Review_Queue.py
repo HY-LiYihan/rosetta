@@ -6,6 +6,7 @@ from typing import Any
 import streamlit as st
 
 from app.runtime.store import RuntimeStore
+from app.ui.components.busy import any_busy, busy_button, clear_busy, is_busy
 from app.ui.i18n import t
 from app.workflows.review import apply_review_decision, get_next_review_task, list_review_queue
 
@@ -13,6 +14,21 @@ st.title(t("review_queue.title"))
 st.caption(t("review_queue.caption"))
 
 store = RuntimeStore()
+
+
+def _set_flash(kind: str, message: str) -> None:
+    st.session_state["review_queue_flash"] = {"kind": kind, "message": message}
+
+
+def _render_flash() -> None:
+    flash = st.session_state.pop("review_queue_flash", None)
+    if not flash:
+        return
+    renderer = getattr(st, flash.get("kind", "info"), st.info)
+    renderer(flash.get("message", ""))
+
+
+_render_flash()
 
 st.subheader(t("review_queue.filters"))
 col1, col2, col3 = st.columns([1, 1, 2])
@@ -100,58 +116,91 @@ note = st.text_area(t("review_queue.note"), height=80)
 hard_example = st.checkbox(t("review_queue.hard"), value=False)
 
 button_cols = st.columns(4)
-accept_clicked = button_cols[0].button(
+accept_button_key = f"review_queue_accept_{review['id']}"
+manual_button_key = f"review_queue_manual_{review['id']}"
+reject_button_key = f"review_queue_reject_{review['id']}"
+skip_button_key = f"review_queue_skip_{review['id']}"
+action_keys = (accept_button_key, manual_button_key, reject_button_key, skip_button_key)
+action_busy = any_busy(action_keys)
+
+accept_clicked = busy_button(
     t("review_queue.accept"),
+    key=accept_button_key,
+    pending_label=t("common.processing"),
+    container=button_cols[0],
     type="primary",
     use_container_width=True,
-    disabled=selected_option_id == "manual",
+    disabled=selected_option_id == "manual" or (action_busy and not is_busy(accept_button_key)),
 )
-manual_clicked = button_cols[1].button(t("review_queue.save_manual"), use_container_width=True)
-reject_clicked = button_cols[2].button(t("review_queue.reject"), use_container_width=True)
-skip_clicked = button_cols[3].button(t("review_queue.skip"), use_container_width=True)
+manual_clicked = busy_button(
+    t("review_queue.save_manual"),
+    key=manual_button_key,
+    pending_label=t("common.processing"),
+    container=button_cols[1],
+    use_container_width=True,
+    disabled=action_busy and not is_busy(manual_button_key),
+)
+reject_clicked = busy_button(
+    t("review_queue.reject"),
+    key=reject_button_key,
+    pending_label=t("common.processing"),
+    container=button_cols[2],
+    use_container_width=True,
+    disabled=action_busy and not is_busy(reject_button_key),
+)
+skip_clicked = busy_button(
+    t("review_queue.skip"),
+    key=skip_button_key,
+    pending_label=t("common.processing"),
+    container=button_cols[3],
+    use_container_width=True,
+    disabled=action_busy and not is_busy(skip_button_key),
+)
 
-try:
-    if accept_clicked:
-        apply_review_decision(
-            store,
-            review_id=review["id"],
-            decision="accept",
-            selected_option_id=selected_option_id,
-            note=note,
-            hard_example=hard_example,
-        )
-        st.success(t("review_queue.accepted"))
+if accept_clicked or manual_clicked or reject_clicked or skip_clicked:
+    active_button_key = next(key for key in action_keys if is_busy(key))
+    try:
+        with st.spinner(t("review_queue.saving_status")):
+            if accept_clicked:
+                apply_review_decision(
+                    store,
+                    review_id=review["id"],
+                    decision="accept",
+                    selected_option_id=selected_option_id,
+                    note=note,
+                    hard_example=hard_example,
+                )
+                _set_flash("success", t("review_queue.accepted"))
+            elif manual_clicked:
+                manual_spans = json.loads(manual_spans_text) if manual_spans_text.strip() else []
+                apply_review_decision(
+                    store,
+                    review_id=review["id"],
+                    decision="manual",
+                    selected_option_id="manual",
+                    manual_spans=manual_spans,
+                    note=note,
+                    hard_example=hard_example,
+                )
+                _set_flash("success", t("review_queue.manual_saved"))
+            elif reject_clicked:
+                apply_review_decision(
+                    store,
+                    review_id=review["id"],
+                    decision="reject",
+                    selected_option_id="reject",
+                    note=note,
+                    hard_example=True,
+                )
+                _set_flash("warning", t("review_queue.rejected"))
+            elif skip_clicked:
+                apply_review_decision(store, review_id=review["id"], decision="skip", note=note)
+                _set_flash("info", t("review_queue.skipped"))
+    except Exception as exc:
+        _set_flash("error", t("review_queue.save_failed", error=exc))
+    finally:
+        clear_busy(active_button_key)
         st.rerun()
-    if manual_clicked:
-        manual_spans = json.loads(manual_spans_text) if manual_spans_text.strip() else []
-        apply_review_decision(
-            store,
-            review_id=review["id"],
-            decision="manual",
-            selected_option_id="manual",
-            manual_spans=manual_spans,
-            note=note,
-            hard_example=hard_example,
-        )
-        st.success(t("review_queue.manual_saved"))
-        st.rerun()
-    if reject_clicked:
-        apply_review_decision(
-            store,
-            review_id=review["id"],
-            decision="reject",
-            selected_option_id="reject",
-            note=note,
-            hard_example=True,
-        )
-        st.warning(t("review_queue.rejected"))
-        st.rerun()
-    if skip_clicked:
-        apply_review_decision(store, review_id=review["id"], decision="skip", note=note)
-        st.info(t("review_queue.skipped"))
-        st.rerun()
-except Exception as exc:
-    st.error(t("review_queue.save_failed", error=exc))
 
 with st.expander(t("review_queue.debug"), expanded=False):
     st.json({"review": review, "task": task, "predictions": predictions}, expanded=False)

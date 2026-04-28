@@ -84,6 +84,32 @@ st.markdown(
         font-weight: 600 !important;
     }
 
+    .stButton > button:disabled,
+    .stDownloadButton > button:disabled,
+    div[data-testid="stButton"] > button:disabled,
+    div[data-testid="stDownloadButton"] > button:disabled,
+    [data-testid="stFormSubmitButton"] button:disabled {
+        background: linear-gradient(135deg, rgba(76, 111, 120, 0.75), rgba(43, 71, 75, 0.75)) !important;
+        border-color: rgba(136, 212, 225, 0.2) !important;
+        color: rgba(217, 232, 243, 0.72) !important;
+        cursor: default !important;
+        opacity: 0.78 !important;
+        pointer-events: none !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .stButton > button:disabled:hover,
+    .stDownloadButton > button:disabled:hover,
+    div[data-testid="stButton"] > button:disabled:hover,
+    div[data-testid="stDownloadButton"] > button:disabled:hover,
+    [data-testid="stFormSubmitButton"] button:disabled:hover {
+        background: linear-gradient(135deg, rgba(76, 111, 120, 0.75), rgba(43, 71, 75, 0.75)) !important;
+        color: rgba(217, 232, 243, 0.72) !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
     @media (max-width: 768px) {
         section[data-testid="stSidebar"] {
             width: 280px !important;

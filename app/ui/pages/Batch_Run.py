@@ -13,6 +13,7 @@ from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.providers import PLATFORM_CONFIGS
 from app.infrastructure.llm.registry import get_provider
 from app.runtime.store import RuntimeStore
+from app.ui.components.busy import busy_button, clear_busy
 from app.ui.i18n import t
 from app.workflows.annotation import run_batch_worker, submit_batch_annotation
 
@@ -20,6 +21,18 @@ st.title(t("batch_run.title"))
 st.caption(t("batch_run.caption"))
 
 store = RuntimeStore()
+
+
+def _set_flash(kind: str, message: str) -> None:
+    st.session_state["batch_run_flash"] = {"kind": kind, "message": message}
+
+
+def _render_flash() -> None:
+    flash = st.session_state.pop("batch_run_flash", None)
+    if not flash:
+        return
+    renderer = getattr(st, flash.get("kind", "info"), st.info)
+    renderer(flash.get("message", ""))
 
 
 def _make_mock_predictor(label: str):
@@ -90,6 +103,8 @@ def _start_worker(job_id: str, mode: str, platform_id: str, model: str, temperat
 
 projects = store.list_projects(limit=200)
 guidelines = store.list_guidelines(limit=200)
+
+_render_flash()
 
 if not projects or not guidelines:
     st.warning(t("batch_run.need_concept"))
@@ -166,23 +181,40 @@ platform_id = st.selectbox(
 model = st.text_input(t("common.model"), value=PLATFORM_CONFIGS[platform_id].default_model, disabled=run_mode != "llm")
 temperature = st.slider(t("common.temperature"), 0.0, 1.0, 0.3, 0.1, disabled=run_mode == "queue")
 
-if st.button(t("batch_run.submit"), type="primary", use_container_width=True, disabled=not tasks):
-    job = submit_batch_annotation(
-        store,
-        project_id=project_id,
-        guideline_id=guideline_id,
-        tasks=tasks,
-        sample_count=int(sample_count),
-        concurrency=int(concurrency),
-        review_threshold=float(review_threshold),
-        auto_sample_rate=float(auto_sample_rate),
-        metadata={"source_page": "batch_run"},
-    )
-    st.success(t("batch_run.submitted", job_id=job.id))
-    if run_mode != "queue":
-        _start_worker(job.id, run_mode, platform_id, model, float(temperature), default_label)
-        st.info(t("batch_run.worker_started"))
-    st.session_state["last_batch_job_id"] = job.id
+submit_button_key = "batch_run_submit_button"
+if busy_button(
+    t("batch_run.submit"),
+    key=submit_button_key,
+    pending_label=t("common.processing"),
+    type="primary",
+    use_container_width=True,
+    disabled=not tasks,
+):
+    try:
+        with st.spinner(t("batch_run.submitting_status")):
+            job = submit_batch_annotation(
+                store,
+                project_id=project_id,
+                guideline_id=guideline_id,
+                tasks=tasks,
+                sample_count=int(sample_count),
+                concurrency=int(concurrency),
+                review_threshold=float(review_threshold),
+                auto_sample_rate=float(auto_sample_rate),
+                metadata={"source_page": "batch_run"},
+            )
+            if run_mode != "queue":
+                _start_worker(job.id, run_mode, platform_id, model, float(temperature), default_label)
+        message = t("batch_run.submitted", job_id=job.id)
+        if run_mode != "queue":
+            message = f"{message} {t('batch_run.worker_started')}"
+        st.session_state["last_batch_job_id"] = job.id
+        _set_flash("success", message)
+    except Exception as exc:
+        _set_flash("error", t("common.action_failed", error=exc))
+    finally:
+        clear_busy(submit_button_key)
+        st.rerun()
 
 st.divider()
 st.subheader(t("batch_run.section_progress"))
