@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-04-29
+
+### Feature / Agentic annotation tool architecture v4.0.0
+
+1. 新增 `app/core`，定义 `Project / AnnotationTask / Prediction / ReviewTask / WorkflowRun / AgentStep` 统一领域模型。
+2. 新增 `app/agents`，提供 `AgentKernel`、`ToolRegistry`、`ContextEngine` 和 reusable `Skill`。
+3. 新增 `app/data`，提供 Prodigy-compatible JSONL round-trip 与 Label Studio edge adapter。
+4. 新增 `app/runtime`，提供 runtime paths 和 SQLite `RuntimeStore`，用于本地保存 projects / tasks / predictions / reviews / runs / artifacts / agent_steps。
+5. 新增 `app/workflows`，将 annotation / bootstrap / corpus / evaluation 作为用户可执行 workflow；旧 `research` / `corpusgen` 保留为 compatibility implementation。
+6. `Annotate` 流程改为通过 `AgentKernel` 执行，旧 `annotation_flow_service` 作为 UI 兼容入口。
+7. 新增统一 CLI [scripts/tool/rosetta_tool.py](../scripts/tool/rosetta_tool.py)，旧 `scripts/research/*` 与 `scripts/corpusgen/*` 保留并提示迁移。
+8. Streamlit 导航改为 `Dashboard / Projects / Guidelines / Annotate / Review / Corpus Builder / Runs / Export / Settings / Tutorial`。
+9. Dockerfile 改为构建期安装依赖，新增 `.dockerignore`，Compose 挂载 `/opt/rosetta/runtime`。
+10. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[ARCHITECTURE.md](./developer/ARCHITECTURE.md)、[SCRIPTS.md](./developer/SCRIPTS.md)、[DEPLOYMENT.md](./developer/DEPLOYMENT.md) 和 [用户教程](./user/TUTORIAL.md)。
+11. 首页页脚版本更新为 `v4.0.0`。
+
 ## 2026-04-28
 
 ### Docs / README and docs navigation refresh

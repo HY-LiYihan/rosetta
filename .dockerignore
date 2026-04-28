@@ -1,0 +1,10 @@
+.git
+.runtime
+.streamlit/secrets.toml
+site
+tmp
+__pycache__
+*.pyc
+*.pdf
+.DS_Store
+.env

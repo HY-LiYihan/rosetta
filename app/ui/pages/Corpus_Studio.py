@@ -103,7 +103,7 @@ def _reset_downstream(workflow: dict, keep_plan: bool = True) -> None:
     workflow["judge"] = None
 
 
-st.title("🧪 Corpus Studio")
+st.title("Corpus Builder")
 st.markdown(
     """
 <p style='color: var(--color-text); line-height: 1.7;'>

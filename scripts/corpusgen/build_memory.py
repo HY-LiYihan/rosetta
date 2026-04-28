@@ -5,12 +5,13 @@ import argparse
 import json
 import sys
 from pathlib import Path
+import warnings
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.corpusgen.runner import build_memory_bank
+from app.workflows.corpus import build_memory
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,7 +25,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    result = build_memory_bank(
+    warnings.warn(
+        "scripts/corpusgen/build_memory.py is a legacy entrypoint; use "
+        "scripts/tool/rosetta_tool.py corpus-memory instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    result = build_memory(
         spec_path=args.config,
         chunks_path=args.chunks,
         output_dir=args.output_dir,

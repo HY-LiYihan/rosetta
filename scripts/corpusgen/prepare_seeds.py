@@ -5,12 +5,13 @@ import argparse
 import json
 import sys
 from pathlib import Path
+import warnings
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.corpusgen.runner import prepare_seed_corpus
+from app.workflows.corpus import prepare
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,7 +25,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    result = prepare_seed_corpus(
+    warnings.warn(
+        "scripts/corpusgen/prepare_seeds.py is a legacy entrypoint; use "
+        "scripts/tool/rosetta_tool.py corpus-prepare instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    result = prepare(
         spec_path=args.config,
         dataset_path=args.dataset,
         output_dir=args.output_dir,

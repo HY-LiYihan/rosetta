@@ -2,7 +2,7 @@
 
 # Rosetta
 
-面向语言学与术语研究的 LLM 辅助概念标注、语料生成与可复核实验流水线。
+基于 Streamlit 的本地优先 Agentic Annotation Tool。
 
 <p>
   <a href="https://hy-liyihan.github.io/rosetta/">
@@ -23,65 +23,58 @@
 
 ## 项目定位
 
-Rosetta 不是单一标注脚本，而是一个面向科研实验的轻量系统。它把“概念描述、少量金样例、LLM 多轮标注、人工复核、语义检索、语料生成、实验报告”拆成可确认、可回放、可评测的步骤。
+Rosetta 现在定位为一个 **annotation tool**，不是 `research` 与 `corpusgen` 两条科研流水线的集合。它围绕标注工具的真实使用流程组织能力：
 
-当前重点支持两条彼此隔离的 pipeline：
+```text
+Project -> Guideline -> Annotate -> Review -> Runs -> Export
+```
 
-| Pipeline | 目标 | 入口 |
-| --- | --- | --- |
-| Concept Bootstrap / Research | 用一句话概念描述和少量金样例，迭代出可用于大规模标注的概念定义与标注流程 | [Concept Bootstrap](./docs/developer/BOOTSTRAP_PIPELINE.md) |
-| Corpus Generation / Corpus Studio | 从一句话需求开始，分步生成指定领域、题材、语言的语料库，并用 judge 做质量检查 | [Corpus Pipeline](./docs/developer/CORPUS_PIPELINE.md) |
+核心目标是让使用者用少量金样例和一句话概念描述启动项目，通过 agent-assisted annotation、低置信复核、上下文检索和可回放运行记录，逐步得到可用的数据集。
 
 ## 快速入口
 
 | 入口 | 地址 | 用途 |
 | --- | --- | --- |
-| 文档站首页 | [hy-liyihan.github.io/rosetta](https://hy-liyihan.github.io/rosetta/) | 所有文档的主入口，适合从这里开始 |
-| 本地文档索引 | [docs/README.md](./docs/README.md) | 在仓库内查看文档层级 |
-| 用户教程 | [docs/user/TUTORIAL.md](./docs/user/TUTORIAL.md) | 页面功能、概念管理、标注与 Corpus Studio 使用说明 |
-| 标注存储格式 | [docs/developer/ANNOTATION_JSONL_FORMAT.md](./docs/developer/ANNOTATION_JSONL_FORMAT.md) | Prodigy-compatible JSONL profile，长期数据格式 |
-| LLM 运行时标注格式 | [docs/developer/ANNOTATION_FORMAT.md](./docs/developer/ANNOTATION_FORMAT.md) | `[原文]{标签}` 与 `[!隐含义]{标签}`，用于 prompt 和解析 |
-| 开发者入口 | [docs/developer/README.md](./docs/developer/README.md) | 架构、工作流、脚本、部署、路线图 |
-| 变更记录 | [docs/CHANGELOG.md](./docs/CHANGELOG.md) | 每个阶段的功能、文档与版本变化 |
+| 文档站首页 | [hy-liyihan.github.io/rosetta](https://hy-liyihan.github.io/rosetta/) | 所有文档的主入口 |
+| 架构总览 | [docs/developer/ARCHITECTURE.md](./docs/developer/ARCHITECTURE.md) | 新 `core/workflows/agents/data/runtime` 分层 |
+| 用户教程 | [docs/user/TUTORIAL.md](./docs/user/TUTORIAL.md) | 页面使用方式 |
+| 标注存储格式 | [docs/developer/ANNOTATION_JSONL_FORMAT.md](./docs/developer/ANNOTATION_JSONL_FORMAT.md) | Prodigy-compatible JSONL profile |
+| 运行时标注格式 | [docs/developer/ANNOTATION_FORMAT.md](./docs/developer/ANNOTATION_FORMAT.md) | `[原文]{标签}` / `[!隐含义]{标签}` |
+| 统一 CLI | [scripts/tool/rosetta_tool.py](./scripts/tool/rosetta_tool.py) | workflow 命令入口 |
+| 变更记录 | [docs/CHANGELOG.md](./docs/CHANGELOG.md) | 版本与阶段记录 |
 
 ## 核心能力
 
 | 能力 | 说明 |
 | --- | --- |
-| 多平台模型调用 | 支持 Kimi、DeepSeek、Qwen、Zhipu AI / BigModel 等 OpenAI-compatible API |
-| GLM-5 标注与生成 | 默认支持 `glm-5`，并关闭 thinking 以提升结构化输出稳定性 |
-| Embedding-3 CPU 检索 | 使用 `embedding-3` 生成向量，配合 numpy CPU index 做相似样例检索 |
-| Concept Bootstrap | 以 15 个左右金样例为起点，结合自洽性、低置信复核和对比式检索改写概念定义 |
-| Corpus Studio | Streamlit 页面中按 brief、标题、样稿、批量生成、judge 逐步确认 |
-| Prodigy-compatible JSONL | 长期标注存储沿用 `text / tokens / spans / relations / label / options / accept / answer / meta` |
-| Docker 与 Conda 双环境 | 生产环境优先 Docker，本地开发优先 Conda |
+| Streamlit tool UI | `Projects / Guidelines / Annotate / Review / Corpus Builder / Runs / Export / Settings` |
+| Agent Kernel | 统一执行 goal、context、tool registry、policy，并记录 `WorkflowRun` 与 `AgentStep` |
+| Tool Registry | 将检索、标注、judge、JSON repair、导出等能力做成可组合 tool |
+| Context Engine | 支持 fresh tail、summary、retrieval chunks 和字符预算控制 |
+| Prodigy-compatible JSONL | 长期存储沿用 `text / tokens / spans / relations / label / options / accept / answer / meta` |
+| Runtime Store | 本地 SQLite 存储 `projects/tasks/predictions/reviews/runs/artifacts/agent_steps` |
+| 兼容旧能力 | 原 bootstrap、corpus generation 保留为 compatibility wrapper |
+| Docker 部署 | 构建期安装依赖，运行期挂载 `/opt/rosetta/runtime` |
 
-## 系统结构
+## 新系统结构
 
 | 层级 | 主要目录 | 职责 |
 | --- | --- | --- |
-| UI 层 | `app/ui/`, `streamlit_app.py` | Streamlit 页面、组件、viewmodel，不承载复杂业务规则 |
-| Service 层 | `app/services/` | 页面流程编排、LLM 调用、导入导出、Corpus Studio 工作流 |
-| Domain 层 | `app/domain/` | 数据 schema、标注格式解析、校验与迁移 |
-| Research 层 | `app/research/` | Concept Bootstrap、动态 few-shot、CPU index、复核队列、报告 |
-| Corpusgen 层 | `app/corpusgen/` | 独立语料生成 pipeline、memory 压缩、规划、生成、judge |
-| Infrastructure 层 | `app/infrastructure/` | 平台配置、凭据读取、OpenAI-compatible provider、运行开关 |
-| Scripts 层 | `scripts/` | 部署、运维、数据备份、research / corpusgen CLI |
-
-关键边界：`app/research/*` 与 `app/corpusgen/*` 平行隔离，不互相 import；二者只共享底层 LLM provider、配置和通用基础设施。
+| UI | `app/ui/` | Streamlit 页面、组件、viewmodel |
+| Core | `app/core/` | Project、AnnotationTask、Prediction、ReviewTask、WorkflowRun、AgentStep |
+| Workflows | `app/workflows/` | 用户可执行流程：annotation、bootstrap、corpus、evaluation |
+| Agents | `app/agents/` | AgentKernel、ToolRegistry、ContextEngine、Skill |
+| Data | `app/data/` | Prodigy JSONL、Label Studio edge adapter、导入导出 |
+| Runtime | `app/runtime/` | 本地路径、SQLite store、run/artifact/trace 持久化 |
+| Infrastructure | `app/infrastructure/` | LLM provider、embedding、config、debug |
+| Legacy | `app/research/`, `app/corpusgen/` | 暂时保留，供 wrappers 和旧脚本兼容 |
 
 ## 快速开始
 
-### 方式 A：服务器部署（Docker，推荐生产）
-
-环境要求：
-
-- Python 3.11 镜像环境由 Docker 构建提供
-- Docker + Docker Compose
-- 2GB+ 可用内存
+### Docker 部署
 
 ```bash
-sudo mkdir -p /opt/streamlit
+sudo mkdir -p /opt/streamlit /opt/rosetta/runtime
 cd /opt/streamlit
 
 if [ ! -d rosetta ]; then
@@ -95,26 +88,11 @@ cd /opt/streamlit/rosetta
 cp -n .env.example .env
 ./scripts/deploy/deploy.sh
 ./scripts/ops/healthcheck.sh
-curl -f http://localhost:8501/_stcore/health
 ```
 
-访问地址：
+访问地址：`http://localhost:8501`
 
-- 本机访问：`http://localhost:8501`
-- 服务器访问：`http://<server-ip>:8501`
-
-常用运维命令：
-
-```bash
-cd /opt/streamlit/rosetta
-./scripts/deploy/update.sh
-./scripts/data/backup.sh
-./scripts/ops/logs.sh
-docker compose ps
-ls -la /opt/rosetta/runtime
-```
-
-### 方式 B：本地开发（Conda，推荐开发）
+### Conda 开发
 
 ```bash
 git clone https://github.com/HY-LiYihan/rosetta.git
@@ -125,148 +103,62 @@ conda activate rosetta-dev
 
 python -m compileall app streamlit_app.py
 python -m unittest discover -s tests -p 'test_*.py'
-
 streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 ```
-
-如果本机已经有 `rosetta-dev` 环境，直接执行：
-
-```bash
-conda activate rosetta-dev
-streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
-```
-
-### Debug 模式
-
-Debug 模式用于短期留存操作轨迹和中间结果，便于排查模型输出、JSON repair、导入文件和页面流程问题。
-
-```bash
-streamlit run streamlit_app.py -- --debug
-```
-
-也可以用环境变量启动：
-
-```bash
-ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
-```
-
-开启后会写入：
-
-- `.runtime/logs/debug/*.jsonl`
-- `.runtime/data/debug_uploads/`
 
 ## 页面入口
 
 | 页面 | 用途 |
 | --- | --- |
-| 首页 | 查看系统状态、快速入口和项目概览 |
-| 概念管理 | 导入、创建、合并、替换概念与示例 |
-| 智能标注 | 选择概念和模型，对输入文本进行 LLM 辅助标注 |
-| Corpus Studio | 从一句话 brief 开始，分步确认并生成语料库 |
+| Dashboard | 系统概览、最近概念、快速入口 |
+| Projects | 创建标注项目，定义 schema 与标签 |
+| Guidelines | 概念描述、金样例和旧概念管理兼容入口 |
+| Annotate | 单条文本 agent-assisted annotation |
+| Review | 低置信、多候选、冲突样本复核队列 |
+| Corpus Builder | 从 brief 分步生成语料，作为数据工厂 workflow |
+| Runs | 查看本地 workflow run 与输出 artifact |
+| Export | 导出 Prodigy-compatible JSONL |
+| Settings | runtime 路径和模型平台配置 |
 
-## 科研脚本入口
+## CLI
 
-### Concept Bootstrap / Research
-
-面向标注实验、pilot audit、自洽性分析、低置信人工复核和报告输出。
-
-```bash
-conda activate rosetta-dev
-python scripts/research/run_bootstrap.py analyze \
-  --experiment configs/research/bootstrap/acter_heart_failure.experiment.json
-```
-
-继续阅读：
-
-- [Concept Bootstrap Pipeline](./docs/developer/BOOTSTRAP_PIPELINE.md)
-- [Bootstrap Experiments](./docs/developer/BOOTSTRAP_EXPERIMENTS.md)
-- [Research Pipeline](./docs/developer/RESEARCH_PIPELINE.md)
-
-### Corpus Generation / Corpusgen
-
-面向指定领域、题材、语言的语料生成，脚本 pipeline 与 `research` runner 分离。
+新的统一入口：
 
 ```bash
-conda activate rosetta-dev
-python scripts/corpusgen/prepare_seeds.py \
+python scripts/tool/rosetta_tool.py bootstrap-analyze \
+  --samples configs/research/bootstrap/acter_heart_failure.samples.example.jsonl \
+  --candidates configs/research/bootstrap/acter_heart_failure.candidates.example.jsonl \
+  --record
+
+python scripts/tool/rosetta_tool.py corpus-prepare \
   --config configs/corpusgen/domain/linguistics_zh_qa.json \
-  --dataset configs/corpusgen/domain/linguistics_zh_seed.example.jsonl
+  --dataset configs/corpusgen/domain/linguistics_zh_seed.example.jsonl \
+  --record
+
+python scripts/tool/rosetta_tool.py runs
 ```
 
-完整流程见：
+旧 `scripts/research/*` 和 `scripts/corpusgen/*` 仍可用，但会提示迁移到统一 CLI。
 
-- [Corpus Pipeline](./docs/developer/CORPUS_PIPELINE.md)
+## 数据格式
 
-## 数据与标注格式
+Rosetta 区分两层格式：
 
-Rosetta 区分“LLM 运行时格式”和“长期存储格式”：
-
-| 格式 | 用途 | 文档 |
-| --- | --- | --- |
-| Inline markup | 给大模型输出和人工快速阅读，形如 `[heart failure]{Specific_Term}` | [ANNOTATION_FORMAT.md](./docs/developer/ANNOTATION_FORMAT.md) |
-| Prodigy-compatible JSONL | 长期存储、评测、导入导出和人工复核，支持 span、relation、分类与选择题 | [ANNOTATION_JSONL_FORMAT.md](./docs/developer/ANNOTATION_JSONL_FORMAT.md) |
-
-## 仓库结构
-
-```text
-rosetta/
-├── streamlit_app.py
-├── app/
-│   ├── ui/                 # Streamlit 页面、组件、viewmodel
-│   ├── services/           # 页面流程和业务编排
-│   ├── domain/             # 数据结构、校验与标注格式
-│   ├── research/           # 标注科研 pipeline
-│   ├── corpusgen/          # 语料生成 pipeline
-│   └── infrastructure/     # LLM provider、凭据、运行配置
-├── configs/
-│   ├── research/           # research / bootstrap 配置模板
-│   └── corpusgen/          # corpusgen 配置模板
-├── scripts/
-│   ├── research/           # 标注实验 CLI
-│   ├── corpusgen/          # 语料生成 CLI
-│   ├── deploy/             # Docker 部署脚本
-│   ├── ops/                # 运维检查脚本
-│   └── data/               # 备份与恢复脚本
-├── docs/                   # MkDocs 文档站源文件
-├── tests/                  # 单元测试与集成测试
-├── Dockerfile
-├── docker-compose.yml
-├── environment.yml
-└── mkdocs.yml
-```
-
-## 文档导航
-
-| 文档 | 说明 |
+| 格式 | 用途 |
 | --- | --- |
-| [文档站首页](https://hy-liyihan.github.io/rosetta/) | 在线文档入口 |
-| [用户教程](./docs/user/TUTORIAL.md) | 页面使用、概念管理、标注和 Corpus Studio |
-| [Concept Bootstrap](./docs/developer/BOOTSTRAP_PIPELINE.md) | 核心研究流程 |
-| [标注 JSONL 格式](./docs/developer/ANNOTATION_JSONL_FORMAT.md) | 长期存储格式来源、字段和示例 |
-| [架构总览](./docs/developer/ARCHITECTURE.md) | 分层边界与代码职责 |
-| [部署与运维](./docs/developer/DEPLOYMENT.md) | Docker 部署、更新、回滚、备份 |
-| [变更记录](./docs/CHANGELOG.md) | 版本演进与每阶段改动 |
+| LLM runtime markup | 给模型输出和人工快速阅读，形如 `[heart failure]{Term}` |
+| Prodigy-compatible JSONL | 长期存储、评测、导入导出和人工复核 |
 
-## 开发协作
+存储格式见 [ANNOTATION_JSONL_FORMAT.md](./docs/developer/ANNOTATION_JSONL_FORMAT.md)。
 
-默认协作流程：
-
-```text
-branch -> small commit -> local validation -> review -> push / PR
-```
-
-提交前至少执行：
+## 开发检查
 
 ```bash
 python -m compileall app streamlit_app.py
 python -m unittest discover -s tests -p 'test_*.py'
 for f in $(find scripts -type f -name '*.sh'); do bash -n "$f"; done
+mkdocs build --strict --clean
 ```
-
-开发约束见：
-
-- [docs/developer/WORKFLOW.md](./docs/developer/WORKFLOW.md)
-- [docs/developer/ARCHITECTURE.md](./docs/developer/ARCHITECTURE.md)
 
 ## License
 
@@ -274,4 +166,4 @@ for f in $(find scripts -type f -name '*.sh'); do bash -n "$f"; done
 
 ---
 
-最后更新：2026-04-28
+最后更新：2026-04-29

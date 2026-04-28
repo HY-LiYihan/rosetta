@@ -4,12 +4,13 @@ import argparse
 import json
 import sys
 from pathlib import Path
+import warnings
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.research.bootstrap_runner import run_bootstrap_analysis
+from app.workflows.bootstrap import analyze_bootstrap
 
 
 def main() -> None:
@@ -25,7 +26,13 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.command == "analyze":
-        manifest = run_bootstrap_analysis(
+        warnings.warn(
+            "scripts/research/run_bootstrap.py is a legacy entrypoint; use "
+            "scripts/tool/rosetta_tool.py bootstrap-analyze instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        manifest = analyze_bootstrap(
             samples_path=args.samples,
             candidates_path=args.candidates,
             output_dir=args.output_dir,

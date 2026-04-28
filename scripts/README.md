@@ -1,36 +1,61 @@
 # Scripts
 
-Rosetta 脚本目录已按职责分层，保持旧入口兼容。
+Rosetta 脚本当前分为统一 tool CLI、部署运维脚本和 legacy 兼容脚本。
 
-## 目录结构
+## 统一 CLI
 
-- `scripts/deploy/`: 部署与更新
-- `scripts/ops/`: 运行维护
-- `scripts/data/`: 数据备份与恢复
-- `scripts/cron/`: 定时任务入口
-- `scripts/lib/`: 公共函数
+新入口：
 
-默认运行目录由 `ROSETTA_RUNTIME_DIR` 控制（默认 `/opt/rosetta/runtime`），统一包含：
+```bash
+python scripts/tool/rosetta_tool.py --help
+```
 
-- `data/`
-- `backups/`
-- `logs/`
+常用命令：
 
-## 常用命令
+```bash
+python scripts/tool/rosetta_tool.py bootstrap-analyze --samples <samples.jsonl> --candidates <candidates.jsonl> --record
+python scripts/tool/rosetta_tool.py corpus-prepare --config <spec.json> --dataset <seed.jsonl> --record
+python scripts/tool/rosetta_tool.py corpus-memory --config <spec.json> --chunks <seed_chunks.jsonl> --record
+python scripts/tool/rosetta_tool.py corpus-plan --config <spec.json> --memory <memory_records.jsonl> --record
+python scripts/tool/rosetta_tool.py corpus-generate --config <spec.json> --memory <memory_records.jsonl> --plan <tasks.jsonl> --record
+python scripts/tool/rosetta_tool.py runs
+```
+
+`--record` 会把 workflow run 写入本地 SQLite runtime store。
+
+## 部署与运维
 
 ```bash
 ./scripts/deploy/deploy.sh
 ./scripts/deploy/update.sh
 ./scripts/ops/healthcheck.sh
+./scripts/ops/logs.sh
+./scripts/ops/restart.sh
 ./scripts/data/backup.sh
 ./scripts/data/restore.sh <backup-file>
 ```
 
-## 兼容入口
+## Legacy 入口
 
-以下旧路径仍可使用：
+以下旧入口仍可用，但会提示迁移到统一 CLI：
 
-- `./scripts/daily_restart.sh`
-- `./scripts/monthly_rebuild.sh`
+1. `scripts/research/run_bootstrap.py`
+2. `scripts/corpusgen/prepare_seeds.py`
+3. `scripts/corpusgen/build_memory.py`
+4. `scripts/corpusgen/plan_corpus.py`
+5. `scripts/corpusgen/generate_corpus.py`
 
-它们会转发到 `scripts/cron/*`。
+## Runtime 目录
+
+默认运行目录由 `ROSETTA_RUNTIME_DIR` 控制：
+
+```text
+/opt/rosetta/runtime
+  data/
+  backups/
+  logs/
+  artifacts/
+  exports/
+  indexes/
+  rosetta.sqlite3
+```

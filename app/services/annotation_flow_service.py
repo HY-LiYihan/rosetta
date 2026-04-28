@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 from app.infrastructure.debug import log_debug_event
-from app.services.annotation_service import (
-    build_annotation_prompt,
-    build_history_entry,
-    parse_annotation_response,
-)
 from app.services.platform_service import get_chat_response
+from app.workflows.annotation import run_agentic_annotation
 
 
 def run_annotation(
@@ -36,37 +32,32 @@ def run_annotation(
     if not api_key:
         return {"ok": False, "error": f"平台 {selected_platform} 缺少 API Key"}
 
-    prompt = build_annotation_prompt(concept, input_text)
-    log_debug_event("annotation_prompt_built", {"prompt": prompt})
-    raw_result = get_chat_response(
+    def predictor(system_prompt: str, messages: list[dict], call_temperature: float) -> str:
+        return get_chat_response(
+            platform=selected_platform,
+            api_key=api_key,
+            model=selected_model,
+            messages=[{"role": "system", "content": system_prompt}, *messages],
+            temperature=call_temperature,
+        )
+
+    result = run_agentic_annotation(
+        concept=concept,
+        input_text=input_text,
+        predictor=predictor,
         platform=selected_platform,
-        api_key=api_key,
         model=selected_model,
-        messages=[
-            {"role": "system", "content": "你是一个专业的语言学助手，擅长文本标注和分析。"},
-            {"role": "user", "content": prompt},
-        ],
         temperature=temperature,
     )
-    parsed_result, parse_warning = parse_annotation_response(raw_result)
+    prompt = result.get("agent_result").state.get("prompt") if result.get("ok") else ""
+    log_debug_event("annotation_prompt_built", {"prompt": prompt})
     log_debug_event(
         "annotation_response_received",
-        {"raw_result": raw_result, "parsed_result": parsed_result, "parse_warning": parse_warning},
+        {
+            "raw_result": result.get("raw_result"),
+            "parsed_result": result.get("parsed_result"),
+            "parse_warning": result.get("parse_warning"),
+            "agent_ok": result.get("ok"),
+        },
     )
-
-    history_entry = build_history_entry(
-        concept_name=concept["name"],
-        input_text=input_text,
-        annotation_result=raw_result,
-        parsed_result=parsed_result,
-        platform=selected_platform,
-        model=selected_model,
-        temperature=temperature,
-    )
-    return {
-        "ok": True,
-        "raw_result": raw_result,
-        "parsed_result": parsed_result,
-        "parse_warning": parse_warning,
-        "history_entry": history_entry,
-    }
+    return result

@@ -1,5 +1,5 @@
 site_name: Rosetta
-site_description: LLM 辅助语言学概念标注与语料生成系统
+site_description: Streamlit-based local-first agentic annotation tool
 site_url: https://hy-liyihan.github.io/rosetta/
 repo_url: https://github.com/HY-LiYihan/rosetta
 repo_name: HY-LiYihan/rosetta
@@ -61,12 +61,12 @@ nav:
   - 首页: README.md
   - 快速使用:
       - 用户教程: user/TUTORIAL.md
-  - 科研流程:
+  - Workflows:
       - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
-      - Concept Bootstrap: developer/BOOTSTRAP_PIPELINE.md
+      - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
       - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
-      - Research Pipeline: developer/RESEARCH_PIPELINE.md
-      - Corpus Pipeline: developer/CORPUS_PIPELINE.md
+      - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md
+      - Corpus Builder: developer/CORPUS_PIPELINE.md
   - 标注格式:
       - 运行时标注格式: developer/ANNOTATION_FORMAT.md
       - JSONL 存储格式: developer/ANNOTATION_JSONL_FORMAT.md

@@ -1,0 +1,8 @@
+{
+  "default_chat_platform": "zhipuai",
+  "default_chat_model": "glm-5",
+  "default_embedding_platform": "zhipuai",
+  "default_embedding_model": "embedding-3",
+  "embedding_dimensions": 512,
+  "notes": "Profiles are configuration hints only. Secrets remain in .streamlit/secrets.toml or environment variables."
+}

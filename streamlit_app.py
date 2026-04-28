@@ -7,7 +7,7 @@ from app.ui.components.debug_notice import render_debug_notice
 
 # 页面配置
 st.set_page_config(
-    page_title="Rosetta - 智能标注与语料生成系统",
+    page_title="Rosetta - Agentic Annotation Tool",
     page_icon="assets/rosetta-icon-whiteback.png",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -104,14 +104,30 @@ st.markdown(
 )
 
 # 使用新的 Streamlit 导航 API
-home_page = st.Page("app/ui/pages/Home.py", title="首页", icon="🏠", default=True)
-tutorial_page = st.Page("app/ui/pages/Tutorial.py", title="使用教程", icon="📘")
-concept_management_page = st.Page("app/ui/pages/Concept_Management.py", title="概念管理", icon="📚")
-annotation_page = st.Page("app/ui/pages/Annotation.py", title="智能标注", icon="✏️")
-corpus_studio_page = st.Page("app/ui/pages/Corpus_Studio.py", title="Corpus Studio", icon="🧪")
+home_page = st.Page("app/ui/pages/Home.py", title="Dashboard", icon="🏠", default=True)
+projects_page = st.Page("app/ui/pages/Projects.py", title="Projects", icon="🗂️")
+guidelines_page = st.Page("app/ui/pages/Guideline_Studio.py", title="Guidelines", icon="📚")
+annotation_page = st.Page("app/ui/pages/Annotation.py", title="Annotate", icon="✏️")
+review_page = st.Page("app/ui/pages/Review.py", title="Review", icon="✅")
+corpus_builder_page = st.Page("app/ui/pages/Corpus_Studio.py", title="Corpus Builder", icon="🧪")
+runs_page = st.Page("app/ui/pages/Runs.py", title="Runs", icon="🧭")
+export_page = st.Page("app/ui/pages/Export.py", title="Export", icon="📦")
+settings_page = st.Page("app/ui/pages/Settings.py", title="Settings", icon="⚙️")
+tutorial_page = st.Page("app/ui/pages/Tutorial.py", title="Tutorial", icon="📘")
 
 navigation = st.navigation(
-    pages=[home_page, tutorial_page, concept_management_page, annotation_page, corpus_studio_page],
+    pages=[
+        home_page,
+        projects_page,
+        guidelines_page,
+        annotation_page,
+        review_page,
+        corpus_builder_page,
+        runs_page,
+        export_page,
+        settings_page,
+        tutorial_page,
+    ],
     position="sidebar",
     expanded=True,
 )

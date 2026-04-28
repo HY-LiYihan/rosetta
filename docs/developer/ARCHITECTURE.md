@@ -1,13 +1,20 @@
 # Architecture (Developer)
 
-更新时间: 2026-04-22
+更新时间: 2026-04-29
 
-## 1. 目标
+## 1. 目标定位
 
-1. UI 与业务逻辑解耦。
-2. 数据结构可校验、可迁移。
-3. LLM 平台适配可插拔。
-4. 双环境（Docker/Conda）一致可运行。
+Rosetta 是一个基于 Streamlit 的本地优先 Agentic Annotation Tool。
+
+当前架构不再把 `research` / `corpusgen` 作为产品边界。它们只作为历史兼容层保留；新功能应进入 `core / workflows / agents / data / runtime`。
+
+核心目标：
+
+1. Streamlit 是唯一正式 UI 基石。
+2. 标注任务、预测、复核、运行记录有统一领域模型。
+3. LLM 标注、检索、judge、JSON repair、导出通过 agent tools 编排。
+4. 长期标注格式保持 Prodigy-compatible JSONL。
+5. Docker 部署稳定，运行数据统一挂载到 `/opt/rosetta/runtime`。
 
 ## 2. 代码结构
 
@@ -15,185 +22,103 @@
 rosetta/
   streamlit_app.py
   app/
-    corpusgen/
-      contracts.py
-      specs.py
-      seeds.py
-      planner.py
-      generators.py
-      judges.py
-      runner.py
-      memory/
-        layers.py
-        recall.py
-        compression.py
-    research/
-      bootstrap_contracts.py
-      bootstrap_io.py
-      consistency.py
-      human_review.py
-      contrastive_retrieval.py
-      label_statistics.py
-      reflection.py
-      bootstrap_runner.py
-      contracts.py
-      config.py
-      indexing.py
-      prompting.py
-      retrieval.py
-      verifier.py
-      runner.py
-    ui/
-      components/
-        debug_notice.py
-      pages/
-        Home.py
-        Concept_Management.py
-        Annotation.py
-        Corpus_Studio.py
-      viewmodels/
-        home_viewmodel.py
-    state/
-      keys.py
-      session_state.py
-    domain/
-      models.py
-      schemas.py
-      validators.py
-    services/
-      concept_service.py
-      concept_flow_service.py
-      annotation_service.py
-      annotation_flow_service.py
-      corpus_studio_service.py
-      corpus_studio_flow_service.py
-      platform_service.py
-    repositories/
-      base.py
-      json_concept_repository.py
-    infrastructure/
-      config/
-        runtime_flags.py
-      debug/
-        runtime.py
-      llm/
-        api_utils.py
-        base.py
-        providers.py
-        registry.py
+    ui/                  # Streamlit 页面和组件
+    core/                # Project / AnnotationTask / Prediction / ReviewTask / WorkflowRun / AgentStep
+    workflows/           # 用户可执行流程
+      annotation/
+      bootstrap/
+      corpus/
+      evaluation/
+    agents/              # AgentKernel / ToolRegistry / ContextEngine / Skill
+    data/                # Prodigy JSONL / Label Studio edge adapter
+    runtime/             # RuntimePaths / SQLite RuntimeStore
+    infrastructure/      # LLM provider / config / debug
+    services/            # 旧 UI flow service 兼容层，逐步变薄
+    domain/              # 旧概念数据校验和 inline annotation parser
+    research/            # legacy compatibility
+    corpusgen/           # legacy compatibility
   scripts/
-    corpusgen/
+    tool/rosetta_tool.py # 新统一 CLI
+    research/            # legacy entrypoints
+    corpusgen/           # legacy entrypoints
     deploy/
     ops/
     data/
-    cron/
-    research/
-    lib/
-  configs/
-    corpusgen/
-    research/
-  tests/
-    unit/
-    integration/
 ```
 
-## 3. 关键层职责
+## 3. 分层职责
 
-1. `app/ui/pages/*`
-- 负责页面渲染与交互。
-- 调用 `state/service`，不实现复杂业务规则。
+| 层 | 职责 | 规则 |
+| --- | --- | --- |
+| `app/ui` | 页面、组件、展示状态 | 不实现复杂业务规则 |
+| `app/core` | 稳定领域模型 | 不依赖 Streamlit、不依赖 LLM provider |
+| `app/workflows` | 用户可执行流程 | 新功能优先进入这里 |
+| `app/agents` | agent kernel、tool registry、context engine | 不直接读写 UI state |
+| `app/data` | 标注格式与外部格式桥接 | Prodigy JSONL 是主格式 |
+| `app/runtime` | 本地路径、SQLite store、artifact/run/trace | 运行数据进入 `.runtime` 或 `/opt/rosetta/runtime` |
+| `app/infrastructure` | LLM、embedding、config、debug | provider 可插拔 |
+| `app/services` | 旧页面 flow 兼容入口 | 逐步收敛为 UI controller |
+| `app/research`, `app/corpusgen` | 旧实现 | 不再作为新架构边界 |
 
-2. `app/ui/viewmodels`
-- 负责页面展示数据聚合（如首页统计卡片）。
+## 4. 核心数据模型
 
-3. `app/state`
-- 统一 session state 初始化。
-- 通过 `keys.py` 统一维护状态键名。
+1. `Project`: 标注项目，包含 schema、labels、guidelines、metadata。
+2. `AnnotationTask`: Prodigy-compatible task，支持 `text/tokens/spans/relations/label/options/accept/answer/meta`。
+3. `Prediction`: LLM 或规则生成的候选标注，类似 Label Studio pre-annotation。
+4. `ReviewTask`: 面向人类专家的选择题/修正题。
+5. `WorkflowRun`: bootstrap、annotation、corpus、evaluation 等运行记录。
+6. `AgentStep`: 每一步 tool 调用、检索、judge、repair 的 trace。
 
-4. `app/domain`
-- 维护数据 schema 与验证器。
-- 导入错误返回结构化字段：`field/reason/hint`。
-- 标注字符串格式由 [ANNOTATION_FORMAT.md](./ANNOTATION_FORMAT.md) 约束（`[原文]{标签}` / `[!隐含义]{标签}`）。
-- 长期存储格式使用 Prodigy-compatible JSONL：`id/text/tokens/spans/relations/label/options/accept/answer/meta`。
+## 5. Agent 执行模型
 
-5. `app/services`
-- `concept_service`: 导入导出、预检摘要、合并替换。
-- `concept_flow_service`: 概念导入/创建的页面流程编排。
-- `annotation_service`: prompt 构建、响应解析、历史记录。
-- `annotation_flow_service`: 标注流程端到端执行编排。
-- `corpus_studio_service`: Streamlit 语料工作台的 prompt / 解析 / 规范化工具。
-- `corpus_studio_flow_service`: `brief -> titles -> samples -> corpus -> judge` 的页面化工作流编排。
-- `platform_service`: 平台探测、模型拉取、聊天编排。
+`AgentKernel.run(goal, context, tools, policy)` 是新 workflow 的统一执行入口：
 
-6. `app/repositories`
-- 数据访问抽象层。
-- 当前 `json_concept_repository` 负责 JSON 文件读取/回退策略。
+1. `AgentPolicy`: 模型、温度、多次采样、重试、人工确认策略。
+2. `ToolRegistry`: 注册并调用 `annotate_text`、`retrieve_examples`、`judge_prediction`、`repair_json`、`export_jsonl` 等工具。
+3. `ContextEngine`: 用 fresh tail、summary、retrieved chunks 组成有限预算上下文。
+4. `AgentResult`: 返回 `WorkflowRun`、最终 state、`AgentStep` trace 和错误信息。
 
-7. `app/infrastructure/llm`
-- 平台配置注册。
-- OpenAI 兼容 provider。
-- `api_utils.py` 放在该层，作为页面侧统一调用入口。
+当前 `Annotate` 已通过 `app.workflows.annotation.run_agentic_annotation` 进入 agent kernel。
 
-8. `app/infrastructure/config + debug`
-- `runtime_flags.py` 解析运行开关（如 `--debug` / `ROSETTA_DEBUG_MODE`）。
-- `debug/runtime.py` 负责调试日志与上传副本落盘。
+## 6. 数据与存储
 
-9. `app/research`
-- 负责科研流水线骨架，不直接依赖页面层。
-- `bootstrap_*`: 负责“15 个金样例 + 概念描述 + 自洽性 + 专家复核”的 concept bootstrap 研究主线。
-- `bootstrap_io.py`: 负责 Prodigy-compatible JSONL 读写，并兼容旧顶层 `spans`、旧 `annotation.layers` 与行内 markup。
-- `config.py`: 研究任务配置解析。
-- `prompting.py`: 操作化定义、负向约束与动态 few-shot prompt 组装。
-- `indexing.py`: 基于 CPU 的向量索引构建、缓存与查询。
-- `retrieval.py`: 提供 lexical/embedding 两种动态示例检索。
-- `verifier.py`: 研究批处理的规则验证与冲突检测。
-- `runner.py`: `preview/audit/batch` 级执行编排。
+长期标注存储：
 
-10. `app/corpusgen`
-- 负责语料生成流水线骨架，不直接依赖页面层，也不依赖 `app/research/*`。
-- `specs.py`: 语料 spec 解析。
-- `seeds.py`: seed 文档切分。
-- `planner.py`: 体裁与主题任务规划。
-- `memory/*`: memory record、CPU index 与压缩上下文打包。
-- `generators.py`: 生成 prompt 与 JSON 解析。
-- `judges.py`: 规则检查与去重过滤。
-- `runner.py`: `prepare/memory/plan/generate` 级执行编排。
+1. 主格式：Prodigy-compatible JSONL。
+2. Schema version：`rosetta.prodigy_jsonl.v1`。
+3. 模型运行时 markup 与落盘格式解耦。
 
-11. `app/ui/pages/Corpus_Studio.py`
-- 面向人工在页面中逐步确认的语料生成工作台。
-- 不直接实现复杂业务规则，调用 `corpus_studio_* service`。
-- 适合“从一句话需求开始”的交互式语料构建。
+本地 runtime store：
 
-## 3.1 科研流水线隔离约束
+1. 默认数据库：`.runtime/rosetta.sqlite3`。
+2. Docker 默认数据库：`/opt/rosetta/runtime/rosetta.sqlite3`。
+3. 表：`projects / tasks / predictions / reviews / runs / artifacts / agent_steps`。
 
-1. `app/research/*` 与 `app/corpusgen/*` 保持平行，不互相 import。
-2. 允许共享的模块仅限通用基础设施，如 `app/infrastructure/llm/*`。
-3. 运行目录、脚本入口、配置模板、文档说明分别独立维护。
-4. Concept Bootstrap Pipeline 属于 `research` 增强，不允许反向依赖 `corpusgen`。
+## 7. 用户流程
 
-## 4. 核心数据流
+```text
+Projects
+  -> Guidelines
+  -> Annotate
+  -> Review
+  -> Runs
+  -> Export
+```
 
-### 4.1 概念导入
+`Corpus Builder` 是数据工厂 workflow，用于生成或扩充待标注语料。
 
-1. 页面上传 JSON。
-2. `validate_import_payload` 校验结构。
-3. `build_import_preview` 输出版本、重复数、自动修复数。
-4. 用户确认后 `replace_concepts` 或 `merge_concepts`。
-5. 更新 `st.session_state.concepts` 与 `concepts_data_version`。
+## 8. 兼容策略
 
-### 4.2 文本标注
+1. `app/research/*` 和 `app/corpusgen/*` 保留，避免旧测试和脚本回归。
+2. 新入口放在 `app/workflows/*`。
+3. 旧 CLI 会打印迁移提示，并转发到新 workflow wrappers。
+4. UI 新导航使用 `Projects / Guidelines / Annotate / Review / Corpus Builder / Runs / Export / Settings`。
+5. 等新 UI 和 CLI 完全覆盖旧功能后，再删除或冻结 legacy 目录。
 
-1. 页面选概念/模型并输入文本。
-2. `build_annotation_prompt` 生成提示。
-3. `api_utils.get_chat_response` 转发到 `platform_service`。
-4. `parse_annotation_response` 解析 JSON 并回写历史。
+## 9. 修改建议
 
-## 5. 当前技术债
-
-1. 目前持久化仍是 JSON，数据库后端待 Stage 6。
-
-## 6. 更新项目建议
-
-1. 先读 [WORKFLOW.md](./WORKFLOW.md)。
-2. 再改 `app/services` / `app/domain`。
-3. 最后才动 `app/ui/pages/*`。
+1. 新领域对象写到 `app/core`。
+2. 新 LLM 流程写到 `app/workflows`，并通过 `app/agents` 编排。
+3. 新文件导入导出写到 `app/data`。
+4. 新持久化写到 `app/runtime`。
+5. 页面只做输入、展示和调用 workflow。
