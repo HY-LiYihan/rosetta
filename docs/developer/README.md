@@ -39,11 +39,13 @@
 
 ## 当前状态
 
-1. v4.0.0 新增 `app/core`、`app/workflows`、`app/agents`、`app/data`、`app/runtime`。
-2. `Annotate` 已通过 `AgentKernel` 执行。
-3. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
-4. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
-5. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
+1. v4.1.0 默认 UI 收敛为 5 个中文主页面：工作台、概念实验室、批量标注、审核队列、导出与可视化。
+2. 新增本地批量任务队列，使用 SQLite 存储 `jobs / job_items / job_events`。
+3. 新增概念阐释与金样例模型，使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
+4. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。
+5. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
+6. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
+7. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
 
 ## 修改建议
 

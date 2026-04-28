@@ -23,13 +23,13 @@
 
 ## 项目定位
 
-Rosetta 现在定位为一个 **annotation tool**，不是 `research` 与 `corpusgen` 两条科研流水线的集合。它围绕标注工具的真实使用流程组织能力：
+Rosetta 现在定位为一个 **本地优先标注工具**，不是 `research` 与 `corpusgen` 两条科研流水线的集合。它围绕真实标注路径组织能力：
 
 ```text
-Project -> Guideline -> Annotate -> Review -> Runs -> Export
+工作台 -> 概念实验室 -> 批量标注 -> 审核队列 -> 导出与可视化
 ```
 
-核心目标是让使用者用少量金样例和一句话概念描述启动项目，通过 agent-assisted annotation、低置信复核、上下文检索和可回放运行记录，逐步得到可用的数据集。
+核心目标是让使用者用一句话概念描述和 15 条金样例启动项目，通过批量模型标注、低置信复核、自洽性路由和可回放运行记录，逐步得到可用的数据集。
 
 ## 快速入口
 
@@ -47,12 +47,12 @@ Project -> Guideline -> Annotate -> Review -> Runs -> Export
 
 | 能力 | 说明 |
 | --- | --- |
-| Streamlit tool UI | `Projects / Guidelines / Annotate / Review / Corpus Builder / Runs / Export / Settings` |
+| Streamlit tool UI | 默认 5 个中文主页面：工作台、概念实验室、批量标注、审核队列、导出与可视化 |
 | Agent Kernel | 统一执行 goal、context、tool registry、policy，并记录 `WorkflowRun` 与 `AgentStep` |
 | Tool Registry | 将检索、标注、judge、JSON repair、导出等能力做成可组合 tool |
 | Context Engine | 支持 fresh tail、summary、retrieval chunks 和字符预算控制 |
 | Prodigy-compatible JSONL | 长期存储沿用 `text / tokens / spans / relations / label / options / accept / answer / meta` |
-| Runtime Store | 本地 SQLite 存储 `projects/tasks/predictions/reviews/runs/artifacts/agent_steps` |
+| Runtime Store | 本地 SQLite 存储项目、任务、候选、审核、批量任务、运行记录和产物 |
 | 兼容旧能力 | 原 bootstrap、corpus generation 保留为 compatibility wrapper |
 | Docker 部署 | 构建期安装依赖，运行期挂载 `/opt/rosetta/runtime` |
 
@@ -110,15 +110,13 @@ streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
 
 | 页面 | 用途 |
 | --- | --- |
-| Dashboard | 系统概览、最近概念、快速入口 |
-| Projects | 创建标注项目，定义 schema 与标签 |
-| Guidelines | 概念描述、金样例和旧概念管理兼容入口 |
-| Annotate | 单条文本 agent-assisted annotation |
-| Review | 低置信、多候选、冲突样本复核队列 |
-| Corpus Builder | 从 brief 分步生成语料，作为数据工厂 workflow |
-| Runs | 查看本地 workflow run 与输出 artifact |
-| Export | 导出 Prodigy-compatible JSONL |
-| Settings | runtime 路径和模型平台配置 |
+| 工作台 | 系统概览、最近任务、待审核数量和主流程快捷入口 |
+| 概念实验室 | 创建标注项目，编辑概念阐释，维护 15 条金样例，验证并修订概念 |
+| 批量标注 | 上传 TXT / JSONL / CSV，自动分句和 tokenize，提交本地批量任务 |
+| 审核队列 | 按置信度阈值逐条展示待审核样本，支持候选选择、人工修正和疑难样例标记 |
+| 导出与可视化 | 查看统计、标签分布、自洽性分布，并导出 JSONL、报告和运行清单 |
+
+`Corpus Builder` 继续保留为高级语料生成能力，但不再进入默认主导航。
 
 ## CLI
 

@@ -1,146 +1,95 @@
+from __future__ import annotations
+
 import streamlit as st
-from app.state.keys import ANNOTATION_HISTORY, CONCEPTS, SELECTED_CONCEPT
-from app.state.session_state import ensure_core_state
-from app.ui.viewmodels.home_viewmodel import build_home_metrics
 
-# 页面标题
-st.title("Rosetta - Agentic Annotation Tool")
+from app.data.exporters import build_dataset_stats
+from app.runtime.paths import get_runtime_paths
+from app.runtime.store import RuntimeStore
 
-# 应用简介
-st.markdown("""
-<h3 style='color: var(--color-primary); margin-top: 0;'>欢迎使用 Rosetta</h3>
-<p style='color: var(--color-text); line-height: 1.6;'>
-    Rosetta 是一个基于 Streamlit 的本地优先标注工具。系统围绕 Project、Guideline、Annotate、Review、Runs 和 Export 组织，
-    用 agent kernel 串联模型调用、上下文检索、JSON 修复、质量评审和人工复核。
-</p>
-""", unsafe_allow_html=True)
+st.title("工作台")
+st.caption("从概念阐释、批量标注、人工审核到导出结果的本地工作入口。")
 
-# 初始化共享 session state
-ensure_core_state()
+store = RuntimeStore()
+paths = get_runtime_paths().ensure()
 
-# 快速统计卡片
-st.subheader("📊 快速统计")
+tasks = store.list_tasks(limit=10000)
+predictions = store.list_predictions(limit=10000)
+reviews = store.list_reviews(limit=10000)
+jobs = store.list_jobs(limit=10000)
+guidelines = store.list_guidelines(limit=1000)
+stats = build_dataset_stats(tasks, predictions, reviews, jobs)
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("待标注语料", stats["task_count"])
+col2.metric("候选标注", stats["prediction_count"])
+col3.metric("待审核", stats["pending_review_count"])
+col4.metric("批量任务", stats["job_count"])
 
-with col1:
-    metrics = build_home_metrics(st.session_state[CONCEPTS], st.session_state[ANNOTATION_HISTORY])
-    st.metric(
-        label="概念数量",
-        value=metrics["concept_count"],
-        delta=f"{metrics['custom_count']} 个自定义"
-    )
-
-with col2:
-    st.metric(
-        label="标注历史",
-        value=metrics["history_count"],
-        delta=metrics["history_delta"],
-    )
-
-with col3:
-    # 计算平均标注长度
-    if metrics["history_count"]:
-        st.metric(
-            label="平均标注长度",
-            value=f"{metrics['avg_length']:.0f} 字符",
-            delta="字符"
-        )
-    else:
-        st.metric(
-            label="平均标注长度",
-            value="0 字符",
-            delta="暂无数据"
-        )
-
-# 功能卡片
-st.subheader("核心功能")
-
-cols = st.columns(3)
-
-with cols[0]:
-    st.markdown("""
-      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
-          <div style='font-size: 2rem; margin-bottom: 0.8rem;'>🤖</div>
-          <h4 style='margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>
-            <a href="/Settings" target="_self" style="color: var(--color-primary); text-decoration: none;">多模型支持</a>
-          </h4>
-          <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>支持国内多个大语言模型平台，实时动态获取可用模型</p>
-      </div>
-    """, unsafe_allow_html=True)
-
-with cols[1]:
-    st.markdown("""
-      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
-          <div style='font-size: 2rem; margin-bottom: 0.8rem;'>📚</div>
-          <h4 style='margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>
-            <a href="/Guideline_Studio" target="_self" style="color: var(--color-primary); text-decoration: none;">Guideline Studio</a>
-          </h4>
-          <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>自定义语言学概念，支持编辑、导入导出，满足不同研究需求</p>
-      </div>
-    """, unsafe_allow_html=True)
-
-with cols[2]:
-    st.markdown("""
-      <div style='text-align: center; padding: 1.2rem; background-color: var(--color-card); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); height: 100%;'>
-          <div style='font-size: 2rem; margin-bottom: 0.8rem;'>✏️</div>
-          <h4 style='margin-bottom: 0.5rem; font-size: 1.1rem; padding-left: 1.1em;'>
-            <a href="/Annotation" target="_self" style="color: var(--color-primary); text-decoration: none;">智能标注</a>
-          </h4>
-          <p style='color: var(--color-text); line-height: 1.4; font-size: 0.9rem;'>利用大语言模型自动标注复杂的语言学概念，提高研究效率</p>
-      </div>
-    """, unsafe_allow_html=True)
-
-st.subheader("Agent Workflows")
-st.markdown("""
-<div style='padding: 1rem 1.2rem; background-color: rgba(99, 179, 237, 0.08); border-radius: 10px; border: 1px solid rgba(136, 212, 225, 0.2);'>
-  <p style='margin: 0 0 0.6rem 0; color: var(--color-primary); font-weight: 600;'>Corpus Builder</p>
-  <p style='margin: 0 0 0.8rem 0; color: var(--color-text); line-height: 1.6;'>
-    从一句话 brief 开始，按“策略规划 -> 标题确认 -> 样稿确认 -> 批量生成 -> judge”逐步完成语料库构建。
-    该功能现在作为 Rosetta workflow 的数据工厂，而不是独立 research pipeline。
-  </p>
-</div>
-""", unsafe_allow_html=True)
-if st.button("进入 Corpus Builder", use_container_width=True, key="go_corpus_studio"):
-    st.switch_page("app/ui/pages/Corpus_Studio.py")
-
-# 最近概念列表
-st.subheader("📋 最近使用的概念")
-
-if st.session_state[CONCEPTS]:
-    # 显示前5个概念
-    for i, concept in enumerate(st.session_state[CONCEPTS][:5]):
-        with st.expander(f"{concept['name']} - {concept.get('category', '未分类')}", expanded=False):
-            st.markdown(f"**提示词**: {concept['prompt'][:100]}..." if len(concept['prompt']) > 100 else f"**提示词**: {concept['prompt']}")
-            st.markdown(f"**样例数量**: {len(concept.get('examples', []))}")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button(f"使用此概念标注", key=f"use_concept_{i}"):
-                    st.session_state[SELECTED_CONCEPT] = concept['name']
-                    st.switch_page("app/ui/pages/Annotation.py")
-            with col2:
-                if st.button(f"编辑概念", key=f"edit_concept_{i}"):
-                    st.switch_page("app/ui/pages/Concept_Management.py")
-else:
-    st.info("暂无概念，请先添加概念")
-
-# 最近标注历史
-if st.session_state[ANNOTATION_HISTORY]:
-    st.subheader("📜 最近标注记录")
-    
-    for i, entry in enumerate(st.session_state[ANNOTATION_HISTORY][:3]):
-        with st.expander(f"{entry['timestamp']} - {entry['concept']}", expanded=False):
-            st.markdown(f"**平台**: {entry.get('platform', '未知')}")
-            st.markdown(f"**文本**: {entry['text'][:100]}..." if len(entry['text']) > 100 else f"**文本**: {entry['text']}")
-            st.markdown(f"**标注**: {entry['annotation'][:200]}..." if len(entry['annotation']) > 200 else f"**标注**: {entry['annotation']}")
-
-# 页脚
 st.divider()
-st.markdown("""
-<div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.2);'>
-    <p><strong>Rosetta - Agentic Annotation Tool</strong></p>
-    <p>版本: v4.0.0 | 最后更新: 2026年4月29日</p>
+
+st.subheader("主流程")
+flow_cols = st.columns(4)
+with flow_cols[0]:
+    st.markdown("**1. 概念实验室**")
+    st.write("写清楚概念阐释，维护 15 条金样例。")
+    if st.button("进入概念实验室", use_container_width=True):
+        st.switch_page("app/ui/pages/Concept_Lab.py")
+with flow_cols[1]:
+    st.markdown("**2. 批量标注**")
+    st.write("上传文本，切分为任务，提交本地队列。")
+    if st.button("进入批量标注", use_container_width=True):
+        st.switch_page("app/ui/pages/Batch_Run.py")
+with flow_cols[2]:
+    st.markdown("**3. 审核队列**")
+    st.write("按置信度阈值逐条确认低置信样本。")
+    if st.button("进入审核队列", use_container_width=True):
+        st.switch_page("app/ui/pages/Review_Queue.py")
+with flow_cols[3]:
+    st.markdown("**4. 导出与可视化**")
+    st.write("查看统计，并导出 JSONL 与报告。")
+    if st.button("进入导出页面", use_container_width=True):
+        st.switch_page("app/ui/pages/Export_View.py")
+
+st.divider()
+
+left, right = st.columns([1, 1])
+with left:
+    st.subheader("最近批量任务")
+    if jobs:
+        for row in jobs[:5]:
+            payload = row["payload"]
+            st.markdown(
+                f"- `{payload['id']}`：{payload['status']}，"
+                f"{payload.get('completed_items', 0)}/{payload.get('total_items', 0)} 已完成，"
+                f"{payload.get('review_items', 0)} 条待审核"
+            )
+    else:
+        st.info("还没有批量任务。先进入“批量标注”上传一小段文本即可创建。")
+
+with right:
+    st.subheader("最近概念")
+    if guidelines:
+        for row in guidelines[:5]:
+            payload = row["payload"]
+            label_text = "、".join(payload.get("labels", [])[:4]) or "未设置标签"
+            st.markdown(f"- **{payload['name']}**：{payload.get('status', 'draft')}，{label_text}")
+    else:
+        st.info("还没有概念阐释。先进入“概念实验室”创建一个概念。")
+
+st.divider()
+
+st.subheader("本地运行目录")
+st.code(str(paths.root), language="text")
+st.caption("SQLite、导出文件、运行日志和临时产物都会写入本地运行目录。")
+
+st.divider()
+st.markdown(
+    """
+<div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem;'>
+    <p><strong>Rosetta 本地优先标注工具</strong></p>
+    <p>版本: v4.1.0 | 最后更新: 2026年4月29日</p>
     <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a></p>
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)

@@ -4,14 +4,17 @@ import sys
 from app.infrastructure.config.runtime_flags import parse_runtime_flags
 from app.infrastructure.debug import configure_debug, is_debug_mode, log_debug_event
 from app.ui.components.debug_notice import render_debug_notice
+from app.ui.i18n import LANGUAGES, get_language, init_language, set_language, t
 
 # 页面配置
 st.set_page_config(
-    page_title="Rosetta - Agentic Annotation Tool",
+    page_title="Rosetta 标注工具",
     page_icon="assets/rosetta-icon-whiteback.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+init_language()
 
 runtime_flags = parse_runtime_flags(sys.argv[1:])
 configure_debug(enabled=runtime_flags.debug_mode)
@@ -103,30 +106,38 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 使用新的 Streamlit 导航 API
-home_page = st.Page("app/ui/pages/Home.py", title="Dashboard", icon="🏠", default=True)
-projects_page = st.Page("app/ui/pages/Projects.py", title="Projects", icon="🗂️")
-guidelines_page = st.Page("app/ui/pages/Guideline_Studio.py", title="Guidelines", icon="📚")
-annotation_page = st.Page("app/ui/pages/Annotation.py", title="Annotate", icon="✏️")
-review_page = st.Page("app/ui/pages/Review.py", title="Review", icon="✅")
-corpus_builder_page = st.Page("app/ui/pages/Corpus_Studio.py", title="Corpus Builder", icon="🧪")
-runs_page = st.Page("app/ui/pages/Runs.py", title="Runs", icon="🧭")
-export_page = st.Page("app/ui/pages/Export.py", title="Export", icon="📦")
-settings_page = st.Page("app/ui/pages/Settings.py", title="Settings", icon="⚙️")
-tutorial_page = st.Page("app/ui/pages/Tutorial.py", title="Tutorial", icon="📘")
+with st.sidebar:
+    st.markdown(f"### {t('app_title')}")
+    with st.expander(t("settings"), expanded=False):
+        current_language = get_language()
+        selected_language = st.selectbox(
+            t("language"),
+            options=list(LANGUAGES.keys()),
+            index=list(LANGUAGES.keys()).index(current_language),
+            format_func=lambda key: LANGUAGES[key],
+            key="rosetta_language_selector",
+        )
+        if selected_language != current_language:
+            set_language(selected_language)
+            st.rerun()
+    with st.expander(t("advanced_tools"), expanded=False):
+        st.caption(t("corpus_builder"))
+        st.caption("高级语料生成能力暂时保留在兼容页面，可通过旧页面文件继续使用。")
+
+# 使用新的 Streamlit 导航 API：默认只展示 5 个主流程页面
+home_page = st.Page("app/ui/pages/Home.py", title=t("dashboard"), icon="🏠", default=True)
+concept_lab_page = st.Page("app/ui/pages/Concept_Lab.py", title=t("concept_lab"), icon="📚")
+batch_run_page = st.Page("app/ui/pages/Batch_Run.py", title=t("batch_run"), icon="✏️")
+review_queue_page = st.Page("app/ui/pages/Review_Queue.py", title=t("review_queue"), icon="✅")
+export_view_page = st.Page("app/ui/pages/Export_View.py", title=t("export_view"), icon="📦")
 
 navigation = st.navigation(
     pages=[
         home_page,
-        projects_page,
-        guidelines_page,
-        annotation_page,
-        review_page,
-        corpus_builder_page,
-        runs_page,
-        export_page,
-        settings_page,
-        tutorial_page,
+        concept_lab_page,
+        batch_run_page,
+        review_queue_page,
+        export_view_page,
     ],
     position="sidebar",
     expanded=True,

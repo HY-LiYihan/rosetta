@@ -123,6 +123,127 @@ class Project:
 
 
 @dataclass(frozen=True)
+class ConceptGuideline:
+    id: str
+    project_id: str
+    name: str
+    brief: str
+    labels: tuple[str, ...] = ()
+    boundary_rules: tuple[str, ...] = ()
+    negative_rules: tuple[str, ...] = ()
+    output_format: str = "[原文]{标签}"
+    stable_description: str = ""
+    status: str = "draft"
+    metadata: dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=utc_timestamp)
+
+    def validate(self) -> None:
+        require_text(self.id, "guideline.id")
+        require_text(self.project_id, "guideline.project_id")
+        require_text(self.name, "guideline.name")
+        require_text(self.brief, "guideline.brief")
+        if self.status not in {"draft", "validating", "stable", "needs_revision"}:
+            raise ValueError(f"unknown guideline status: {self.status}")
+
+
+@dataclass(frozen=True)
+class GoldExampleSet:
+    id: str
+    project_id: str
+    guideline_id: str
+    task_ids: tuple[str, ...]
+    target_count: int = 15
+    status: str = "draft"
+    metadata: dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=utc_timestamp)
+
+    def validate(self) -> None:
+        require_text(self.id, "gold_set.id")
+        require_text(self.project_id, "gold_set.project_id")
+        require_text(self.guideline_id, "gold_set.guideline_id")
+        if self.target_count <= 0:
+            raise ValueError("gold_set.target_count must be positive")
+        if self.status not in {"draft", "validating", "passed", "needs_revision"}:
+            raise ValueError(f"unknown gold set status: {self.status}")
+
+
+@dataclass(frozen=True)
+class ConceptVersion:
+    id: str
+    guideline_id: str
+    version: int
+    description: str
+    failed_task_ids: tuple[str, ...] = ()
+    unstable_task_ids: tuple[str, ...] = ()
+    notes: str = ""
+    created_at: str = field(default_factory=utc_timestamp)
+
+    def validate(self) -> None:
+        require_text(self.id, "concept_version.id")
+        require_text(self.guideline_id, "concept_version.guideline_id")
+        require_text(self.description, "concept_version.description")
+        if self.version <= 0:
+            raise ValueError("concept_version.version must be positive")
+
+
+@dataclass(frozen=True)
+class BatchJob:
+    id: str
+    project_id: str
+    guideline_id: str
+    status: str = "queued"
+    sample_count: int = 5
+    concurrency: int = 4
+    review_threshold: float = 0.75
+    auto_sample_rate: float = 0.05
+    total_items: int = 0
+    completed_items: int = 0
+    failed_items: int = 0
+    review_items: int = 0
+    metadata: dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=utc_timestamp)
+    updated_at: str = field(default_factory=utc_timestamp)
+
+    def validate(self) -> None:
+        require_text(self.id, "job.id")
+        require_text(self.project_id, "job.project_id")
+        require_text(self.guideline_id, "job.guideline_id")
+        if self.status not in {"queued", "running", "completed", "failed", "paused"}:
+            raise ValueError(f"unknown job status: {self.status}")
+        if self.sample_count <= 0:
+            raise ValueError("job.sample_count must be positive")
+        if self.concurrency <= 0:
+            raise ValueError("job.concurrency must be positive")
+        if not 0 <= self.review_threshold <= 1:
+            raise ValueError("job.review_threshold must be between 0 and 1")
+        if not 0 <= self.auto_sample_rate <= 1:
+            raise ValueError("job.auto_sample_rate must be between 0 and 1")
+
+
+@dataclass(frozen=True)
+class BatchJobItem:
+    id: str
+    job_id: str
+    task_id: str
+    status: str = "queued"
+    score: float | None = None
+    route: str = "pending"
+    error: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=utc_timestamp)
+    updated_at: str = field(default_factory=utc_timestamp)
+
+    def validate(self) -> None:
+        require_text(self.id, "job_item.id")
+        require_text(self.job_id, "job_item.job_id")
+        require_text(self.task_id, "job_item.task_id")
+        if self.status not in {"queued", "running", "completed", "failed"}:
+            raise ValueError(f"unknown job item status: {self.status}")
+        if self.score is not None and not 0 <= self.score <= 1:
+            raise ValueError("job_item.score must be between 0 and 1")
+
+
+@dataclass(frozen=True)
 class Prediction:
     id: str
     task_id: str

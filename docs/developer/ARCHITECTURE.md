@@ -12,7 +12,7 @@ Rosetta 是一个基于 Streamlit 的本地优先 Agentic Annotation Tool。
 
 1. Streamlit 是唯一正式 UI 基石。
 2. 标注任务、预测、复核、运行记录有统一领域模型。
-3. LLM 标注、检索、judge、JSON repair、导出通过 agent tools 编排。
+3. LLM 标注、检索、judge、JSON repair、批量任务和导出通过 workflow / agent tools 编排。
 4. 长期标注格式保持 Prodigy-compatible JSONL。
 5. Docker 部署稳定，运行数据统一挂载到 `/opt/rosetta/runtime`。
 
@@ -68,6 +68,8 @@ rosetta/
 4. `ReviewTask`: 面向人类专家的选择题/修正题。
 5. `WorkflowRun`: bootstrap、annotation、corpus、evaluation 等运行记录。
 6. `AgentStep`: 每一步 tool 调用、检索、judge、repair 的 trace。
+7. `ConceptGuideline / GoldExampleSet / ConceptVersion`: 概念阐释、金样例库和修订历史。
+8. `BatchJob / BatchJobItem`: 本地批量标注队列与 checkpoint。
 
 ## 5. Agent 执行模型
 
@@ -78,7 +80,7 @@ rosetta/
 3. `ContextEngine`: 用 fresh tail、summary、retrieved chunks 组成有限预算上下文。
 4. `AgentResult`: 返回 `WorkflowRun`、最终 state、`AgentStep` trace 和错误信息。
 
-当前 `Annotate` 已通过 `app.workflows.annotation.run_agentic_annotation` 进入 agent kernel。
+旧单条 `Annotate` 兼容页仍通过 `app.workflows.annotation.run_agentic_annotation` 进入 agent kernel；新主流程的“批量标注”通过 `app.workflows.annotation.batch` 写入本地队列。
 
 ## 6. 数据与存储
 
@@ -92,27 +94,34 @@ rosetta/
 
 1. 默认数据库：`.runtime/rosetta.sqlite3`。
 2. Docker 默认数据库：`/opt/rosetta/runtime/rosetta.sqlite3`。
-3. 表：`projects / tasks / predictions / reviews / runs / artifacts / agent_steps`。
+3. 表：`projects / tasks / predictions / reviews / runs / artifacts / agent_steps / concept_guidelines / gold_example_sets / concept_versions / jobs / job_items / job_events`。
 
 ## 7. 用户流程
 
 ```text
-Projects
-  -> Guidelines
-  -> Annotate
-  -> Review
-  -> Runs
-  -> Export
+工作台
+  -> 概念实验室
+  -> 批量标注
+  -> 审核队列
+  -> 导出与可视化
 ```
 
-`Corpus Builder` 是数据工厂 workflow，用于生成或扩充待标注语料。
+页面职责：
+
+1. `工作台`: 展示状态、最近任务、最近概念和快捷入口。
+2. `概念实验室`: 创建项目，编辑概念阐释，维护金样例，验证并修订概念。
+3. `批量标注`: 导入 TXT/JSONL/CSV，分句、tokenize、提交本地 SQLite 任务队列。
+4. `审核队列`: 按阈值、抽检和路由原因逐条展示候选，让专家选择或修正。
+5. `导出与可视化`: 导出 Prodigy-compatible JSONL、报告和运行清单，展示统计图。
+
+`Corpus Builder` 是高级数据工厂 workflow，保留兼容页面，但不进入默认主导航。
 
 ## 8. 兼容策略
 
 1. `app/research/*` 和 `app/corpusgen/*` 保留，避免旧测试和脚本回归。
 2. 新入口放在 `app/workflows/*`。
 3. 旧 CLI 会打印迁移提示，并转发到新 workflow wrappers。
-4. UI 新导航使用 `Projects / Guidelines / Annotate / Review / Corpus Builder / Runs / Export / Settings`。
+4. UI 默认导航使用 `工作台 / 概念实验室 / 批量标注 / 审核队列 / 导出与可视化`。
 5. 等新 UI 和 CLI 完全覆盖旧功能后，再删除或冻结 legacy 目录。
 
 ## 9. 修改建议

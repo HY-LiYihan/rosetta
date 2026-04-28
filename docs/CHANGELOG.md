@@ -2,6 +2,19 @@
 
 ## 2026-04-29
 
+### Feature / Chinese-first batch annotation tool v4.1.0
+
+1. Streamlit 默认导航收敛为 5 个中文主页面：工作台、概念实验室、批量标注、审核队列、导出与可视化。
+2. 新增 `app/ui/i18n.py`，默认中文界面，并保留可选英文模式。
+3. 新增概念实验室页面，支持创建项目、编辑概念阐释、保存金样例、验证概念、生成修订草案，并导出概念阐释和金样例。
+4. 新增批量标注页面，支持 TXT / JSONL / CSV 导入、分句、轻量 tokenize、本地 SQLite 队列、后台执行和本地模拟。
+5. 新增审核队列页面，按置信度阈值、自洽性和抽检策略逐条展示候选，支持保存选择、手动修正、跳过、全部拒绝和疑难样例标记。
+6. 新增导出与可视化页面，支持按范围导出 Prodigy-compatible JSONL、报告和运行清单，并展示路由、标签和一致性分布。
+7. 新增 `ConceptGuideline / GoldExampleSet / ConceptVersion / BatchJob / BatchJobItem` 领域模型，以及对应 SQLite 表。
+8. 新增 `app/data/text_ingestion.py`、`app/data/exporters.py`、`app/workflows/annotation/batch.py`、`app/workflows/bootstrap/guideline.py` 和 `app/workflows/review/queue.py`。
+9. 新增批量标注闭环单测，覆盖文本导入、概念验证、批量任务、审核决策和 JSONL round-trip。
+10. 首页页脚版本更新为 `v4.1.0`。
+
 ### Feature / Agentic annotation tool architecture v4.0.0
 
 1. 新增 `app/core`，定义 `Project / AnnotationTask / Prediction / ReviewTask / WorkflowRun / AgentStep` 统一领域模型。
