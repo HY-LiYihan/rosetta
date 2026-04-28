@@ -2,6 +2,13 @@
 
 ## 2026-04-28
 
+### Feature / Extensible annotation JSONL storage
+
+1. 将 Concept Bootstrap 新写出格式从顶层 `spans` 升级为 `rosetta.annotation_jsonl.v1`，使用 `annotation.layers.spans` 存储 span，并预留 `relations / attributes / comments / document_labels` 扩展层。
+2. 更新 [app/research/bootstrap_io.py](../app/research/bootstrap_io.py)，继续兼容旧顶层 `spans` 与 `gold_annotation` 输入，但 normalized samples / candidates 写出统一使用 Annotation JSONL。
+3. 更新 ACTER 示例、实验配置、[BOOTSTRAP_PIPELINE.md](./developer/BOOTSTRAP_PIPELINE.md)、[ANNOTATION_FORMAT.md](./developer/ANNOTATION_FORMAT.md) 与 [README.md](../README.md)，明确存储格式与 LLM runtime markup 解耦。
+4. 首页页脚版本更新为 `v3.11.0`。
+
 ### Docs / Core research idea archive
 
 1. 新增 [docs/ideas/CORE_ANNOTATION_BOOTSTRAP.md](./ideas/CORE_ANNOTATION_BOOTSTRAP.md)，单独记录“15 个金样例 + 一句话概念描述 + 自洽性主动 refinement + 对比式检索”的核心科研设想。

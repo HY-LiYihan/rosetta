@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.domain.annotation_doc import legacy_string_to_spans, spans_to_legacy_string
+from app.domain.annotation_doc import ANNOTATION_DOC_VERSION, legacy_string_to_spans, spans_to_legacy_string
 from app.research.bootstrap_contracts import (
     BootstrapCandidate,
     BootstrapDataError,
@@ -36,9 +36,15 @@ def span_to_dict(span: BootstrapSpan) -> dict:
         "end": span.end,
         "text": span.text,
         "label": span.label,
+        "implicit": span.implicit,
     }
-    if span.implicit:
-        row["implicit"] = True
+    return row
+
+
+def span_to_layer_dict(span: BootstrapSpan, index: int) -> dict:
+    row = {"id": f"T{index + 1}"}
+    row.update(span_to_dict(span))
+    row["features"] = {}
     return row
 
 
@@ -84,9 +90,10 @@ def sample_from_dict(payload: dict, index: int = 1) -> BootstrapSample:
 
 def sample_to_dict(sample: BootstrapSample) -> dict:
     return {
+        "schema_version": "rosetta.annotation_jsonl.v1",
         "id": sample.id,
         "text": sample.text,
-        "spans": [span_to_dict(span) for span in sample.spans],
+        "annotation": annotation_doc_from_spans(sample.text, sample.spans),
         "metadata": sample.metadata,
     }
 
@@ -100,8 +107,15 @@ def candidate_from_dict(payload: dict, index: int = 1) -> BootstrapCandidate:
         raise BootstrapDataError(f"line {index}: sample_id 不能为空")
 
     source_text = str(payload.get("text", payload.get("source_text", ""))).strip()
-    annotation_markup = str(payload.get("annotation_markup", payload.get("annotation", ""))).strip()
+    runtime_annotation = payload.get("runtime_annotation") or {}
+    runtime_markup = runtime_annotation.get("annotation_markup") if isinstance(runtime_annotation, dict) else None
+    annotation_markup = str(payload.get("annotation_markup", runtime_markup or payload.get("annotation_markup_legacy", ""))).strip()
+    if not annotation_markup and isinstance(payload.get("annotation"), str):
+        annotation_markup = str(payload["annotation"]).strip()
     raw_spans = payload.get("spans")
+    if raw_spans is None and isinstance(payload.get("annotation"), dict):
+        raw_spans = payload["annotation"].get("layers", {}).get("spans")
+
     if raw_spans is None and annotation_markup and source_text:
         spans = spans_from_markup(source_text, annotation_markup)
     elif raw_spans is not None and source_text:
@@ -117,6 +131,7 @@ def candidate_from_dict(payload: dict, index: int = 1) -> BootstrapCandidate:
         candidate_id=str(payload.get("candidate_id") or payload.get("run_id") or f"candidate-{index:03d}").strip(),
         annotation_markup=annotation_markup,
         spans=spans,
+        text=source_text,
         explanation=str(payload.get("explanation", "")).strip(),
         model_confidence=normalize_confidence(payload.get("model_confidence")),
         uncertainty_reason=str(payload.get("uncertainty_reason", "")).strip(),
@@ -126,16 +141,39 @@ def candidate_from_dict(payload: dict, index: int = 1) -> BootstrapCandidate:
 
 
 def candidate_to_dict(candidate: BootstrapCandidate) -> dict:
-    return {
+    row = {
+        "schema_version": "rosetta.annotation_candidate.v1",
         "sample_id": candidate.sample_id,
         "candidate_id": candidate.candidate_id,
-        "annotation_markup": candidate.annotation_markup,
-        "spans": [span_to_dict(span) for span in candidate.spans],
+        "runtime_annotation": {
+            "format": "inline_markup.v1",
+            "annotation_markup": candidate.annotation_markup,
+        },
+        "annotation": annotation_doc_from_spans(candidate.text, candidate.spans),
         "explanation": candidate.explanation,
         "model_confidence": candidate.model_confidence,
         "uncertainty_reason": candidate.uncertainty_reason,
         "raw_response": candidate.raw_response,
         "metadata": candidate.metadata,
+    }
+    if candidate.text:
+        row["text"] = candidate.text
+    return row
+
+
+def annotation_doc_from_spans(source_text: str, spans: tuple[BootstrapSpan, ...]) -> dict:
+    return {
+        "version": ANNOTATION_DOC_VERSION,
+        "kind": "document_annotation",
+        "text": source_text,
+        "layers": {
+            "spans": [span_to_layer_dict(span, index) for index, span in enumerate(spans)],
+            "relations": [],
+            "attributes": [],
+            "comments": [],
+            "document_labels": [],
+        },
+        "provenance": {},
     }
 
 

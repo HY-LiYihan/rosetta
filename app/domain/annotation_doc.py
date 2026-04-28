@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.domain.annotation_format import extract_annotation_tokens
 
+ANNOTATION_DOC_VERSION = "3.1"
 _SPAN_REQUIRED = {"id", "start", "end", "text", "label", "implicit"}
 
 
@@ -27,12 +28,16 @@ def legacy_string_to_spans(source_text: str, annotation_str: str) -> list[dict]:
 
 def make_annotation_doc(source_text: str, annotation_str: str, meta: dict | None = None) -> dict:
     return {
-        "version": "3.0",
+        "version": ANNOTATION_DOC_VERSION,
         "text": source_text,
         "layers": {
             "spans": legacy_string_to_spans(source_text, annotation_str),
+            "relations": [],
+            "attributes": [],
+            "comments": [],
             "document_labels": [],
         },
+        "provenance": {},
         "meta": meta or {},
     }
 

@@ -30,6 +30,7 @@ class BootstrapCandidate:
     candidate_id: str
     annotation_markup: str
     spans: tuple[BootstrapSpan, ...]
+    text: str = ""
     explanation: str = ""
     model_confidence: float | None = None
     uncertainty_reason: str = ""

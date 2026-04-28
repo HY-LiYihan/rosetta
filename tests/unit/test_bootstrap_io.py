@@ -5,6 +5,7 @@ from pathlib import Path
 from app.research.bootstrap_contracts import BootstrapDataError, BootstrapSample, BootstrapSpan
 from app.research.bootstrap_io import (
     candidate_from_dict,
+    candidate_to_dict,
     read_samples_jsonl,
     sample_from_dict,
     sample_to_dict,
@@ -51,8 +52,39 @@ class TestBootstrapSamples(unittest.TestCase):
     def test_sample_accepts_legacy_gold_annotation_but_outputs_spans(self):
         sample = sample_from_dict({"id": "s1", "text": "heart failure", "gold_annotation": "[heart failure]{Term}"})
 
-        self.assertEqual(sample_to_dict(sample)["spans"][0]["label"], "Term")
+        row = sample_to_dict(sample)
+        self.assertEqual(row["schema_version"], "rosetta.annotation_jsonl.v1")
+        self.assertEqual(row["annotation"]["layers"]["spans"][0]["label"], "Term")
+        self.assertIn("relations", row["annotation"]["layers"])
         self.assertNotIn("gold_annotation", sample_to_dict(sample))
+
+    def test_sample_accepts_annotation_doc_jsonl(self):
+        sample = sample_from_dict(
+            {
+                "schema_version": "rosetta.annotation_jsonl.v1",
+                "id": "s1",
+                "text": "heart failure",
+                "annotation": {
+                    "version": "3.1",
+                    "layers": {
+                        "spans": [
+                            {
+                                "id": "T1",
+                                "start": 0,
+                                "end": 13,
+                                "text": "heart failure",
+                                "label": "Term",
+                                "implicit": False,
+                                "features": {"source": "gold"},
+                            }
+                        ],
+                        "relations": [],
+                    },
+                },
+            }
+        )
+
+        self.assertEqual(sample.spans[0].text, "heart failure")
 
     def test_jsonl_round_trip(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -84,8 +116,25 @@ class TestBootstrapCandidates(unittest.TestCase):
         )
 
         self.assertEqual(candidate.candidate_id, "run-1")
+        self.assertEqual(candidate.text, "heart failure")
         self.assertEqual(candidate.model_confidence, 0.75)
         self.assertEqual(candidate.spans[0].label, "Term")
+
+    def test_candidate_outputs_extensible_annotation_doc(self):
+        candidate = candidate_from_dict(
+            {
+                "sample_id": "s1",
+                "candidate_id": "run-1",
+                "text": "heart failure",
+                "runtime_annotation": {
+                    "format": "inline_markup.v1",
+                    "annotation_markup": "[heart failure]{Term}",
+                },
+            }
+        )
+
+        row = candidate_from_dict(candidate_to_dict(candidate))
+        self.assertEqual(row.spans[0].label, "Term")
 
     def test_candidate_rejects_invalid_confidence(self):
         with self.assertRaises(BootstrapDataError):

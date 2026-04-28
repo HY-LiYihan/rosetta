@@ -95,20 +95,36 @@ Patients with [heart failure]{Specific_Term} may receive [ventricular assist dev
 
 这种格式适合放进 prompt，因为标签紧贴原文，模型不需要手工计算字符偏移。
 
-最终存储时，必须统一转换为 span JSONL。内部主格式保持简单 JSONL，避免直接绑定 INCEpTION `jsoncas`：
+最终存储时，必须统一转换为可扩展的 Annotation JSONL。内部主格式保持简单 JSONL，避免直接绑定 INCEpTION `jsoncas`；同时通过 `annotation.layers` 预留关系、属性、备注、文档级标签等扩展层：
 
 ```json
 {
+  "schema_version": "rosetta.annotation_jsonl.v1",
   "id": "sample-001",
   "text": "Patients with heart failure may receive ventricular assist devices.",
-  "spans": [
-    {
-      "start": 14,
-      "end": 27,
-      "text": "heart failure",
-      "label": "Specific_Term"
-    }
-  ],
+  "annotation": {
+    "version": "3.1",
+    "kind": "document_annotation",
+    "text": "Patients with heart failure may receive ventricular assist devices.",
+    "layers": {
+      "spans": [
+        {
+          "id": "T1",
+          "start": 14,
+          "end": 27,
+          "text": "heart failure",
+          "label": "Specific_Term",
+          "implicit": false,
+          "features": {}
+        }
+      ],
+      "relations": [],
+      "attributes": [],
+      "comments": [],
+      "document_labels": []
+    },
+    "provenance": {}
+  },
   "metadata": {
     "dataset": "ACTER",
     "language": "en",
@@ -117,23 +133,43 @@ Patients with [heart failure]{Specific_Term} may receive [ventricular assist dev
 }
 ```
 
-这个格式不是新发明。它参考 Prodigy 的 NER / span annotation JSONL 设计：每条记录包含 `text`，并用 `spans` 保存实体或片段的字符起止偏移和标签；spaCy 的训练数据格式也使用字符 offset 表示 spans。因此 Rosetta 不需要大修大调格式，只需要在内部字段名上保持稳定。
+这个格式不是新发明。`annotation.layers.spans` 参考 Prodigy 的 NER / span annotation JSONL 设计：每条记录包含 `text`，并用 spans 保存实体或片段的字符起止偏移和标签；spaCy 的训练数据格式也使用字符 offset 表示 spans。Rosetta 的差异是外面包一层 `annotation.layers`，便于未来加入 relation extraction、属性判断、文档标签、人类审阅备注和来源追踪。
 
 每次模型输出候选：
 
 ```json
 {
+  "schema_version": "rosetta.annotation_candidate.v1",
   "sample_id": "sample-001",
-  "run_id": "run-001",
-  "annotation_markup": "[heart failure]{Specific_Term}",
-  "spans": [
-    {
-      "start": 14,
-      "end": 27,
-      "text": "heart failure",
-      "label": "Specific_Term"
-    }
-  ],
+  "candidate_id": "run-001",
+  "text": "Patients with heart failure may receive ventricular assist devices.",
+  "runtime_annotation": {
+    "format": "inline_markup.v1",
+    "annotation_markup": "[heart failure]{Specific_Term}"
+  },
+  "annotation": {
+    "version": "3.1",
+    "kind": "document_annotation",
+    "text": "Patients with heart failure may receive ventricular assist devices.",
+    "layers": {
+      "spans": [
+        {
+          "id": "T1",
+          "start": 14,
+          "end": 27,
+          "text": "heart failure",
+          "label": "Specific_Term",
+          "implicit": false,
+          "features": {}
+        }
+      ],
+      "relations": [],
+      "attributes": [],
+      "comments": [],
+      "document_labels": []
+    },
+    "provenance": {}
+  },
   "explanation": "The phrase names a domain-specific medical condition.",
   "model_confidence": 0.82,
   "uncertainty_reason": "Boundary is clear."
@@ -155,9 +191,9 @@ Patients with [heart failure]{Specific_Term} may receive [ventricular assist dev
 转换原则：
 
 1. Prompt 中优先使用行内 markup，降低模型输出难度。
-2. 解析后立刻转换成 `spans`，并校验 `text[start:end] == span.text`。
-3. 研究产物、评测、专家复核、导入导出一律以 span JSONL 为准。
-4. 如果接入 INCEpTION，则只在边界层做 `jsoncas <-> span JSONL` 转换。
+2. 解析后立刻转换成 `annotation.layers.spans`，并校验 `text[start:end] == span.text`。
+3. 研究产物、评测、专家复核、导入导出一律以 Annotation JSONL 为准。
+4. 如果接入 INCEpTION，则只在边界层做 `jsoncas <-> Annotation JSONL` 转换。
 
 参考：
 
@@ -259,6 +295,7 @@ manifest.json
 8. `v3.8.0`: Bootstrap runner 与 CLI。
 9. `v3.9.0`: ACTER / EMNLP 实验模板。
 10. `v3.10.0`: 报告生成、对比表与最终文档串联。
+11. `v3.11.0`: 存储格式升级为可扩展 Annotation JSONL。
 
 ## 11. 当前实现状态
 
@@ -270,9 +307,9 @@ manifest.json
 - 校验模型自评 confidence 必须在 `0-1`。
 
 2. `app/research/bootstrap_io.py`
-- 支持读取 span JSONL。
+- 支持读取 Annotation JSONL，并兼容旧顶层 `spans` JSONL。
 - 支持从旧行内 `[span]{label}` gold annotation 迁移到 `spans`。
-- 写出时统一落盘为 span JSONL。
+- 写出时统一落盘为 `annotation.layers` 格式。
 - 支持候选标注记录的 JSONL 读写。
 
 `v3.4.0` 已完成自洽性评分层：
@@ -333,3 +370,14 @@ python scripts/research/run_bootstrap.py analyze \
 
 2. `scripts/research/run_bootstrap.py`
 - `analyze` 子命令新增 `--experiment`，用于把实验配置中的 baselines / metrics 写入报告。
+
+`v3.11.0` 已完成可扩展存储格式升级：
+
+1. `app/research/bootstrap_io.py`
+- 新写出的 normalized samples 使用 `rosetta.annotation_jsonl.v1`。
+- 新写出的 candidate runs 使用 `rosetta.annotation_candidate.v1`。
+- 旧顶层 `spans`、旧 `annotation_markup` 与 `gold_annotation` 仍作为兼容输入。
+
+2. 存储主结构
+- `annotation.layers.spans` 继续承担 span 标注。
+- `annotation.layers.relations / attributes / comments / document_labels` 作为未来扩展层。

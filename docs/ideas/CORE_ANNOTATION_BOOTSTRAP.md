@@ -124,23 +124,36 @@
 [heart failure]{Specific_Term}
 ```
 
-最终落盘时再统一解析成 span JSONL：
+最终落盘时再统一解析成可扩展 Annotation JSONL：
 
 ```json
 {
+  "schema_version": "rosetta.annotation_jsonl.v1",
   "text": "Patients with heart failure may receive ventricular assist devices.",
-  "spans": [
-    {
-      "start": 14,
-      "end": 27,
-      "text": "heart failure",
-      "label": "Specific_Term"
+  "annotation": {
+    "version": "3.1",
+    "layers": {
+      "spans": [
+        {
+          "id": "T1",
+          "start": 14,
+          "end": 27,
+          "text": "heart failure",
+          "label": "Specific_Term",
+          "implicit": false,
+          "features": {}
+        }
+      ],
+      "relations": [],
+      "attributes": [],
+      "comments": [],
+      "document_labels": []
     }
-  ]
+  }
 }
 ```
 
-这个格式对齐已有 span annotation 工具生态，尤其是 Prodigy 的 `text + spans[start/end/label]` 设计，也和 spaCy 的字符 offset span 数据表达相近。Rosetta 不需要发明复杂格式，只需要坚持“prompt 友好、存储标准、转换可校验”。
+这个格式对齐已有 span annotation 工具生态，尤其是 Prodigy 的 `text + spans[start/end/label]` 设计，也和 spaCy 的字符 offset span 数据表达相近。Rosetta 在外层增加 `annotation.layers`，用于后续关系、属性、文档标签、人类备注和 provenance 扩展。核心原则仍是“prompt 友好、存储标准、转换可校验”。
 
 ## 5. 与 ALLabel 的关系
 

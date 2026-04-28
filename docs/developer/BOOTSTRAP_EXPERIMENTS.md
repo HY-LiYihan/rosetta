@@ -66,4 +66,4 @@ python scripts/research/run_bootstrap.py analyze \
 3. BC2GM: biomedical gene/protein NER.
 4. CoNLL03: general-domain NER.
 
-后续实验应先把这些数据集转换为 Rosetta span JSONL，而不是改变内部格式。
+后续实验应先把这些数据集转换为 Rosetta Annotation JSONL，而不是改变内部格式。span 仍放在 `annotation.layers.spans` 中，其他层保留给关系、属性、文档标签和审阅信息。

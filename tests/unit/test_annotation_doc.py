@@ -1,6 +1,7 @@
 import unittest
 
 from app.domain.annotation_doc import (
+    ANNOTATION_DOC_VERSION,
     legacy_string_to_spans,
     make_annotation_doc,
     spans_to_legacy_string,
@@ -46,12 +47,16 @@ class TestLegacyStringToSpans(unittest.TestCase):
 class TestValidateAnnotationDoc(unittest.TestCase):
     def _valid_doc(self):
         return {
-            "version": "3.0",
+            "version": ANNOTATION_DOC_VERSION,
             "text": "示例文本",
             "layers": {
                 "spans": [{"id": "s0", "start": 0, "end": 2, "text": "示例", "label": "X", "implicit": False}],
+                "relations": [],
+                "attributes": [],
+                "comments": [],
                 "document_labels": [],
             },
+            "provenance": {},
             "meta": {},
         }
 
@@ -103,10 +108,14 @@ class TestSpansToLegacyString(unittest.TestCase):
 class TestMakeAnnotationDoc(unittest.TestCase):
     def test_structure(self):
         doc = make_annotation_doc("苹果很好吃", "[苹果]{名词}")
-        self.assertEqual(doc["version"], "3.0")
+        self.assertEqual(doc["version"], ANNOTATION_DOC_VERSION)
         self.assertEqual(doc["text"], "苹果很好吃")
         self.assertIn("spans", doc["layers"])
+        self.assertIn("relations", doc["layers"])
+        self.assertIn("attributes", doc["layers"])
+        self.assertIn("comments", doc["layers"])
         self.assertIn("document_labels", doc["layers"])
+        self.assertIn("provenance", doc)
         self.assertEqual(doc["layers"]["spans"][0]["label"], "名词")
 
     def test_meta_defaults_empty(self):

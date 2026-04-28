@@ -142,6 +142,7 @@ ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py
 - 面向标注实验、pilot audit、冲突导出。
 - 入口文档：[docs/developer/RESEARCH_PIPELINE.md](./docs/developer/RESEARCH_PIPELINE.md)
 - Concept Bootstrap 文档：[docs/developer/BOOTSTRAP_PIPELINE.md](./docs/developer/BOOTSTRAP_PIPELINE.md)
+- 标注数据长期存储使用 `rosetta.annotation_jsonl.v1`：每行保留 `id/text/annotation.layers/metadata`，span 放在 `annotation.layers.spans`。
 - 入口脚本：`python scripts/research/run_pipeline.py ...`
 
 2. `corpusgen`
