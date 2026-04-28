@@ -39,13 +39,14 @@
 
 ## 当前状态
 
-1. v4.1.0 默认 UI 收敛为 5 个中文主页面：工作台、概念实验室、批量标注、审核队列、导出与可视化。
-2. 新增本地批量任务队列，使用 SQLite 存储 `jobs / job_items / job_events`。
-3. 新增概念阐释与金样例模型，使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
-4. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。
-5. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
-6. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
-7. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
+1. v4.1.1 默认 UI 保持 5 个主页面，并让导航与正文固定文案同步支持中文 / English。
+2. 工作台收敛为轻量状态入口，概念实验室内置“硬科学科普术语标注”填表示例。
+3. 本地批量任务队列使用 SQLite 存储 `jobs / job_items / job_events`。
+4. 概念阐释与金样例模型使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
+5. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。
+6. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
+7. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
+8. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
 
 ## 修改建议
 

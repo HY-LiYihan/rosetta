@@ -12,10 +12,12 @@ from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.providers import PLATFORM_CONFIGS
 from app.infrastructure.llm.registry import get_provider
 from app.runtime.store import RuntimeStore
+from app.ui.examples import HARD_SCIENCE_TERM_EXAMPLE, hard_science_gold_jsonl
+from app.ui.i18n import t
 from app.workflows.bootstrap import gold_task_from_markup, revise_guideline, save_guideline_package, validate_gold_examples
 
-st.title("概念实验室")
-st.caption("把一句话概念描述迭代成稳定概念阐释，并维护可导出的金样例库。")
+st.title(t("concept_lab.title"))
+st.caption(t("concept_lab.caption"))
 
 store = RuntimeStore()
 
@@ -75,7 +77,7 @@ def _parse_gold_jsonl(content: str, source_name: str = "pasted.jsonl") -> list[A
 def _make_predictor(platform_id: str, model: str):
     provider = get_provider(platform_id)
     if provider is None:
-        raise RuntimeError("平台不可用")
+        raise RuntimeError(t("common.platform_unavailable"))
     api_key = resolve_api_key(platform_id)
 
     def predictor(system_prompt: str, messages: list[dict], temperature: float) -> str:
@@ -85,16 +87,65 @@ def _make_predictor(platform_id: str, model: str):
     return predictor
 
 
+def _fill_example() -> None:
+    st.session_state["concept_lab_project_mode"] = "new"
+    st.session_state["concept_lab_project_name"] = HARD_SCIENCE_TERM_EXAMPLE["project_name"]
+    st.session_state["concept_lab_project_description"] = HARD_SCIENCE_TERM_EXAMPLE["project_description"]
+    st.session_state["concept_lab_name"] = HARD_SCIENCE_TERM_EXAMPLE["concept_name"]
+    st.session_state["concept_lab_brief"] = HARD_SCIENCE_TERM_EXAMPLE["brief"]
+    st.session_state["concept_lab_labels"] = HARD_SCIENCE_TERM_EXAMPLE["labels"]
+    st.session_state["concept_lab_boundary"] = HARD_SCIENCE_TERM_EXAMPLE["boundary_rules"]
+    st.session_state["concept_lab_negative"] = HARD_SCIENCE_TERM_EXAMPLE["negative_rules"]
+    st.session_state["concept_lab_output_format"] = HARD_SCIENCE_TERM_EXAMPLE["output_format"]
+    st.session_state["concept_lab_manual_text"] = ""
+    st.session_state["concept_lab_manual_markup"] = ""
+    st.session_state["concept_lab_pasted_jsonl"] = hard_science_gold_jsonl()
+    st.session_state["concept_lab_csv_text_column"] = "text"
+
+
+for key, value in {
+    "concept_lab_project_mode": "existing",
+    "concept_lab_project_name": "术语标注项目",
+    "concept_lab_project_description": "用于概念阐释、金样例和批量标注。",
+    "concept_lab_name": "硬科学术语",
+    "concept_lab_brief": "标出英文科普新闻中与硬科学概念、技术、物理过程或实验对象直接相关的术语。",
+    "concept_lab_labels": "Term",
+    "concept_lab_boundary": "优先标注最小完整术语\n包含必要修饰词，但不要扩大到整个句子",
+    "concept_lab_negative": "不标注泛泛的普通名词\n不标注没有科学含义的修辞表达",
+    "concept_lab_output_format": "[原文]{标签}",
+    "concept_lab_manual_text": "",
+    "concept_lab_manual_markup": "",
+    "concept_lab_pasted_jsonl": "",
+    "concept_lab_csv_text_column": "text",
+}.items():
+    st.session_state.setdefault(key, value)
+
+if st.session_state.get("concept_lab_project_mode") not in {"existing", "new"}:
+    st.session_state["concept_lab_project_mode"] = "existing"
+if st.session_state.get("concept_validation_mode") not in {None, "local", "llm"}:
+    st.session_state["concept_validation_mode"] = "local"
+
+if st.button(t("concept_lab.load_example"), use_container_width=True):
+    _fill_example()
+    st.success(t("concept_lab.example_loaded"))
+    st.rerun()
+
 projects = _project_options()
-st.subheader("1. 标注项目")
-project_mode = st.radio("项目来源", ["使用已有项目", "创建新项目"], horizontal=True)
+st.subheader(t("concept_lab.section_project"))
+project_mode = st.radio(
+    t("concept_lab.project_source"),
+    ["existing", "new"],
+    horizontal=True,
+    format_func=lambda mode: t(f"concept_lab.project_{mode}"),
+    key="concept_lab_project_mode",
+)
 
 selected_project_id = ""
-if project_mode == "创建新项目" or not projects:
+if project_mode == "new" or not projects:
     with st.form("create_project_form"):
-        project_name = st.text_input("项目名称", value="术语标注项目")
-        project_description = st.text_area("项目说明", value="用于概念阐释、金样例和批量标注。", height=80)
-        create_project = st.form_submit_button("保存项目", type="primary", use_container_width=True)
+        project_name = st.text_input(t("concept_lab.project_name"), key="concept_lab_project_name")
+        project_description = st.text_area(t("concept_lab.project_description"), height=80, key="concept_lab_project_description")
+        create_project = st.form_submit_button(t("concept_lab.save_project"), type="primary", use_container_width=True)
     if create_project:
         project = Project(
             id=f"project-{uuid.uuid4().hex[:10]}",
@@ -103,55 +154,49 @@ if project_mode == "创建新项目" or not projects:
             task_schema="span",
         )
         store.upsert_project(project)
-        st.success("项目已保存。")
+        st.success(t("concept_lab.project_saved"))
         st.rerun()
 else:
     selected_project_id = st.selectbox(
-        "选择项目",
+        t("concept_lab.select_project"),
         [row["id"] for row in projects],
         format_func=lambda project_id: next(row["payload"]["name"] for row in projects if row["id"] == project_id),
     )
 
-if not selected_project_id and projects and project_mode != "创建新项目":
+if not selected_project_id and projects and project_mode != "new":
     selected_project_id = projects[0]["id"]
 
 st.divider()
-st.subheader("2. 概念阐释")
+st.subheader(t("concept_lab.section_guideline"))
 with st.form("guideline_form"):
-    concept_name = st.text_input("概念名称", value="硬科学术语")
-    brief = st.text_area(
-        "一句话概念描述",
-        value="标出英文科普新闻中与硬科学概念、技术、物理过程或实验对象直接相关的术语。",
-        height=100,
-    )
-    labels_text = st.text_input("标签集合，用逗号分隔", value="Term")
-    boundary_text = st.text_area(
-        "边界说明，每行一条",
-        value="优先标注最小完整术语\n包含必要修饰词，但不要扩大到整个句子",
-        height=90,
-    )
-    negative_text = st.text_area(
-        "负例规则，每行一条",
-        value="不标注泛泛的普通名词\n不标注没有科学含义的修辞表达",
-        height=90,
-    )
-    output_format = st.text_input("模型运行时标注格式", value="[原文]{标签}")
+    concept_name = st.text_input(t("concept_lab.concept_name"), key="concept_lab_name")
+    brief = st.text_area(t("concept_lab.brief"), height=100, key="concept_lab_brief")
+    labels_text = st.text_input(t("concept_lab.labels"), key="concept_lab_labels")
+    boundary_text = st.text_area(t("concept_lab.boundary"), height=90, key="concept_lab_boundary")
+    negative_text = st.text_area(t("concept_lab.negative"), height=90, key="concept_lab_negative")
+    output_format = st.text_input(t("concept_lab.output_format"), key="concept_lab_output_format")
 
-    st.markdown("**金样例**")
-    manual_text = st.text_area("新增样例原文", height=90, placeholder="粘贴一条需要作为金样例的原文")
-    manual_markup = st.text_area("新增样例标注", height=90, placeholder="例如：[quantum dots]{Term} can emit light.")
-    pasted_jsonl = st.text_area(
-        "批量粘贴 JSONL",
-        height=140,
-        placeholder='{"text":"quantum dots emit light","annotation":"[quantum dots]{Term} emit light"}',
+    st.markdown(f"**{t('concept_lab.gold_examples')}**")
+    manual_text = st.text_area(
+        t("concept_lab.manual_text"),
+        height=90,
+        placeholder=t("concept_lab.manual_text_placeholder"),
+        key="concept_lab_manual_text",
     )
-    upload = st.file_uploader("上传金样例文件", type=["jsonl", "csv"])
-    csv_text_column = st.text_input("CSV 文本列名", value="text")
-    save_clicked = st.form_submit_button("保存概念与金样例", type="primary", use_container_width=True)
+    manual_markup = st.text_area(
+        t("concept_lab.manual_markup"),
+        height=90,
+        placeholder=t("concept_lab.manual_markup_placeholder"),
+        key="concept_lab_manual_markup",
+    )
+    pasted_jsonl = st.text_area(t("concept_lab.paste_jsonl"), height=160, key="concept_lab_pasted_jsonl")
+    upload = st.file_uploader(t("concept_lab.upload_gold"), type=["jsonl", "csv"])
+    csv_text_column = st.text_input(t("concept_lab.csv_text_column"), key="concept_lab_csv_text_column")
+    save_clicked = st.form_submit_button(t("concept_lab.save_guideline"), type="primary", use_container_width=True)
 
 if save_clicked:
     if not selected_project_id:
-        st.error("请先创建或选择项目。")
+        st.error(t("concept_lab.need_project"))
         st.stop()
     gold_tasks: list[AnnotationTask] = []
     if manual_text.strip() and manual_markup.strip():
@@ -168,7 +213,7 @@ if save_clicked:
     gold_tasks.extend(_parse_uploaded_gold(upload, csv_text_column))
 
     if not gold_tasks:
-        st.error("至少需要提供 1 条金样例。目标是 15 条，第一版允许逐步补充。")
+        st.error(t("concept_lab.need_gold"))
         st.stop()
 
     package = save_guideline_package(
@@ -181,65 +226,75 @@ if save_clicked:
         negative_rules=_lines(negative_text),
         gold_tasks=gold_tasks,
     )
-    st.success(f"已保存概念阐释和 {len(gold_tasks)} 条金样例。")
+    st.success(t("concept_lab.saved_package", count=len(gold_tasks)))
     st.session_state["selected_guideline_id"] = package["guideline"].id
 
 st.divider()
-st.subheader("3. 验证与修订")
+st.subheader(t("concept_lab.section_validate"))
 guidelines = store.list_guidelines(project_id=selected_project_id or None, limit=100)
 if not guidelines:
-    st.info("保存概念后可以在这里验证 15 条金样例。")
+    st.info(t("concept_lab.no_guideline"))
 else:
     selected_guideline = st.selectbox(
-        "选择概念",
+        t("concept_lab.select_concept"),
         [row["id"] for row in guidelines],
         index=0,
         format_func=lambda guideline_id: next(row["payload"]["name"] for row in guidelines if row["id"] == guideline_id),
         key="concept_lab_guideline_selector",
     )
     guideline_payload = next(row["payload"] for row in guidelines if row["id"] == selected_guideline)
-    st.text_area("当前稳定阐释", value=guideline_payload.get("stable_description", ""), height=180)
+    st.text_area(t("concept_lab.current_description"), value=guideline_payload.get("stable_description", ""), height=180)
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        validation_mode = st.selectbox("验证方式", ["本地结构验证", "调用大模型"], key="concept_validation_mode")
+        validation_mode = st.selectbox(
+            t("concept_lab.validation_mode"),
+            ["local", "llm"],
+            key="concept_validation_mode",
+            format_func=lambda mode: t(f"concept_lab.validation_{mode}"),
+        )
     with col2:
         platform_id = st.selectbox(
-            "平台",
+            t("common.platform"),
             list(PLATFORM_CONFIGS.keys()),
             format_func=lambda key: PLATFORM_CONFIGS[key].name,
-            disabled=validation_mode == "本地结构验证",
+            disabled=validation_mode == "local",
         )
     with col3:
         model_name = st.text_input(
-            "模型",
+            t("common.model"),
             value=PLATFORM_CONFIGS[platform_id].default_model,
-            disabled=validation_mode == "本地结构验证",
+            disabled=validation_mode == "local",
         )
 
-    if st.button("验证概念", type="primary", use_container_width=True):
-        predictor = None
-        if validation_mode == "调用大模型":
-            predictor = _make_predictor(platform_id, model_name)
+    if st.button(t("concept_lab.validate"), type="primary", use_container_width=True):
+        predictor = _make_predictor(platform_id, model_name) if validation_mode == "llm" else None
         result = validate_gold_examples(store, selected_guideline, predictor=predictor)
         st.session_state["concept_lab_validation_result"] = result
-        st.success(result["summary"])
+        st.success(
+            t(
+                "concept_lab.validation_summary",
+                passed=len(result["passed"]),
+                failed=len(result["failed"]),
+                unstable=len(result["unstable"]),
+            )
+        )
 
     result = st.session_state.get("concept_lab_validation_result")
     if result:
         metrics = st.columns(3)
-        metrics[0].metric("通过", len(result["passed"]))
-        metrics[1].metric("失败", len(result["failed"]))
-        metrics[2].metric("边界不稳定", len(result["unstable"]))
+        metrics[0].metric(t("concept_lab.passed"), len(result["passed"]))
+        metrics[1].metric(t("common.failed"), len(result["failed"]))
+        metrics[2].metric(t("concept_lab.unstable"), len(result["unstable"]))
         st.json(result)
-        if st.button("修订概念阐释草案", use_container_width=True):
+        if st.button(t("concept_lab.revise"), use_container_width=True):
             revised = revise_guideline(guideline_payload, result)
             st.session_state["concept_lab_revised_text"] = revised
 
     revised_text = st.session_state.get("concept_lab_revised_text")
     if revised_text:
-        revised_text = st.text_area("修订草案", value=revised_text, height=220)
-        if st.button("保存修订草案", use_container_width=True):
+        revised_text = st.text_area(t("concept_lab.revised_draft"), value=revised_text, height=220)
+        if st.button(t("concept_lab.save_revised"), use_container_width=True):
             updated = ConceptGuideline(
                 id=guideline_payload["id"],
                 project_id=guideline_payload["project_id"],
@@ -263,14 +318,14 @@ else:
                     guideline_id=selected_guideline,
                     version=next_version,
                     description=revised_text,
-                    notes="人工保存修订草案。",
+                    notes="manual revision draft",
                 )
             )
-            st.success("修订草案已保存为新的概念版本。")
+            st.success(t("concept_lab.revised_saved"))
             st.rerun()
 
     st.divider()
-    st.subheader("4. 导出产物")
+    st.subheader(t("concept_lab.section_export"))
     gold_sets = store.list_gold_example_sets(guideline_id=selected_guideline, limit=1)
     gold_tasks = []
     if gold_sets:
@@ -285,6 +340,6 @@ else:
         for row in store.list_concept_versions(guideline_id=selected_guideline, limit=1000)
     )
     c1, c2, c3 = st.columns(3)
-    c1.download_button("下载概念阐释", guideline_md, file_name="concept_guideline.md", use_container_width=True)
-    c2.download_button("下载金样例", gold_jsonl, file_name="gold_examples.jsonl", use_container_width=True)
-    c3.download_button("下载修订记录", versions_jsonl, file_name="concept_versions.jsonl", use_container_width=True)
+    c1.download_button(t("concept_lab.download_guideline"), guideline_md, file_name="concept_guideline.md", use_container_width=True)
+    c2.download_button(t("concept_lab.download_gold"), gold_jsonl, file_name="gold_examples.jsonl", use_container_width=True)
+    c3.download_button(t("concept_lab.download_versions"), versions_jsonl, file_name="concept_versions.jsonl", use_container_width=True)

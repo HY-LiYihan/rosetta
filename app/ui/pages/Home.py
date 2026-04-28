@@ -5,9 +5,13 @@ import streamlit as st
 from app.data.exporters import build_dataset_stats
 from app.runtime.paths import get_runtime_paths
 from app.runtime.store import RuntimeStore
+from app.ui.i18n import t
 
-st.title("工作台")
-st.caption("从概念阐释、批量标注、人工审核到导出结果的本地工作入口。")
+VERSION = "v4.1.1"
+UPDATED_AT = "2026-04-29"
+
+st.title(t("home.title"))
+st.caption(t("home.caption"))
 
 store = RuntimeStore()
 paths = get_runtime_paths().ensure()
@@ -18,77 +22,73 @@ reviews = store.list_reviews(limit=10000)
 jobs = store.list_jobs(limit=10000)
 guidelines = store.list_guidelines(limit=1000)
 stats = build_dataset_stats(tasks, predictions, reviews, jobs)
+pending_reviews = [row for row in reviews if row["payload"].get("status") == "pending"]
 
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("待标注语料", stats["task_count"])
-col2.metric("候选标注", stats["prediction_count"])
-col3.metric("待审核", stats["pending_review_count"])
-col4.metric("批量任务", stats["job_count"])
+col1.metric(t("home.metric_tasks"), stats["task_count"])
+col2.metric(t("home.metric_predictions"), stats["prediction_count"])
+col3.metric(t("home.metric_pending_reviews"), stats["pending_review_count"])
+col4.metric(t("home.metric_jobs"), stats["job_count"])
 
 st.divider()
 
-st.subheader("主流程")
-flow_cols = st.columns(4)
-with flow_cols[0]:
-    st.markdown("**1. 概念实验室**")
-    st.write("写清楚概念阐释，维护 15 条金样例。")
-    if st.button("进入概念实验室", use_container_width=True):
-        st.switch_page("app/ui/pages/Concept_Lab.py")
-with flow_cols[1]:
-    st.markdown("**2. 批量标注**")
-    st.write("上传文本，切分为任务，提交本地队列。")
-    if st.button("进入批量标注", use_container_width=True):
-        st.switch_page("app/ui/pages/Batch_Run.py")
-with flow_cols[2]:
-    st.markdown("**3. 审核队列**")
-    st.write("按置信度阈值逐条确认低置信样本。")
-    if st.button("进入审核队列", use_container_width=True):
-        st.switch_page("app/ui/pages/Review_Queue.py")
-with flow_cols[3]:
-    st.markdown("**4. 导出与可视化**")
-    st.write("查看统计，并导出 JSONL 与报告。")
-    if st.button("进入导出页面", use_container_width=True):
-        st.switch_page("app/ui/pages/Export_View.py")
+if not guidelines:
+    next_label = t("home.next_concept")
+    next_page = "app/ui/pages/Concept_Lab.py"
+elif pending_reviews:
+    next_label = t("home.next_review")
+    next_page = "app/ui/pages/Review_Queue.py"
+elif not jobs:
+    next_label = t("home.next_batch")
+    next_page = "app/ui/pages/Batch_Run.py"
+else:
+    next_label = t("home.next_export")
+    next_page = "app/ui/pages/Export_View.py"
+
+st.subheader(t("home.next_title"))
+if st.button(next_label, type="primary", use_container_width=True):
+    st.switch_page(next_page)
 
 st.divider()
 
 left, right = st.columns([1, 1])
 with left:
-    st.subheader("最近批量任务")
+    st.subheader(t("home.recent_jobs"))
     if jobs:
-        for row in jobs[:5]:
+        for row in jobs[:3]:
             payload = row["payload"]
             st.markdown(
-                f"- `{payload['id']}`：{payload['status']}，"
-                f"{payload.get('completed_items', 0)}/{payload.get('total_items', 0)} 已完成，"
-                f"{payload.get('review_items', 0)} 条待审核"
+                f"- `{payload['id']}`: {payload['status']}, "
+                f"{payload.get('completed_items', 0)}/{payload.get('total_items', 0)}, "
+                f"{payload.get('review_items', 0)} {t('common.pending_review')}"
             )
     else:
-        st.info("还没有批量任务。先进入“批量标注”上传一小段文本即可创建。")
+        st.info(t("home.no_jobs"))
 
 with right:
-    st.subheader("最近概念")
-    if guidelines:
-        for row in guidelines[:5]:
+    st.subheader(t("home.recent_reviews"))
+    if reviews:
+        for row in reviews[:3]:
             payload = row["payload"]
-            label_text = "、".join(payload.get("labels", [])[:4]) or "未设置标签"
-            st.markdown(f"- **{payload['name']}**：{payload.get('status', 'draft')}，{label_text}")
+            score = payload.get("meta", {}).get("score", 0.0)
+            st.markdown(f"- `{payload['id']}`: {payload.get('status', 'pending')}, {score}")
     else:
-        st.info("还没有概念阐释。先进入“概念实验室”创建一个概念。")
+        st.info(t("home.no_reviews"))
 
-st.divider()
+with st.expander(t("home.flow_expander"), expanded=False):
+    st.write(t("home.flow_text"))
 
-st.subheader("本地运行目录")
-st.code(str(paths.root), language="text")
-st.caption("SQLite、导出文件、运行日志和临时产物都会写入本地运行目录。")
+with st.expander(t("home.runtime"), expanded=False):
+    st.code(str(paths.root), language="text")
+    st.caption(t("home.runtime_caption"))
 
 st.divider()
 st.markdown(
-    """
+    f"""
 <div style='text-align: center; color: var(--color-text); font-size: 0.9rem; margin-top: 2rem;'>
-    <p><strong>Rosetta 本地优先标注工具</strong></p>
-    <p>版本: v4.1.0 | 最后更新: 2026年4月29日</p>
-    <p>项目地址: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a></p>
+    <p><strong>{t("home.footer_name")}</strong></p>
+    <p>{t("common.version_line", version=VERSION, date=UPDATED_AT)}</p>
+    <p>{t("common.github")}: <a href='https://github.com/HY-LiYihan/rosetta' target='_blank'>GitHub</a></p>
 </div>
 """,
     unsafe_allow_html=True,

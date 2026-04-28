@@ -8,7 +8,7 @@ from app.ui.i18n import LANGUAGES, get_language, init_language, set_language, t
 
 # 页面配置
 st.set_page_config(
-    page_title="Rosetta 标注工具",
+    page_title="Rosetta",
     page_icon="assets/rosetta-icon-whiteback.png",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -107,29 +107,25 @@ st.markdown(
 )
 
 with st.sidebar:
-    st.markdown(f"### {t('app_title')}")
-    with st.expander(t("settings"), expanded=False):
-        current_language = get_language()
-        selected_language = st.selectbox(
-            t("language"),
-            options=list(LANGUAGES.keys()),
-            index=list(LANGUAGES.keys()).index(current_language),
-            format_func=lambda key: LANGUAGES[key],
-            key="rosetta_language_selector",
-        )
-        if selected_language != current_language:
-            set_language(selected_language)
-            st.rerun()
-    with st.expander(t("advanced_tools"), expanded=False):
-        st.caption(t("corpus_builder"))
-        st.caption("高级语料生成能力暂时保留在兼容页面，可通过旧页面文件继续使用。")
+    st.markdown(f"### {t('common.app_title')}")
+    current_language = get_language()
+    selected_language = st.selectbox(
+        t("common.language"),
+        options=list(LANGUAGES.keys()),
+        index=list(LANGUAGES.keys()).index(current_language),
+        format_func=lambda key: LANGUAGES[key],
+        key="rosetta_language_selector",
+    )
+    if selected_language != current_language:
+        set_language(selected_language)
+        st.rerun()
 
 # 使用新的 Streamlit 导航 API：默认只展示 5 个主流程页面
-home_page = st.Page("app/ui/pages/Home.py", title=t("dashboard"), icon="🏠", default=True)
-concept_lab_page = st.Page("app/ui/pages/Concept_Lab.py", title=t("concept_lab"), icon="📚")
-batch_run_page = st.Page("app/ui/pages/Batch_Run.py", title=t("batch_run"), icon="✏️")
-review_queue_page = st.Page("app/ui/pages/Review_Queue.py", title=t("review_queue"), icon="✅")
-export_view_page = st.Page("app/ui/pages/Export_View.py", title=t("export_view"), icon="📦")
+home_page = st.Page("app/ui/pages/Home.py", title=t("nav.dashboard"), icon="🏠", default=True)
+concept_lab_page = st.Page("app/ui/pages/Concept_Lab.py", title=t("nav.concept_lab"), icon="📚")
+batch_run_page = st.Page("app/ui/pages/Batch_Run.py", title=t("nav.batch_run"), icon="✏️")
+review_queue_page = st.Page("app/ui/pages/Review_Queue.py", title=t("nav.review_queue"), icon="✅")
+export_view_page = st.Page("app/ui/pages/Export_View.py", title=t("nav.export_view"), icon="📦")
 
 navigation = st.navigation(
     pages=[
