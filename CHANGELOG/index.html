@@ -1,0 +1,3331 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Streamlit-based local-first agentic annotation tool">
+      
+      
+      
+        <link rel="canonical" href="https://hy-liyihan.github.io/rosetta/CHANGELOG/">
+      
+      
+        <link rel="prev" href="../developer/DEPLOYMENT/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>变更记录 - Rosetta</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="Rosetta" class="md-header__button md-logo" aria-label="Rosetta" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Rosetta
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              变更记录
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="切换到暗色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到暗色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="切换到亮色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到亮色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/HY-LiYihan/rosetta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HY-LiYihan/rosetta
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../user/TUTORIAL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  快速使用
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ideas/CORE_ANNOTATION_BOOTSTRAP/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Workflows
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../developer/ANNOTATION_FORMAT/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  标注格式
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../developer/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  开发维护
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../developer/DEPLOYMENT/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  部署运维
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  变更记录
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Rosetta" class="md-nav__button md-logo" aria-label="Rosetta" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Rosetta
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/HY-LiYihan/rosetta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HY-LiYihan/rosetta
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速使用
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    快速使用
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user/TUTORIAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    用户教程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ideas/CORE_ANNOTATION_BOOTSTRAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    核心想法
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/BOOTSTRAP_PIPELINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guideline Bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/BOOTSTRAP_EXPERIMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Experiments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/RESEARCH_PIPELINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Research Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/CORPUS_PIPELINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Corpus Builder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标注格式
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    标注格式
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/ANNOTATION_FORMAT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运行时标注格式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/ANNOTATION_JSONL_FORMAT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSONL 存储格式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../developer/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发维护
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发维护
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构总览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/WORKFLOW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工作流
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/SCRIPTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    脚本说明
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    路线图
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    部署运维
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    部署运维
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer/DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker / Conda 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    变更记录
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    变更记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-29
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-29">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-chinese-first-batch-annotation-tool-v410" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Chinese-first batch annotation tool v4.1.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-agentic-annotation-tool-architecture-v400" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Agentic annotation tool architecture v4.0.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-28
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-28">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs-readme-and-docs-navigation-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / README and docs navigation refresh
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-prodigy-compatible-annotation-jsonl-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Prodigy-compatible annotation JSONL format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-extensible-annotation-jsonl-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Extensible annotation JSONL storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-core-research-idea-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Core research idea archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-concept-bootstrap-pipeline-blueprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Concept Bootstrap pipeline blueprint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-span-jsonl-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap span JSONL contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-consistency-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap consistency scoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-human-review-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap human review queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-contrastive-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap contrastive retrieval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-label-statistics-and-reflection-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap label statistics and reflection plan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-offline-runner-and-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap offline runner and CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-experiment-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap experiment templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-report-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap report generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-26
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-26">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-annotation-format-migration-annotationdoc-v30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Annotation format migration — [原文]{标签} → AnnotationDoc (v3.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-23
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-23">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#refactor-corpus-pipeline-unification-shared-infra-concurrency-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / Corpus pipeline unification — shared infra, concurrency, checkpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-corpus-studio-step-by-step-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Corpus Studio step-by-step page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fix-corpus-studio-json-repair-and-judge-completeness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fix / Corpus Studio JSON repair and judge completeness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-21
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-21">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-corpusgen-grounded-corpus-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Corpusgen grounded corpus pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-glm-5-embedding-3-cpu-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / GLM-5 + Embedding-3 CPU retrieval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-research-lab-pipeline-bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Research lab pipeline bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-03-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-03-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-03-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs-markdown-links-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Markdown links fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-user-tutorial-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / User tutorial page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-annotation-history-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Annotation history export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-03-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-03-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-03-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#format-annotation-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format / Annotation V2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-navigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home navigation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation visualization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-core-cards-navigation-refinement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home core cards navigation refinement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-visualization-refinement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation visualization refinement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-core-cards-clickable-on-original-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home core cards clickable on original UI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-core-cards-navigation-adjustment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home core cards navigation adjustment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-color-rule-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation color rule update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-color-lightness-tweak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation color lightness tweak
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-result-visualization-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation result visualization upgrade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Debug mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactor-service-layering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / service layering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reliability-state-observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reliability / State observability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactor-page-relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / page relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactor-api_utils-relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / api_utils relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-layout-docs-clarity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime Layout / Docs Clarity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-03-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-03-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-03-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs-architecture-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Architecture V1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-code-restructure-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1 / Code Restructure (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-domain-data-governance-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2 / Domain &amp; Data Governance (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-3-platform-adapter-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 3 / Platform Adapter (started)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-4-testing-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 4 / Testing (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-5-engineering-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 5 / Engineering (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-classification-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Classification Update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repo-root-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repo / Root Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-readme-simplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / README Simplification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-deployment-link-style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Deployment &amp; Link Style
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-developer-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Developer Refresh
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-29
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-29">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-chinese-first-batch-annotation-tool-v410" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Chinese-first batch annotation tool v4.1.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-agentic-annotation-tool-architecture-v400" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Agentic annotation tool architecture v4.0.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-28
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-28">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs-readme-and-docs-navigation-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / README and docs navigation refresh
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-prodigy-compatible-annotation-jsonl-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Prodigy-compatible annotation JSONL format
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-extensible-annotation-jsonl-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Extensible annotation JSONL storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-core-research-idea-archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Core research idea archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-concept-bootstrap-pipeline-blueprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Concept Bootstrap pipeline blueprint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-span-jsonl-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap span JSONL contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-consistency-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap consistency scoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-human-review-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap human review queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-contrastive-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap contrastive retrieval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-label-statistics-and-reflection-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap label statistics and reflection plan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-offline-runner-and-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap offline runner and CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-experiment-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap experiment templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-bootstrap-report-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Bootstrap report generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-26" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-26
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-26">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-annotation-format-migration-annotationdoc-v30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Annotation format migration — [原文]{标签} → AnnotationDoc (v3.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-23
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-23">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#refactor-corpus-pipeline-unification-shared-infra-concurrency-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / Corpus pipeline unification — shared infra, concurrency, checkpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-22
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-corpus-studio-step-by-step-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Corpus Studio step-by-step page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fix-corpus-studio-json-repair-and-judge-completeness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fix / Corpus Studio JSON repair and judge completeness
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-04-21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-04-21
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-04-21">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#feature-corpusgen-grounded-corpus-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Corpusgen grounded corpus pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-glm-5-embedding-3-cpu-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / GLM-5 + Embedding-3 CPU retrieval
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-research-lab-pipeline-bootstrap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Research lab pipeline bootstrap
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-03-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-03-12
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-03-12">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs-markdown-links-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Markdown links fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-user-tutorial-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / User tutorial page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-annotation-history-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Annotation history export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-03-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-03-11
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-03-11">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#format-annotation-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Format / Annotation V2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-navigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home navigation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation visualization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-core-cards-navigation-refinement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home core cards navigation refinement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-visualization-refinement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation visualization refinement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-core-cards-clickable-on-original-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home core cards clickable on original UI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-home-core-cards-navigation-adjustment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Home core cards navigation adjustment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-color-rule-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation color rule update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-color-lightness-tweak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation color lightness tweak
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-annotation-result-visualization-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX / Annotation result visualization upgrade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#feature-debug-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature / Debug mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactor-service-layering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / service layering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reliability-state-observability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reliability / State observability
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactor-page-relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / page relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refactor-api_utils-relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor / api_utils relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-layout-docs-clarity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime Layout / Docs Clarity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2026-03-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-03-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026-03-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docs-architecture-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Architecture V1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-code-restructure-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1 / Code Restructure (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-domain-data-governance-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2 / Domain &amp; Data Governance (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-3-platform-adapter-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 3 / Platform Adapter (started)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-4-testing-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 4 / Testing (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-5-engineering-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 5 / Engineering (completed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-classification-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Classification Update
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#repo-root-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repo / Root Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-readme-simplification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / README Simplification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-deployment-link-style" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Deployment &amp; Link Style
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs-developer-refresh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docs / Developer Refresh
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/HY-LiYihan/rosetta/edit/main/docs/CHANGELOG.md" title="编辑此页" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<h2 id="2026-04-29">2026-04-29<a class="headerlink" href="#2026-04-29" title="Permanent link">&para;</a></h2>
+<h3 id="feature-chinese-first-batch-annotation-tool-v410">Feature / Chinese-first batch annotation tool v4.1.0<a class="headerlink" href="#feature-chinese-first-batch-annotation-tool-v410" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Streamlit 默认导航收敛为 5 个中文主页面：工作台、概念实验室、批量标注、审核队列、导出与可视化。</li>
+<li>新增 <code>app/ui/i18n.py</code>，默认中文界面，并保留可选英文模式。</li>
+<li>新增概念实验室页面，支持创建项目、编辑概念阐释、保存金样例、验证概念、生成修订草案，并导出概念阐释和金样例。</li>
+<li>新增批量标注页面，支持 TXT / JSONL / CSV 导入、分句、轻量 tokenize、本地 SQLite 队列、后台执行和本地模拟。</li>
+<li>新增审核队列页面，按置信度阈值、自洽性和抽检策略逐条展示候选，支持保存选择、手动修正、跳过、全部拒绝和疑难样例标记。</li>
+<li>新增导出与可视化页面，支持按范围导出 Prodigy-compatible JSONL、报告和运行清单，并展示路由、标签和一致性分布。</li>
+<li>新增 <code>ConceptGuideline / GoldExampleSet / ConceptVersion / BatchJob / BatchJobItem</code> 领域模型，以及对应 SQLite 表。</li>
+<li>新增 <code>app/data/text_ingestion.py</code>、<code>app/data/exporters.py</code>、<code>app/workflows/annotation/batch.py</code>、<code>app/workflows/bootstrap/guideline.py</code> 和 <code>app/workflows/review/queue.py</code>。</li>
+<li>新增批量标注闭环单测，覆盖文本导入、概念验证、批量任务、审核决策和 JSONL round-trip。</li>
+<li>首页页脚版本更新为 <code>v4.1.0</code>。</li>
+</ol>
+<h3 id="feature-agentic-annotation-tool-architecture-v400">Feature / Agentic annotation tool architecture v4.0.0<a class="headerlink" href="#feature-agentic-annotation-tool-architecture-v400" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <code>app/core</code>，定义 <code>Project / AnnotationTask / Prediction / ReviewTask / WorkflowRun / AgentStep</code> 统一领域模型。</li>
+<li>新增 <code>app/agents</code>，提供 <code>AgentKernel</code>、<code>ToolRegistry</code>、<code>ContextEngine</code> 和 reusable <code>Skill</code>。</li>
+<li>新增 <code>app/data</code>，提供 Prodigy-compatible JSONL round-trip 与 Label Studio edge adapter。</li>
+<li>新增 <code>app/runtime</code>，提供 runtime paths 和 SQLite <code>RuntimeStore</code>，用于本地保存 projects / tasks / predictions / reviews / runs / artifacts / agent_steps。</li>
+<li>新增 <code>app/workflows</code>，将 annotation / bootstrap / corpus / evaluation 作为用户可执行 workflow；旧 <code>research</code> / <code>corpusgen</code> 保留为 compatibility implementation。</li>
+<li><code>Annotate</code> 流程改为通过 <code>AgentKernel</code> 执行，旧 <code>annotation_flow_service</code> 作为 UI 兼容入口。</li>
+<li>新增统一 CLI <a href="../scripts/tool/rosetta_tool.py">scripts/tool/rosetta_tool.py</a>，旧 <code>scripts/research/*</code> 与 <code>scripts/corpusgen/*</code> 保留并提示迁移。</li>
+<li>Streamlit 导航改为 <code>Dashboard / Projects / Guidelines / Annotate / Review / Corpus Builder / Runs / Export / Settings / Tutorial</code>。</li>
+<li>Dockerfile 改为构建期安装依赖，新增 <code>.dockerignore</code>，Compose 挂载 <code>/opt/rosetta/runtime</code>。</li>
+<li>更新 <a href="../README.md">README.md</a>、<a href="../">docs/README.md</a>、<a href="../developer/ARCHITECTURE/">ARCHITECTURE.md</a>、<a href="../developer/SCRIPTS/">SCRIPTS.md</a>、<a href="../developer/DEPLOYMENT/">DEPLOYMENT.md</a> 和 <a href="../user/TUTORIAL/">用户教程</a>。</li>
+<li>首页页脚版本更新为 <code>v4.0.0</code>。</li>
+</ol>
+<h2 id="2026-04-28">2026-04-28<a class="headerlink" href="#2026-04-28" title="Permanent link">&para;</a></h2>
+<h3 id="docs-readme-and-docs-navigation-refresh">Docs / README and docs navigation refresh<a class="headerlink" href="#docs-readme-and-docs-navigation-refresh" title="Permanent link">&para;</a></h3>
+<ol>
+<li>重写 <a href="../README.md">README.md</a>，参考 <code>venom_vnv</code> 的入口组织方式，将文档站地址、快速入口、系统结构、快速开始、pipeline 和文档导航前置。</li>
+<li>重写 <a href="../">docs/README.md</a>，按用户路径、科研路径、数据格式、开发维护和当前阶段组织文档站首页。</li>
+<li>重写 <a href="../developer/">docs/developer/README.md</a>，按工程架构、标注格式、科研流水线、部署运维分组开发文档。</li>
+<li>更新 <a href="../mkdocs.yml">mkdocs.yml</a>，补齐 Concept Bootstrap、Bootstrap Experiments、Annotation JSONL、核心想法等文档站导航入口，并启用更清晰的 Material 导航特性。</li>
+</ol>
+<h3 id="docs-prodigy-compatible-annotation-jsonl-format">Docs / Prodigy-compatible annotation JSONL format<a class="headerlink" href="#docs-prodigy-compatible-annotation-jsonl-format" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../developer/ANNOTATION_JSONL_FORMAT/">docs/developer/ANNOTATION_JSONL_FORMAT.md</a>，系统记录 Rosetta 标注 JSONL 的来源、字段语义、约束和多类型标注示例。</li>
+<li>将 Concept Bootstrap 新写出格式收敛为 <code>rosetta.prodigy_jsonl.v1</code> / <code>rosetta.prodigy_candidate.v1</code>，顶层沿用 <code>text / tokens / spans / relations / label / options / accept / answer / meta</code>。</li>
+<li>更新 <a href="../app/research/bootstrap_io.py">app/research/bootstrap_io.py</a> 与 ACTER 示例，使 normalized samples / candidates 写出 Prodigy-compatible JSONL，并继续兼容旧 <code>annotation.layers</code> 输入。</li>
+<li>更新 <a href="../README.md">README.md</a>、<a href="../">docs/README.md</a>、<a href="../developer/">docs/developer/README.md</a>、<a href="../developer/BOOTSTRAP_PIPELINE/">BOOTSTRAP_PIPELINE.md</a> 和 <a href="../developer/ANNOTATION_FORMAT/">ANNOTATION_FORMAT.md</a>。</li>
+<li>首页页脚版本更新为 <code>v3.12.0</code>。</li>
+</ol>
+<h3 id="feature-extensible-annotation-jsonl-storage">Feature / Extensible annotation JSONL storage<a class="headerlink" href="#feature-extensible-annotation-jsonl-storage" title="Permanent link">&para;</a></h3>
+<ol>
+<li>将 Concept Bootstrap 新写出格式从顶层 <code>spans</code> 升级为 <code>rosetta.annotation_jsonl.v1</code>，使用 <code>annotation.layers.spans</code> 存储 span，并预留 <code>relations / attributes / comments / document_labels</code> 扩展层。</li>
+<li>更新 <a href="../app/research/bootstrap_io.py">app/research/bootstrap_io.py</a>，继续兼容旧顶层 <code>spans</code> 与 <code>gold_annotation</code> 输入，但 normalized samples / candidates 写出统一使用 Annotation JSONL。</li>
+<li>更新 ACTER 示例、实验配置、<a href="../developer/BOOTSTRAP_PIPELINE/">BOOTSTRAP_PIPELINE.md</a>、<a href="../developer/ANNOTATION_FORMAT/">ANNOTATION_FORMAT.md</a> 与 <a href="../README.md">README.md</a>，明确存储格式与 LLM runtime markup 解耦。</li>
+<li>首页页脚版本更新为 <code>v3.11.0</code>。</li>
+</ol>
+<h3 id="docs-core-research-idea-archive">Docs / Core research idea archive<a class="headerlink" href="#docs-core-research-idea-archive" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../ideas/CORE_ANNOTATION_BOOTSTRAP/">docs/ideas/CORE_ANNOTATION_BOOTSTRAP.md</a>，单独记录“15 个金样例 + 一句话概念描述 + 自洽性主动 refinement + 对比式检索”的核心科研设想。</li>
+<li>更新 <a href="../">docs/README.md</a>，新增 <code>Ideas</code> 文档入口，避免核心想法散落在对话中。</li>
+<li>补充 human-in-the-loop uncertainty triage：低自洽 / 低自评样本优先进入专家批改队列，并以多候选选择题降低人工标注成本。</li>
+<li>首页页脚版本更新为 <code>v3.1.0</code>，最后更新日期改为 <code>2026年4月28日</code>。</li>
+</ol>
+<h3 id="docs-concept-bootstrap-pipeline-blueprint">Docs / Concept Bootstrap pipeline blueprint<a class="headerlink" href="#docs-concept-bootstrap-pipeline-blueprint" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../developer/BOOTSTRAP_PIPELINE/">docs/developer/BOOTSTRAP_PIPELINE.md</a>，将核心想法抽象为项目级研究流水线。</li>
+<li>更新 <a href="../developer/ARCHITECTURE/">docs/developer/ARCHITECTURE.md</a> 与 <a href="../developer/RESEARCH_PIPELINE/">docs/developer/RESEARCH_PIPELINE.md</a>，明确 bootstrap 属于 <code>research</code> 增强，且不依赖 <code>corpusgen</code>。</li>
+<li>更新 <a href="../README.md">README.md</a>、<a href="../">docs/README.md</a> 与 <a href="../developer/">docs/developer/README.md</a>，加入 Concept Bootstrap 入口。</li>
+<li>明确 LLM prompt 标注格式与最终存储格式解耦：prompt 可用行内 <code>[span]{label}</code>，落盘统一为参考 Prodigy / spaCy span 表达的 JSONL。</li>
+<li>首页页脚版本更新为 <code>v3.2.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-span-jsonl-contracts">Feature / Bootstrap span JSONL contracts<a class="headerlink" href="#feature-bootstrap-span-jsonl-contracts" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/research/bootstrap_contracts.py">app/research/bootstrap_contracts.py</a>，定义 concept bootstrap 的 <code>BootstrapSpan</code>、<code>BootstrapSample</code> 与 <code>BootstrapCandidate</code> 数据契约。</li>
+<li>新增 <a href="../app/research/bootstrap_io.py">app/research/bootstrap_io.py</a>，支持 span JSONL 读写，并兼容旧的 <code>[span]{label}</code> 行内 gold annotation 输入。</li>
+<li>新增 <a href="../tests/unit/test_bootstrap_io.py">tests/unit/test_bootstrap_io.py</a>，覆盖 offset 校验、legacy markup 转 span、JSONL 往返和 candidate confidence 校验。</li>
+<li>首页页脚版本更新为 <code>v3.3.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-consistency-scoring">Feature / Bootstrap consistency scoring<a class="headerlink" href="#feature-bootstrap-consistency-scoring" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/research/consistency.py">app/research/consistency.py</a>，基于多候选 span set 计算 pairwise span-F1、exact-match rate、平均模型自评 confidence 与 uncertainty score。</li>
+<li>自洽性结果输出 <code>high / medium / low</code> 路由，为后续“低置信样本优先专家批改”提供稳定输入。</li>
+<li>新增 <a href="../tests/unit/test_consistency.py">tests/unit/test_consistency.py</a>，覆盖空标注、部分重叠、完全一致、低一致性和分组评分。</li>
+<li>首页页脚版本更新为 <code>v3.4.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-human-review-queue">Feature / Bootstrap human review queue<a class="headerlink" href="#feature-bootstrap-human-review-queue" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/research/human_review.py">app/research/human_review.py</a>，将低自洽 / 中自洽候选组转换为专家复核任务。</li>
+<li>每个复核任务包含候选 A/B/C... 与固定 <code>__manual__</code> 手动修正选项，把专家工作从开放式标注转为选择题优先。</li>
+<li>新增 <a href="../tests/unit/test_human_review.py">tests/unit/test_human_review.py</a>，覆盖低置信队列、高置信跳过、任务字典化和候选排序。</li>
+<li>首页页脚版本更新为 <code>v3.5.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-contrastive-retrieval">Feature / Bootstrap contrastive retrieval<a class="headerlink" href="#feature-bootstrap-contrastive-retrieval" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/research/contrastive_retrieval.py">app/research/contrastive_retrieval.py</a>，支持对每条 query 同时选择相似样例与少量边界远例。</li>
+<li>当前实现使用轻量 lexical similarity，保持可解释、低依赖；接口保留后续替换为 Embedding-3 CPU index 的空间。</li>
+<li>新增 <a href="../tests/unit/test_contrastive_retrieval.py">tests/unit/test_contrastive_retrieval.py</a>，覆盖相似度、query 排除、similar/boundary 选择和字典化输出。</li>
+<li>首页页脚版本更新为 <code>v3.6.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-label-statistics-and-reflection-plan">Feature / Bootstrap label statistics and reflection plan<a class="headerlink" href="#feature-bootstrap-label-statistics-and-reflection-plan" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/research/label_statistics.py">app/research/label_statistics.py</a>，从 gold / high-confidence 样本统计 token 的 entity/context/other 分布。</li>
+<li>新增 <a href="../app/research/reflection.py">app/research/reflection.py</a>，基于统计结果生成 unseen token、possible false negative 与 boundary token 反思计划。</li>
+<li>新增 <a href="../tests/unit/test_label_statistics.py">tests/unit/test_label_statistics.py</a> 与 <a href="../tests/unit/test_reflection.py">tests/unit/test_reflection.py</a>。</li>
+<li>首页页脚版本更新为 <code>v3.7.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-offline-runner-and-cli">Feature / Bootstrap offline runner and CLI<a class="headerlink" href="#feature-bootstrap-offline-runner-and-cli" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/research/bootstrap_runner.py">app/research/bootstrap_runner.py</a>，将 normalized samples 与 candidate runs 串联成离线分析产物。</li>
+<li>新增 <a href="../scripts/research/run_bootstrap.py">scripts/research/run_bootstrap.py</a>，提供 <code>analyze</code> 子命令。</li>
+<li>Runner 当前输出 normalized samples、candidate runs、consistency scores、human review queue、label statistics、reflection plans、retrieval traces 与 manifest。</li>
+<li>新增 <a href="../tests/unit/test_bootstrap_runner.py">tests/unit/test_bootstrap_runner.py</a>。</li>
+<li>首页页脚版本更新为 <code>v3.8.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-experiment-templates">Feature / Bootstrap experiment templates<a class="headerlink" href="#feature-bootstrap-experiment-templates" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 ACTER heart failure 风格实验入口：</li>
+<li><a href="../configs/research/bootstrap/acter_heart_failure.experiment.json">acter_heart_failure.experiment.json</a></li>
+<li><a href="../configs/research/bootstrap/acter_heart_failure.samples.example.jsonl">acter_heart_failure.samples.example.jsonl</a></li>
+<li><a href="../configs/research/bootstrap/acter_heart_failure.candidates.example.jsonl">acter_heart_failure.candidates.example.jsonl</a></li>
+<li>新增 <a href="../developer/BOOTSTRAP_EXPERIMENTS/">docs/developer/BOOTSTRAP_EXPERIMENTS.md</a>，记录 ACTER 优先实验、baselines、指标和真实实验建议。</li>
+<li>更新 <a href="../">docs/README.md</a> 与 <a href="../developer/">docs/developer/README.md</a>，加入实验文档入口。</li>
+<li>首页页脚版本更新为 <code>v3.9.0</code>。</li>
+</ol>
+<h3 id="feature-bootstrap-report-generation">Feature / Bootstrap report generation<a class="headerlink" href="#feature-bootstrap-report-generation" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/research/bootstrap_report.py">app/research/bootstrap_report.py</a>，将离线分析产物汇总为 <code>report.md</code>。</li>
+<li>更新 <a href="../app/research/bootstrap_runner.py">app/research/bootstrap_runner.py</a>，每次分析自动输出 <code>report.md</code>，并在 manifest 中记录 <code>report_path</code>。</li>
+<li>更新 <a href="../scripts/research/run_bootstrap.py">scripts/research/run_bootstrap.py</a>，<code>analyze</code> 子命令新增 <code>--experiment</code> 参数。</li>
+<li>新增 <a href="../tests/unit/test_bootstrap_report.py">tests/unit/test_bootstrap_report.py</a>，并更新 runner 测试确认报告落盘。</li>
+<li>首页页脚版本更新为 <code>v3.10.0</code>。</li>
+</ol>
+<h2 id="2026-04-26">2026-04-26<a class="headerlink" href="#2026-04-26" title="Permanent link">&para;</a></h2>
+<h3 id="feature-annotation-format-migration-annotationdoc-v30">Feature / Annotation format migration — <code>[原文]{标签}</code> → AnnotationDoc (v3.0)<a class="headerlink" href="#feature-annotation-format-migration-annotationdoc-v30" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/domain/annotation_doc.py">app/domain/annotation_doc.py</a>，提供结构化标注文档类型：</li>
+<li><code>legacy_string_to_spans()</code>：将 <code>[原文]{标签}</code> 字符串转换为带字符偏移量的 span 列表</li>
+<li><code>make_annotation_doc()</code>：组装完整 AnnotationDoc（version、text、layers、meta）</li>
+<li><code>validate_annotation_doc()</code>：校验 AnnotationDoc 结构合法性</li>
+<li><code>spans_to_legacy_string()</code>：将 spans 反向转为 <code>[原文]{标签}</code> 字符串（供 LLM prompt 注入）</li>
+<li><a href="../app/services/annotation_service.py">app/services/annotation_service.py</a>：<code>parse_annotation_response()</code> 在验证 LLM 输出字符串后自动调用 <code>make_annotation_doc()</code> 将 annotation 字段转换为 AnnotationDoc；<code>build_annotation_prompt()</code> 支持 few-shot examples 的 annotation 字段为 dict 时自动转回字符串。</li>
+<li><a href="../app/domain/validators.py">app/domain/validators.py</a>：<code>normalize_example()</code> 同时接受 str（legacy）和 dict（AnnotationDoc）两种格式，自动迁移 legacy 字符串。</li>
+<li><a href="../app/domain/schemas.py">app/domain/schemas.py</a>：<code>DATA_VERSION</code> 从 <code>"2.0"</code> 升级到 <code>"3.0"</code>。</li>
+<li><a href="../app/ui/viewmodels/annotation_visualization.py">app/ui/viewmodels/annotation_visualization.py</a>：<code>annotation_to_colored_html()</code> 支持 dict 输入，自动转换后渲染。</li>
+<li><a href="../app/ui/pages/Annotation.py">app/ui/pages/Annotation.py</a>：新增 <code>_annotation_tokens()</code> 和 <code>_annotation_display_str()</code> helper，替换对 <code>extract_annotation_tokens</code> 的直接调用。</li>
+<li><a href="../app/research/runner.py">app/research/runner.py</a>：<code>_annotation_signature()</code> 支持 AnnotationDoc dict 输入。</li>
+<li>新增 <a href="../scripts/migrate_annotation_format.py">scripts/migrate_annotation_format.py</a>：一次性迁移脚本，将 <code>assets/concepts.json</code> 中所有 <code>annotation: str</code> 转换为 AnnotationDoc dict，并将 <code>version</code> 升级为 <code>"3.0"</code>。</li>
+<li>新增 <a href="../tests/unit/test_annotation_doc.py">tests/unit/test_annotation_doc.py</a>，覆盖 4 个核心函数的 13 个测试用例。</li>
+<li>首页页脚版本更新为 <code>v3.0.0</code>，最后更新日期改为 <code>2026年4月26日</code>。</li>
+</ol>
+<h2 id="2026-04-23">2026-04-23<a class="headerlink" href="#2026-04-23" title="Permanent link">&para;</a></h2>
+<h3 id="refactor-corpus-pipeline-unification-shared-infra-concurrency-checkpoint">Refactor / Corpus pipeline unification — shared infra, concurrency, checkpoint<a class="headerlink" href="#refactor-corpus-pipeline-unification-shared-infra-concurrency-checkpoint" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/corpusgen/utils.py">app/corpusgen/utils.py</a>，提取 <code>strip_markdown_fences</code> 与 <code>dedupe_strings</code> 两个共享工具，消除 <code>generators.py</code>、<code>compression.py</code>、<code>corpus_studio_service.py</code>、<code>corpus_studio_flow_service.py</code> 中的重复实现。</li>
+<li><a href="../app/services/platform_service.py">app/services/platform_service.py</a> 新增 <code>call_llm_with_repair()</code>，将 JSON 修复逻辑集中到 service 层；<code>corpus_studio_flow_service.py</code> 的 <code>_request_json_payload</code> 改为调用该函数，删除本地 <code>_build_json_repair_prompt</code>。</li>
+<li><a href="../app/corpusgen/runner.py">app/corpusgen/runner.py</a> 提取 <code>_run_single_task()</code>，用 <code>ThreadPoolExecutor(max_workers=8)</code> 并行执行 LLM 生成任务，judge 阶段保持串行以保证去重确定性。</li>
+<li><a href="../app/corpusgen/runner.py">app/corpusgen/runner.py</a> 新增 <code>resume_dir</code> 参数与 <code>checkpoint.jsonl</code> 断点续跑机制；<a href="../scripts/corpusgen/generate_corpus.py">scripts/corpusgen/generate_corpus.py</a> 新增 <code>--resume-dir</code> 参数。</li>
+<li><a href="../app/services/corpus_studio_flow_service.py">app/services/corpus_studio_flow_service.py</a> 提取 <code>_generate_batch()</code>，用 <code>ThreadPoolExecutor(max_workers=4)</code> 并行执行批次生成；新增 <code>session_dir</code> 参数，每批结果 append 写入 <code>batches.jsonl</code>。</li>
+<li><a href="../app/ui/pages/Corpus_Studio.py">app/ui/pages/Corpus_Studio.py</a> 新增"断点续跑"折叠区，允许用户指定会话目录。</li>
+<li>更新单测 <a href="../tests/unit/test_corpus_studio_flow_service.py">test_corpus_studio_flow_service.py</a>，将 mock 目标从 <code>flow_service.get_chat_response</code> 更新为 <code>platform_service.get_chat_response</code>。</li>
+</ol>
+<h2 id="2026-04-22">2026-04-22<a class="headerlink" href="#2026-04-22" title="Permanent link">&para;</a></h2>
+<h3 id="feature-corpus-studio-step-by-step-page">Feature / Corpus Studio step-by-step page<a class="headerlink" href="#feature-corpus-studio-step-by-step-page" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增页面 <a href="../app/ui/pages/Corpus_Studio.py">Corpus_Studio.py</a>，提供分步式语料生成工作台。</li>
+<li>新增服务层 <a href="../app/services/corpus_studio_service.py">corpus_studio_service.py</a> 与 <a href="../app/services/corpus_studio_flow_service.py">corpus_studio_flow_service.py</a>，支持：</li>
+<li>一句话 brief 解析</li>
+<li>标题候选与样稿方向生成</li>
+<li>多轮策略重规划</li>
+<li>样稿生成</li>
+<li>批量语料生成</li>
+<li>独立 judge 评估</li>
+<li>新增单测 <a href="../tests/unit/test_corpus_studio_service.py">test_corpus_studio_service.py</a> 与 <a href="../tests/unit/test_corpus_studio_flow_service.py">test_corpus_studio_flow_service.py</a>。</li>
+<li>更新 <a href="../streamlit_app.py">streamlit_app.py</a> 导航，新增 <code>Corpus Studio</code> 页面入口。</li>
+<li>更新 <a href="../README.md">README.md</a>、<a href="../user/TUTORIAL/">docs/user/TUTORIAL.md</a>、<a href="../developer/CORPUS_PIPELINE/">CORPUS_PIPELINE.md</a>、<a href="../developer/ARCHITECTURE/">ARCHITECTURE.md</a> 以说明新的页面化工作流。</li>
+<li>首页新增 <code>Corpus Studio</code> 快速入口，首页页脚版本更新为 <code>v2.13.0</code>，最后更新日期改为 <code>2026年4月22日</code>。</li>
+</ol>
+<h3 id="fix-corpus-studio-json-repair-and-judge-completeness">Fix / Corpus Studio JSON repair and judge completeness<a class="headerlink" href="#fix-corpus-studio-json-repair-and-judge-completeness" title="Permanent link">&para;</a></h3>
+<ol>
+<li><a href="../app/services/corpus_studio_flow_service.py">corpus_studio_flow_service.py</a> 新增 JSON repair fallback：当长批次生成返回非法 JSON 时，会自动发起一次“只修 JSON 不改语义”的修复调用，提升 <code>sample / corpus / judge</code> 阶段稳定性。</li>
+<li><a href="../app/services/corpus_studio_service.py">corpus_studio_service.py</a> 的 judge prompt 不再截断文章正文，改为基于完整文章评估，修复“较长文章被误判为中途截断”的系统性偏差。</li>
+<li>新增与更新单测，覆盖 JSON repair fallback 与完整正文 judge prompt。</li>
+<li>用真实 <code>Corpus Studio</code> flow 完成了 10 篇英文硬科学科普新闻语料的端到端测试，并确认修复后的 judge 结果可用。</li>
+<li>首页页脚版本更新为 <code>v2.13.1</code>。</li>
+</ol>
+<h2 id="2026-04-21">2026-04-21<a class="headerlink" href="#2026-04-21" title="Permanent link">&para;</a></h2>
+<h3 id="feature-corpusgen-grounded-corpus-pipeline">Feature / Corpusgen grounded corpus pipeline<a class="headerlink" href="#feature-corpusgen-grounded-corpus-pipeline" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增独立语料生成流水线目录 <a href="../app/corpusgen/">app/corpusgen/</a>：</li>
+<li><code>specs.py</code>: 语料 spec 解析</li>
+<li><code>seeds.py</code>: seed 文档切分</li>
+<li><code>planner.py</code>: 任务规划</li>
+<li><code>memory/*</code>: context memory 压缩与 CPU 向量检索</li>
+<li><code>generators.py</code>: 生成 prompt 与 JSON 解析</li>
+<li><code>judges.py</code>: 质量规则检查与去重</li>
+<li><code>runner.py</code>: <code>prepare / memory / plan / generate</code> 编排</li>
+<li>新增独立脚本入口 <a href="../scripts/corpusgen/">scripts/corpusgen/</a>：</li>
+<li><code>prepare_seeds.py</code></li>
+<li><code>build_memory.py</code></li>
+<li><code>plan_corpus.py</code></li>
+<li><code>generate_corpus.py</code></li>
+<li>新增模板 <a href="../configs/corpusgen/domain/linguistics_zh_qa.json">linguistics_zh_qa.json</a> 与 seed 示例 <a href="../configs/corpusgen/domain/linguistics_zh_seed.example.jsonl">linguistics_zh_seed.example.jsonl</a>。</li>
+<li><code>corpusgen</code> 与 <code>research</code> 明确保持平行隔离，仅共享 <code>app/infrastructure/llm/*</code> 的底层 provider / 凭据能力。</li>
+<li>新增开发文档 <a href="../developer/CORPUS_PIPELINE/">CORPUS_PIPELINE.md</a>，并更新 <a href="../developer/ARCHITECTURE/">ARCHITECTURE.md</a>、<a href="../">docs/README.md</a>、<a href="../developer/">developer/README.md</a> 与 <a href="../README.md">README.md</a>。</li>
+<li>新增单测覆盖 spec、memory recall 与 corpus runner。</li>
+<li>使用真实 <code>GLM-5 + Embedding-3</code> 完成了 1 个任务、2 条样本的 smoke run，验证 CPU index 与生成链路可运行。</li>
+<li>首页页脚版本更新为 <code>v2.12.0</code>。</li>
+</ol>
+<h3 id="feature-glm-5-embedding-3-cpu-retrieval">Feature / GLM-5 + Embedding-3 CPU retrieval<a class="headerlink" href="#feature-glm-5-embedding-3-cpu-retrieval" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增本地凭据解析模块 <a href="../app/infrastructure/llm/credentials.py">credentials.py</a>，研究流水线可在非 Streamlit 环境下自动读取 <code>.streamlit/secrets.toml</code> 中的 <code>zhipuai_api_key</code>。</li>
+<li>扩展 <a href="../app/infrastructure/llm/base.py">base.py</a>：</li>
+<li>新增 <code>embed()</code>，支持调用 <code>Embedding-3</code></li>
+<li>优化 chat 响应提取逻辑，兼容 <code>GLM-5</code> 的 <code>reasoning_content</code></li>
+<li>更新 <a href="../app/infrastructure/llm/providers.py">providers.py</a>，将智谱默认聊天模型更新为 <code>glm-5</code>，并默认关闭 <code>thinking</code> 以适配结构化科研标注输出。</li>
+<li>新增 <a href="../app/research/indexing.py">indexing.py</a>，实现基于 <code>numpy</code> 的 CPU 向量索引构建、缓存与 top-k 相似度检索。</li>
+<li><a href="../app/research/retrieval.py">retrieval.py</a> 从仅支持 <code>lexical</code> 扩展为支持 <code>lexical</code> 与 <code>embedding</code> 双检索策略。</li>
+<li><a href="../app/research/runner.py">runner.py</a> 新增：</li>
+<li><code>.streamlit/secrets.toml</code> 的 API Key 自动回退</li>
+<li><code>build_index()</code> 入口</li>
+<li><code>Embedding-3</code> 动态 few-shot 检索支持</li>
+<li><a href="../scripts/research/run_pipeline.py">run_pipeline.py</a> 新增 <code>build-index</code> 子命令。</li>
+<li>新增智谱研究模板 <a href="../configs/research/glm5_embedding3_template.json">glm5_embedding3_template.json</a>，默认使用 <code>GLM-5 + Embedding-3(512维)</code>。</li>
+<li>更新 <a href="../developer/RESEARCH_PIPELINE/">RESEARCH_PIPELINE.md</a> 与 <a href="../developer/ARCHITECTURE/">ARCHITECTURE.md</a> 以说明 CPU index 与双检索策略。</li>
+<li>首页页脚版本更新为 <code>v2.11.0</code>。</li>
+</ol>
+<h3 id="feature-research-lab-pipeline-bootstrap">Feature / Research lab pipeline bootstrap<a class="headerlink" href="#feature-research-lab-pipeline-bootstrap" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增研究流水线骨架目录 <a href="../app/research/">app/research/</a>：</li>
+<li><code>config.py</code>: 研究配置加载与校验</li>
+<li><code>prompting.py</code>: 研究 prompt 组装</li>
+<li><code>retrieval.py</code>: lexical 动态 few-shot 检索</li>
+<li><code>verifier.py</code>: 规则验证与逻辑冲突检测</li>
+<li><code>runner.py</code>: <code>preview</code> / <code>batch</code> / <code>audit</code> 执行编排</li>
+<li>新增脚本 <a href="../scripts/research/run_pipeline.py">scripts/research/run_pipeline.py</a>，支持：</li>
+<li><code>preview</code>：预览单条样本的动态 prompt</li>
+<li><code>run --mode batch</code>：执行批处理推断</li>
+<li><code>run --mode audit</code>：执行带 gold 标签的审查流程并导出冲突样本</li>
+<li>新增研究配置模板 <a href="../configs/research/pilot_template.json">configs/research/pilot_template.json</a> 与示例数据 <a href="../configs/research/pilot_dataset.example.jsonl">configs/research/pilot_dataset.example.jsonl</a>。</li>
+<li>新增开发文档 <a href="../developer/RESEARCH_PIPELINE/">RESEARCH_PIPELINE.md</a>，说明当前研究流水线范围、运行方式与下一步演进方向。</li>
+<li>更新 <a href="../">docs/README.md</a>、<a href="../developer/">docs/developer/README.md</a>、<a href="../developer/ARCHITECTURE/">docs/developer/ARCHITECTURE.md</a> 以纳入研究流水线入口。</li>
+<li>新增单测覆盖研究配置、prompt 组装、验证器与批处理 runner。</li>
+<li>首页页脚版本更新为 <code>v2.10.0</code>，最后更新日期改为 <code>2026年4月21日</code>。</li>
+</ol>
+<h2 id="2026-03-12">2026-03-12<a class="headerlink" href="#2026-03-12" title="Permanent link">&para;</a></h2>
+<h3 id="docs-markdown-links-fix">Docs / Markdown links fix<a class="headerlink" href="#docs-markdown-links-fix" title="Permanent link">&para;</a></h3>
+<ol>
+<li>修复 <code>README.md</code> 与 <code>docs/*</code> 中失效的本机绝对路径链接（<code>/Users/liyh/rosetta/...</code>）。</li>
+<li>统一改为仓库内相对路径，确保在 GitHub 和本地 Markdown 预览中均可跳转。</li>
+<li>同步更新首页页脚版本为 <code>v2.9.3</code>。</li>
+</ol>
+<h3 id="feature-user-tutorial-page">Feature / User tutorial page<a class="headerlink" href="#feature-user-tutorial-page" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增页面 <a href="../app/ui/pages/Tutorial.py">Tutorial.py</a>，在应用内直接展示用户教程文档。</li>
+<li>侧边栏导航顺序调整为：<code>首页 -&gt; 使用教程 -&gt; 概念管理 -&gt; 智能标注</code>，其中“使用教程”固定为第二项。</li>
+<li>重写 <a href="../user/TUTORIAL/">docs/user/TUTORIAL.md</a> 为“网站使用版”，移除部署、Token 配置、运维脚本等非终端用户内容。</li>
+<li>首页页脚版本更新为 <code>v2.9.2</code>。</li>
+</ol>
+<h3 id="feature-annotation-history-export">Feature / Annotation history export<a class="headerlink" href="#feature-annotation-history-export" title="Permanent link">&para;</a></h3>
+<ol>
+<li>在 <a href="../app/ui/pages/Annotation.py">Annotation.py</a> 的「📜 标注历史」区域新增“下载全部历史”按钮，可一键导出当前 session 中的全部标注历史。</li>
+<li>新增导出构建函数 <a href="../app/services/annotation_service.py">annotation_service.py</a>：</li>
+<li><code>build_history_export_json(history)</code>：生成导出 JSON（含 <code>exported_at</code>、<code>history_count</code>、<code>history</code>）。</li>
+<li><code>build_history_export_filename()</code>：生成时间戳文件名（如 <code>annotation_history_20260312_090807.json</code>）。</li>
+<li>新增单测覆盖导出文件名与导出 JSON 内容结构：<code>tests/unit/test_annotation_service.py</code>。</li>
+<li>首页页脚版本更新为 <code>v2.9.1</code>。</li>
+</ol>
+<h2 id="2026-03-11">2026-03-11<a class="headerlink" href="#2026-03-11" title="Permanent link">&para;</a></h2>
+<h3 id="format-annotation-v2">Format / Annotation V2<a class="headerlink" href="#format-annotation-v2" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增统一标注格式校验模块 <a href="../app/domain/annotation_format.py">annotation_format.py</a>。</li>
+<li>标注规范升级为：</li>
+<li>显性标注：<code>[原文]{标签}</code></li>
+<li>隐含语义：<code>[!隐含义]{标签}</code></li>
+<li><code>examples[*].explanation</code> 从可选改为必填且非空；导入校验同步升级。</li>
+<li>标注响应解析增加格式校验，不再接受旧格式 <code>[...] (...)</code>。</li>
+<li>迁移 <a href="../assets/concepts.json">assets/concepts.json</a> 到 V2（版本 <code>2.0</code>），批量转换旧标注并补齐 explanation。</li>
+<li>概念管理页面编辑样例新增 explanation 输入项。</li>
+<li>新增文档：</li>
+<li>用户文档更新 <a href="../user/TUTORIAL/">TUTORIAL.md</a></li>
+<li>开发文档新增 <a href="../developer/ANNOTATION_FORMAT/">ANNOTATION_FORMAT.md</a></li>
+<li>新增测试：<code>test_annotation_format.py</code>，并更新相关单测与集成测以匹配新格式。</li>
+<li>修复 <code>assets/concepts.json</code> 中 <code>terminology</code> 概念样例的遗留格式：将 <code>[词]</code> 统一迁移为 <code>[词]{terminology}</code>，避免启动时回退默认概念。</li>
+</ol>
+<h3 id="ux-home-navigation">UX / Home navigation<a class="headerlink" href="#ux-home-navigation" title="Permanent link">&para;</a></h3>
+<ol>
+<li>首页「核心功能」区域新增快速跳转按钮：</li>
+<li>多模型支持 -&gt; 智能标注页面</li>
+<li>概念管理 -&gt; 概念管理页面</li>
+<li>智能标注 -&gt; 智能标注页面</li>
+<li>首页页脚版本更新为 <code>v2.3</code>。</li>
+</ol>
+<h3 id="ux-annotation-visualization">UX / Annotation visualization<a class="headerlink" href="#ux-annotation-visualization" title="Permanent link">&para;</a></h3>
+<ol>
+<li>在 <a href="../app/ui/pages/Annotation.py">Annotation.py</a> 的「查看概念详情」样例区，新增标注可视化渲染：</li>
+<li>按 <code>[]</code> 中被标注文本高亮显示</li>
+<li>根据 <code>{}</code> 中标签稳定映射颜色</li>
+<li>悬浮提示显示标签内容（tooltip）</li>
+<li>新增渲染器 <a href="../app/ui/viewmodels/annotation_visualization.py">annotation_visualization.py</a>。</li>
+<li>新增单测：<code>tests/unit/test_annotation_visualization.py</code>。</li>
+<li>首页页脚版本更新为 <code>v2.4</code>。</li>
+</ol>
+<h3 id="ux-home-core-cards-navigation-refinement">UX / Home core cards navigation refinement<a class="headerlink" href="#ux-home-core-cards-navigation-refinement" title="Permanent link">&para;</a></h3>
+<ol>
+<li>首页核心功能区移除额外小按钮，改为卡片标题文本直接可点击跳转（<code>st.page_link</code>）。</li>
+<li>跳转映射保持不变：</li>
+<li>多模型支持 -&gt; 智能标注</li>
+<li>概念管理 -&gt; 概念管理</li>
+<li>智能标注 -&gt; 智能标注</li>
+<li>首页页脚版本更新为 <code>v2.5</code>。</li>
+</ol>
+<h3 id="ux-annotation-visualization-refinement">UX / Annotation visualization refinement<a class="headerlink" href="#ux-annotation-visualization-refinement" title="Permanent link">&para;</a></h3>
+<ol>
+<li>概念详情中的高亮文本不再显示中括号。</li>
+<li>为避免 tooltip 兼容性差异，改为在高亮片段后直接显示 <code>|标签</code>。</li>
+<li>首页页脚版本更新为 <code>v2.6</code>。</li>
+</ol>
+<h3 id="ux-home-core-cards-clickable-on-original-ui">UX / Home core cards clickable on original UI<a class="headerlink" href="#ux-home-core-cards-clickable-on-original-ui" title="Permanent link">&para;</a></h3>
+<ol>
+<li>首页核心功能区取消额外链接控件，恢复原卡片视觉结构。</li>
+<li>跳转能力绑定到原卡片本体（整块圆角矩形可点击）：</li>
+<li>多模型支持 -&gt; <code>/Annotation</code></li>
+<li>概念管理 -&gt; <code>/Concept_Management</code></li>
+<li>智能标注 -&gt; <code>/Annotation</code></li>
+<li>首页页脚版本更新为 <code>v2.7</code>。</li>
+</ol>
+<h3 id="ux-home-core-cards-navigation-adjustment">UX / Home core cards navigation adjustment<a class="headerlink" href="#ux-home-core-cards-navigation-adjustment" title="Permanent link">&para;</a></h3>
+<ol>
+<li>核心功能区改为“仅原标题文字可点击跳转”，卡片视觉保持不变，不新增控件。</li>
+<li>跳转路径保持：</li>
+<li>多模型支持 -&gt; <code>/Annotation</code></li>
+<li>概念管理 -&gt; <code>/Concept_Management</code></li>
+<li>智能标注 -&gt; <code>/Annotation</code></li>
+<li>首页页脚版本更新为 <code>v2.8.1</code>，开始采用三段式版本号（<code>主.次.修</code>）以标记 fix 类改动。</li>
+</ol>
+<h3 id="ux-annotation-color-rule-update">UX / Annotation color rule update<a class="headerlink" href="#ux-annotation-color-rule-update" title="Permanent link">&para;</a></h3>
+<ol>
+<li>标注可视化改为“动态色相分配”规则：按当前标签数量分配颜色。</li>
+<li>绿色作为基准色（更深一点），背景保持白色，饱和度与亮度参数固定。</li>
+<li>两个标签时固定为绿色 + 红色；更多标签时按规则平均分配剩余色调。</li>
+<li>首页页脚版本更新为 <code>v2.8.2</code>。</li>
+</ol>
+<h3 id="ux-annotation-color-lightness-tweak">UX / Annotation color lightness tweak<a class="headerlink" href="#ux-annotation-color-lightness-tweak" title="Permanent link">&para;</a></h3>
+<ol>
+<li>在保持既有配色规则不变的前提下，将标注颜色亮度小幅提升（视觉更浅）。</li>
+<li>首页页脚版本更新为 <code>v2.8.3</code>。</li>
+</ol>
+<h3 id="ux-annotation-result-visualization-upgrade">UX / Annotation result visualization upgrade<a class="headerlink" href="#ux-annotation-result-visualization-upgrade" title="Permanent link">&para;</a></h3>
+<ol>
+<li>标注完成后的结果区新增 <code>JSON 结果（默认折叠）</code> 小标题，并将 JSON 默认折叠展示。</li>
+<li>新增“复制完整 JSON”按钮，可一键复制完整 JSON 文本。</li>
+<li>新增标注结果统计：标注片段数、标签种类、隐含标注数。</li>
+<li>新增标注结果可视化：按与概念详情一致的规则高亮，并展示标签分布表。</li>
+<li>首页页脚版本更新为 <code>v2.9.0</code>。</li>
+</ol>
+<h3 id="feature-debug-mode">Feature / Debug mode<a class="headerlink" href="#feature-debug-mode" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增运行时开关解析 <a href="../app/infrastructure/config/runtime_flags.py">runtime_flags.py</a>，支持 <code>--debug</code> 与 <code>ROSETTA_DEBUG_MODE=1</code>。</li>
+<li>新增调试运行时模块 <a href="../app/infrastructure/debug/runtime.py">runtime.py</a>，可留存操作日志与上传副本。</li>
+<li>新增首次访问双语提示组件 <a href="../app/ui/components/debug_notice.py">debug_notice.py</a>，5 秒倒计时后可关闭。</li>
+<li>在 <code>streamlit_app.py</code> 接入 debug 初始化与提示展示逻辑。</li>
+<li>标注与概念导入流程接入调试事件埋点，记录操作与中间结果（含导入文件副本）。</li>
+<li>调试日志落盘到 <code>.runtime/logs/debug/*.jsonl</code>，上传副本保存到 <code>.runtime/data/debug_uploads/</code>。</li>
+<li>新增单测：<code>test_runtime_flags.py</code>、<code>test_debug_runtime.py</code>。</li>
+</ol>
+<h3 id="refactor-service-layering">Refactor / service layering<a class="headerlink" href="#refactor-service-layering" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <code>app/state/keys.py</code>，统一管理 <code>session_state</code> 键名常量。</li>
+<li>新增 <code>app/services/annotation_flow_service.py</code>，收敛标注端到端流程（调用、解析、历史记录构建）。</li>
+<li>新增 <code>app/services/concept_flow_service.py</code>，收敛概念导入预检与应用导入流程。</li>
+<li>新增 <code>app/repositories/base.py</code> 与 <code>app/repositories/json_concept_repository.py</code>，建立数据访问抽象并接入 <code>session_state</code>。</li>
+<li>新增 <code>app/ui/viewmodels/home_viewmodel.py</code>，收敛首页统计聚合逻辑。</li>
+<li>页面 <code>app/ui/pages/*</code> 改为优先调用 flow service + state keys，降低页面层业务耦合。</li>
+<li>新增单测：<code>test_annotation_flow_service.py</code>、<code>test_concept_flow_service.py</code>、<code>test_home_viewmodel.py</code>。</li>
+</ol>
+<h3 id="reliability-state-observability">Reliability / State observability<a class="headerlink" href="#reliability-state-observability" title="Permanent link">&para;</a></h3>
+<ol>
+<li><a href="../app/state/session_state.py">app/state/session_state.py</a> 为概念加载失败场景补充日志输出。</li>
+<li><code>load_concepts_from_file()</code> 不再静默吞掉异常，改为记录 warning/exception 后回退默认概念。</li>
+</ol>
+<h3 id="refactor-page-relocation">Refactor / page relocation<a class="headerlink" href="#refactor-page-relocation" title="Permanent link">&para;</a></h3>
+<ol>
+<li>页面目录由根目录 <code>pages/</code> 迁移到 <a href="../app/ui/pages/">app/ui/pages/</a>。</li>
+<li><code>streamlit_app.py</code> 的 <code>st.Page(...)</code> 路径全部更新为 <code>app/ui/pages/*</code>。</li>
+<li>页面内 <code>st.switch_page(...)</code> 路径全部同步更新。</li>
+<li>删除旧目录 <code>pages/</code>，实现 UI 层完全收敛到 <code>app/ui</code>。</li>
+<li>更新 <a href="../developer/ARCHITECTURE/">ARCHITECTURE.md</a> 的目录结构与职责描述。</li>
+</ol>
+<h3 id="refactor-api_utils-relocation">Refactor / api_utils relocation<a class="headerlink" href="#refactor-api_utils-relocation" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <a href="../app/infrastructure/llm/api_utils.py">app/infrastructure/llm/api_utils.py</a> 作为正式 LLM 调用入口。</li>
+<li><a href="../app/ui/pages/Annotation.py">app/ui/pages/Annotation.py</a> 改为直接引用新位置的 <code>api_utils</code>。</li>
+<li>删除根目录 <code>api_utils.py</code>，不再保留兼容 shim。</li>
+<li>更新 <a href="../developer/ARCHITECTURE/">ARCHITECTURE.md</a> 以反映新模块位置。</li>
+</ol>
+<h3 id="runtime-layout-docs-clarity">Runtime Layout / Docs Clarity<a class="headerlink" href="#runtime-layout-docs-clarity" title="Permanent link">&para;</a></h3>
+<ol>
+<li>引入统一运行目录变量 <code>ROSETTA_RUNTIME_DIR</code>（默认 <code>/opt/rosetta/runtime</code>）。</li>
+<li><code>scripts/lib/common.sh</code> 改为从 <code>ROSETTA_RUNTIME_DIR</code> 自动派生：</li>
+<li><code>ROSETTA_DATA_DIR=${ROSETTA_RUNTIME_DIR}/data</code></li>
+<li><code>ROSETTA_BACKUP_DIR=${ROSETTA_RUNTIME_DIR}/backups</code></li>
+<li><code>ROSETTA_LOG_DIR=${ROSETTA_RUNTIME_DIR}/logs</code></li>
+<li><code>.env.example</code> 重写为“主变量 + 可选覆盖”结构，减少配置理解成本。</li>
+<li><code>.gitignore</code> 增加 <code>.runtime/</code> 整目录忽略规则，避免本地/服务器运行产物进入版本库。</li>
+<li>更新 <a href="../developer/SCRIPTS/">SCRIPTS.md</a>、<a href="../developer/DEPLOYMENT/">DEPLOYMENT.md</a>、<a href="../README.md">README.md</a>、<a href="../scripts/README.md">scripts/README.md</a> 以匹配新目录约定。</li>
+</ol>
+<h2 id="2026-03-10">2026-03-10<a class="headerlink" href="#2026-03-10" title="Permanent link">&para;</a></h2>
+<h3 id="docs-architecture-v1">Docs / Architecture V1<a class="headerlink" href="#docs-architecture-v1" title="Permanent link">&para;</a></h3>
+<ol>
+<li>重写 <code>docs/ARCHITECTURE.md</code>，补齐分层边界、接口契约、数据策略、运行架构。</li>
+<li>新增 <code>docs/DEPLOYMENT.md</code>，定义 Docker-first 服务器部署、更新、备份、回滚流程。</li>
+<li>重写 <code>docs/TUTORIAL.md</code>，明确重构开发流程与 Stage 1 边界。</li>
+<li>重写 <code>docs/ROADMAP.md</code>，细化 Stage 0-6 目标与验收口径。</li>
+<li>更新 <code>docs/README.md</code> 索引与推荐阅读顺序。</li>
+<li>新增 <code>environment.yml</code>，标准化 Conda 本地开发环境。</li>
+<li>新增 <code>.env.example</code>，标准化 Docker 部署环境变量模板。</li>
+<li>文档策略升级为双环境：Docker（服务器）+ Conda（本地）。</li>
+<li>路线图新增脚本目录分层改造计划（deploy/ops/data/cron/lib）。</li>
+<li>开发流程新增执行纪律：每个可验收步骤必须 commit 并 push 到 GitHub。</li>
+</ol>
+<h3 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Stage 1 代码改造将严格按上述文档执行。</li>
+</ul>
+<h3 id="stage-1-code-restructure-completed">Stage 1 / Code Restructure (completed)<a class="headerlink" href="#stage-1-code-restructure-completed" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <code>app/state/session_state.py</code>，统一 <code>concepts</code>、<code>annotation_history</code>、平台配置与默认模型初始化。</li>
+<li>新增 <code>app/services/concept_service.py</code>，抽取概念导入导出、合并与创建逻辑。</li>
+<li>新增 <code>app/services/annotation_service.py</code>，抽取 prompt 构建、响应解析与历史记录构建逻辑。</li>
+<li><code>app/ui/pages/Home.py</code> 改为使用 <code>ensure_core_state()</code>，移除重复状态初始化代码。</li>
+<li><code>app/ui/pages/Concept_Management.py</code> 改为调用 concept service，移除页面内重复业务逻辑。</li>
+<li><code>app/ui/pages/Annotation.py</code> 改为调用 state/service，移除页面内 prompt 组装与解析细节。</li>
+<li>基础验证通过：<code>python -m compileall ...</code>、<code>python -m unittest discover -s tests -p 'test_*.py'</code>。</li>
+<li>全局样式改为 TOML 优先策略：<code>.streamlit/config.toml</code> 承担主题配置，<code>streamlit_app.py</code> 仅保留最小 CSS 覆盖。</li>
+<li><code>scripts/</code> 完成分层重构：新增 <code>deploy/ops/data/cron/lib</code>。</li>
+<li>新增标准脚本：<code>deploy.sh</code>、<code>update.sh</code>、<code>rollback.sh</code>、<code>healthcheck.sh</code>、<code>logs.sh</code>、<code>restart.sh</code>、<code>backup.sh</code>、<code>restore.sh</code>。</li>
+<li>旧入口 <code>scripts/daily_restart.sh</code> 与 <code>scripts/monthly_rebuild.sh</code> 改为兼容转发，不破坏现有 cron 路径。</li>
+</ol>
+<h3 id="stage-2-domain-data-governance-completed">Stage 2 / Domain &amp; Data Governance (completed)<a class="headerlink" href="#stage-2-domain-data-governance-completed" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <code>app/domain</code>：<code>models.py</code>、<code>schemas.py</code>、<code>validators.py</code>。</li>
+<li>概念导入导出开始引入版本化数据结构（<code>version</code> + <code>concepts</code>）。</li>
+<li>兼容旧数据格式（无 <code>version</code>），并在导入时进行规范化校验。</li>
+<li>新增 <code>tests/unit/test_domain_validators.py</code>，覆盖基础规范化与缺失字段异常场景。</li>
+<li>导入校验错误升级为结构化格式：<code>field / reason / hint</code>，并在概念导入页面显示。</li>
+<li>新增导入预检摘要：显示 <code>version</code>、重复概念数、自动修复字段数、可导入概念数。</li>
+<li>导出文件名加入版本和日期（如 <code>concepts_v1_0_20260310.json</code>），并在概念管理页面显示当前数据版本。</li>
+</ol>
+<h3 id="stage-3-platform-adapter-started">Stage 3 / Platform Adapter (started)<a class="headerlink" href="#stage-3-platform-adapter-started" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <code>app/infrastructure/llm</code>，实现 OpenAI 兼容 provider 抽象与平台注册表。</li>
+<li>新增 <code>app/services/platform_service.py</code>，统一平台探测与对话调用编排。</li>
+<li><code>api_utils.py</code> 改为兼容门面，内部转发到 provider/service 层。</li>
+<li>新增 <code>tests/unit/test_platform_service.py</code>，覆盖平台探测核心逻辑。</li>
+</ol>
+<h3 id="stage-4-testing-completed">Stage 4 / Testing (completed)<a class="headerlink" href="#stage-4-testing-completed" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <code>tests/unit/test_annotation_service.py</code>，覆盖 prompt 构建与响应解析。</li>
+<li>新增 <code>tests/unit/test_concept_service.py</code>，覆盖导出、替换、合并核心逻辑。</li>
+<li>新增 <code>tests/integration/test_import_flow.py</code>，覆盖导入预检到合并流程。</li>
+<li>测试执行统一为 <code>python -m unittest discover -s tests -p 'test_*.py'</code>。</li>
+</ol>
+<h3 id="stage-5-engineering-completed">Stage 5 / Engineering (completed)<a class="headerlink" href="#stage-5-engineering-completed" title="Permanent link">&para;</a></h3>
+<ol>
+<li>新增 <code>.github/workflows/ci.yml</code>，包含编译检查、单元测试与脚本语法检查。</li>
+<li>CI 使用 Python 3.11 与 <code>requirements.txt</code> 作为依赖基线。</li>
+</ol>
+<h3 id="docs-classification-update">Docs / Classification Update<a class="headerlink" href="#docs-classification-update" title="Permanent link">&para;</a></h3>
+<ol>
+<li>文档分为两类：<code>docs/developer/</code>（开发）与 <code>docs/user/</code>（用户）。</li>
+<li>新增 <code>docs/developer/ARCHITECTURE.md</code>（详细架构说明）与 <code>docs/developer/WORKFLOW.md</code>（执行流程）。</li>
+<li>新增 <code>docs/user/TUTORIAL.md</code>（用户教程）。</li>
+<li>新增仓库级 <code>CLAUDE.md</code>，定义任务前必读与提交前检查清单。</li>
+<li>同步更新 <code>docs/README.md</code> 与仓库 <code>README.md</code> 文档索引。</li>
+</ol>
+<h3 id="docs-cleanup">Docs / Cleanup<a class="headerlink" href="#docs-cleanup" title="Permanent link">&para;</a></h3>
+<ol>
+<li>删除已弃用的旧文档入口：<code>docs/ARCHITECTURE.md</code>、<code>docs/DEPLOYMENT.md</code>、<code>docs/ROADMAP.md</code>、<code>docs/TUTORIAL.md</code>。</li>
+<li>统一文档入口到 <code>docs/developer/*</code> 与 <code>docs/user/*</code>，避免重复维护。</li>
+</ol>
+<h3 id="repo-root-cleanup">Repo / Root Cleanup<a class="headerlink" href="#repo-root-cleanup" title="Permanent link">&para;</a></h3>
+<ol>
+<li><code>concepts.json</code> 从根目录迁移到 <code>assets/concepts.json</code>，并同步更新加载与脚本路径。</li>
+<li>删除已弃用脚本 <code>test_concepts.py</code>，统一使用 <code>tests/</code> 自动化测试体系。</li>
+<li><code>api_utils.py</code> 保留为兼容门面（仍被页面调用），内部逻辑已下沉到 provider/service 层。</li>
+</ol>
+<h3 id="docs-readme-simplification">Docs / README Simplification<a class="headerlink" href="#docs-readme-simplification" title="Permanent link">&para;</a></h3>
+<ol>
+<li>README 调整为入口级文档，保留部署与导航信息。</li>
+<li>使用细节（API Key 配置、FAQ 等）下沉到 <code>docs/user/TUTORIAL.md</code>。</li>
+</ol>
+<h3 id="docs-deployment-link-style">Docs / Deployment &amp; Link Style<a class="headerlink" href="#docs-deployment-link-style" title="Permanent link">&para;</a></h3>
+<ol>
+<li>README 的两种部署方式在“项目已存在”场景下增加 <code>fetch/pull</code> 更新命令。</li>
+<li>关键文档引用改为可点击链接格式，避免仅保留纯路径文本。</li>
+</ol>
+<h3 id="docs-developer-refresh">Docs / Developer Refresh<a class="headerlink" href="#docs-developer-refresh" title="Permanent link">&para;</a></h3>
+<ol>
+<li>全量更新 <code>docs/developer/README.md</code>、<code>ARCHITECTURE.md</code>、<code>WORKFLOW.md</code>、<code>ROADMAP.md</code>、<code>DEPLOYMENT.md</code>。</li>
+<li>开发文档内容与当前代码、脚本、测试、CI 状态对齐。</li>
+<li>统一补充了可点击链接引用与 <code>/opt/streamlit</code> 路径约定。</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.action.edit", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
