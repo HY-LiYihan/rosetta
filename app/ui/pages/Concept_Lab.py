@@ -15,7 +15,13 @@ from app.runtime.store import RuntimeStore
 from app.ui.components.busy import busy_button, clear_busy
 from app.ui.examples import HARD_SCIENCE_TERM_EXAMPLE, hard_science_gold_jsonl
 from app.ui.i18n import t
-from app.workflows.bootstrap import gold_task_from_markup, revise_guideline, save_guideline_package, validate_gold_examples
+from app.workflows.bootstrap import (
+    gold_task_from_markup,
+    revise_guideline,
+    run_concept_refinement_loop,
+    save_guideline_package,
+    validate_gold_examples,
+)
 
 st.title(t("concept_lab.title"))
 st.caption(t("concept_lab.caption"))
@@ -383,8 +389,62 @@ else:
                 st.rerun()
 
     st.divider()
-    st.subheader(t("concept_lab.section_export"))
+    st.subheader(t("concept_lab.bootstrap_section"))
     gold_sets = store.list_gold_example_sets(guideline_id=selected_guideline, limit=1)
+    gold_count = len(gold_sets[0]["payload"].get("task_ids", [])) if gold_sets else 0
+    target_count = int(gold_sets[0]["payload"].get("target_count", 15)) if gold_sets else 15
+    st.caption(t("concept_lab.bootstrap_help"))
+    if gold_count < target_count:
+        st.warning(t("concept_lab.bootstrap_need_gold", target=target_count, count=gold_count))
+    boot_col1, boot_col2 = st.columns([1, 1])
+    max_rounds = int(boot_col1.number_input(t("concept_lab.max_rounds"), min_value=1, max_value=10, value=5, step=1))
+    auto_apply = boot_col2.checkbox(t("concept_lab.auto_apply"), value=False)
+    bootstrap_button_key = "concept_lab_bootstrap_button"
+    if busy_button(
+        t("concept_lab.start_bootstrap"),
+        key=bootstrap_button_key,
+        pending_label=t("common.processing"),
+        type="primary",
+        use_container_width=True,
+        disabled=gold_count < target_count,
+    ):
+        try:
+            with st.spinner(t("concept_lab.bootstrap_status")):
+                predictor = _make_predictor(platform_id, model_name) if validation_mode == "llm" else None
+                bootstrap_result = run_concept_refinement_loop(
+                    store,
+                    selected_guideline,
+                    predictor=predictor,
+                    max_rounds=max_rounds,
+                    auto_apply=auto_apply,
+                )
+            st.session_state["concept_lab_bootstrap_result"] = bootstrap_result
+            _set_flash(
+                "success",
+                t(
+                    "concept_lab.bootstrap_summary",
+                    rounds=len(bootstrap_result["rounds"]),
+                    status=bootstrap_result["status"],
+                ),
+            )
+        except Exception as exc:
+            _set_flash("error", t("common.action_failed", error=exc))
+        finally:
+            clear_busy(bootstrap_button_key)
+            st.rerun()
+
+    bootstrap_result = st.session_state.get("concept_lab_bootstrap_result")
+    if bootstrap_result:
+        st.markdown(f"**{t('concept_lab.bootstrap_rounds')}**")
+        st.dataframe(bootstrap_result["rounds"], use_container_width=True, hide_index=True)
+        st.text_area(
+            t("concept_lab.bootstrap_final"),
+            value=bootstrap_result.get("final_description", ""),
+            height=180,
+        )
+
+    st.divider()
+    st.subheader(t("concept_lab.section_export"))
     gold_tasks = []
     if gold_sets:
         for task_id in gold_sets[0]["payload"].get("task_ids", []):

@@ -6,7 +6,7 @@ from typing import Any
 
 import streamlit as st
 
-from app.data.exporters import build_dataset_stats, build_markdown_report, filter_tasks_for_export, rows_to_jsonl
+from app.data.exporters import build_dataset_stats, build_experiment_report, filter_tasks_for_export, rows_to_jsonl
 from app.runtime.store import RuntimeStore
 from app.ui.i18n import t
 
@@ -19,6 +19,7 @@ predictions = store.list_predictions(limit=50000)
 reviews = store.list_reviews(limit=50000)
 jobs = store.list_jobs(limit=50000)
 stats = build_dataset_stats(tasks, predictions, reviews, jobs)
+versions = store.list_concept_versions(limit=100)
 
 
 def _chart_rows(counter: Counter[str]) -> list[dict[str, Any]]:
@@ -29,12 +30,13 @@ category_key = t("common.category")
 count_key = t("common.count")
 
 st.subheader(t("export_view.overview"))
-cols = st.columns(5)
+cols = st.columns(6)
 cols[0].metric(t("export_view.task_count"), stats["task_count"])
 cols[1].metric(t("export_view.auto_rate"), f"{stats['auto_accept_rate']:.0%}")
 cols[2].metric(t("export_view.review_rate"), f"{stats['review_rate']:.0%}")
 cols[3].metric(t("common.pending_review"), stats["pending_review_count"])
 cols[4].metric(t("export_view.avg_span_length"), stats["avg_span_length"])
+cols[5].metric(t("export_view.hard_examples"), stats.get("hard_example_count", 0))
 
 st.divider()
 st.subheader(t("export_view.filters"))
@@ -107,7 +109,7 @@ export_labels = {
 export_kind = st.selectbox(t("export_view.export_scope"), list(export_labels.keys()), format_func=lambda key: export_labels[key])
 export_rows = filter_tasks_for_export(filtered_tasks, export_kind)
 jsonl = rows_to_jsonl(export_rows)
-report = build_markdown_report(build_dataset_stats(filtered_tasks, predictions, reviews, jobs))
+report = build_experiment_report(build_dataset_stats(filtered_tasks, predictions, reviews, jobs), versions, reviews)
 
 download_cols = st.columns(3)
 download_cols[0].download_button(
@@ -142,7 +144,6 @@ with st.expander(t("export_view.preview_jsonl"), expanded=False):
 
 st.divider()
 st.subheader(t("export_view.concept_versions"))
-versions = store.list_concept_versions(limit=100)
 if versions:
     version_rows: list[dict[str, Any]] = []
     for row in versions:

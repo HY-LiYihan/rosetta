@@ -176,6 +176,7 @@ class ConceptVersion:
     failed_task_ids: tuple[str, ...] = ()
     unstable_task_ids: tuple[str, ...] = ()
     notes: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
     created_at: str = field(default_factory=utc_timestamp)
 
     def validate(self) -> None:

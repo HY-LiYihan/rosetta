@@ -91,6 +91,8 @@ def apply_review_decision(
     manual_spans: list[dict[str, Any]] | None = None,
     note: str = "",
     hard_example: bool = False,
+    error_type: str = "",
+    promote_to_gold: bool = False,
 ) -> dict[str, Any]:
     review_row = store.get_review(review_id)
     if review_row is None:
@@ -102,7 +104,19 @@ def apply_review_decision(
     task = task_from_dict(task_row["payload"])
 
     if decision == "skip":
-        updated_review = replace(review, status="ignored", answer="skip", meta={**review.meta, "review_note": note})
+        updated_review = replace(
+            review,
+            status="ignored",
+            answer="skip",
+            meta={
+                **review.meta,
+                "review_note": note,
+                "error_type": error_type,
+                "hard_example": hard_example,
+                "promote_to_gold": False,
+                "selected_candidate_id": None,
+            },
+        )
         store.upsert_review(updated_review)
         return {"status": "ignored", "task_id": task.id}
 
@@ -115,12 +129,22 @@ def apply_review_decision(
             selected_option_id=selected_option_id or "reject",
             note=note,
             hard_example=hard_example,
+            error_type=error_type or "all_candidates_wrong",
+            promote_to_gold=False,
         )
         updated_review = replace(
             review,
             status="rejected",
             answer=selected_option_id or "reject",
-            meta={**review.meta, "review_note": note, "hard_example": hard_example},
+            meta={
+                **review.meta,
+                "review_note": note,
+                "hard_example": True if hard_example else review.meta.get("hard_example", False),
+                "error_type": error_type or "all_candidates_wrong",
+                "promote_to_gold": False,
+                "selected_candidate_id": selected_option_id or "reject",
+                "manually_edited": False,
+            },
         )
         store.upsert_task(updated_task, project_id=task_row.get("project_id"))
         store.upsert_review(updated_review)
@@ -130,10 +154,14 @@ def apply_review_decision(
     if decision == "manual" or selected_option_id == "manual":
         selected_spans = tuple(_span_from_payload(span, index) for index, span in enumerate(manual_spans or [], start=1))
         selected_option = "manual"
+        selected_candidate_id = "manual"
+        manually_edited = True
     else:
         selected_option = selected_option_id or "A"
         prediction = _prediction_for_option(store, review, selected_option)
         selected_spans = prediction.spans
+        selected_candidate_id = prediction.id
+        manually_edited = False
 
     updated_task = _replace_task_review_result(
         task,
@@ -143,12 +171,22 @@ def apply_review_decision(
         selected_option_id=selected_option,
         note=note,
         hard_example=hard_example,
+        error_type=error_type,
+        promote_to_gold=promote_to_gold,
     )
     updated_review = replace(
         review,
         status="accepted",
         answer=selected_option,
-        meta={**review.meta, "review_note": note, "hard_example": hard_example},
+        meta={
+            **review.meta,
+            "review_note": note,
+            "hard_example": hard_example,
+            "error_type": error_type,
+            "promote_to_gold": promote_to_gold,
+            "selected_candidate_id": selected_candidate_id,
+            "manually_edited": manually_edited,
+        },
     )
     store.upsert_task(updated_task, project_id=task_row.get("project_id"))
     store.upsert_review(updated_review)
@@ -173,6 +211,8 @@ def _replace_task_review_result(
     selected_option_id: str,
     note: str,
     hard_example: bool,
+    error_type: str,
+    promote_to_gold: bool,
 ) -> AnnotationTask:
     updated = AnnotationTask(
         id=task.id,
@@ -191,6 +231,9 @@ def _replace_task_review_result(
             "selected_option": selected_option_id,
             "review_note": note,
             "hard_example": hard_example,
+            "error_type": error_type,
+            "promote_to_gold": promote_to_gold,
+            "source_pool": "gold_like" if promote_to_gold else task.meta.get("source_pool", "reviewed"),
         },
     )
     updated.validate()

@@ -113,7 +113,21 @@ manual_spans_text = st.text_area(
     help=t("review_queue.edit_help"),
 )
 note = st.text_area(t("review_queue.note"), height=80)
+error_options = {
+    "none": t("review_queue.error_none"),
+    "boundary": t("review_queue.error_boundary"),
+    "missing": t("review_queue.error_missing"),
+    "extra": t("review_queue.error_extra"),
+    "label": t("review_queue.error_label"),
+    "all_wrong": t("review_queue.error_all_wrong"),
+}
+error_type = st.selectbox(
+    t("review_queue.error_type"),
+    list(error_options.keys()),
+    format_func=lambda key: error_options[key],
+)
 hard_example = st.checkbox(t("review_queue.hard"), value=False)
+promote_to_gold = st.checkbox(t("review_queue.promote"), value=False)
 
 button_cols = st.columns(4)
 accept_button_key = f"review_queue_accept_{review['id']}"
@@ -169,6 +183,8 @@ if accept_clicked or manual_clicked or reject_clicked or skip_clicked:
                     selected_option_id=selected_option_id,
                     note=note,
                     hard_example=hard_example,
+                    error_type="" if error_type == "none" else error_type,
+                    promote_to_gold=promote_to_gold,
                 )
                 _set_flash("success", t("review_queue.accepted"))
             elif manual_clicked:
@@ -181,6 +197,8 @@ if accept_clicked or manual_clicked or reject_clicked or skip_clicked:
                     manual_spans=manual_spans,
                     note=note,
                     hard_example=hard_example,
+                    error_type="" if error_type == "none" else error_type,
+                    promote_to_gold=promote_to_gold,
                 )
                 _set_flash("success", t("review_queue.manual_saved"))
             elif reject_clicked:
@@ -191,10 +209,20 @@ if accept_clicked or manual_clicked or reject_clicked or skip_clicked:
                     selected_option_id="reject",
                     note=note,
                     hard_example=True,
+                    error_type=error_type if error_type != "none" else "all_wrong",
+                    promote_to_gold=False,
                 )
                 _set_flash("warning", t("review_queue.rejected"))
             elif skip_clicked:
-                apply_review_decision(store, review_id=review["id"], decision="skip", note=note)
+                apply_review_decision(
+                    store,
+                    review_id=review["id"],
+                    decision="skip",
+                    note=note,
+                    hard_example=hard_example,
+                    error_type="" if error_type == "none" else error_type,
+                    promote_to_gold=False,
+                )
                 _set_flash("info", t("review_queue.skipped"))
     except Exception as exc:
         _set_flash("error", t("review_queue.save_failed", error=exc))

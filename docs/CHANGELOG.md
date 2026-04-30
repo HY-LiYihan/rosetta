@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-01
+
+### Feature / Concept bootstrap loop v4.2.0
+
+1. 新增 `run_concept_refinement_loop`，正式自举要求 15 条金样例，并按轮次写入 `ConceptVersion.metadata`。
+2. 概念实验室新增“开始自举校准”，展示每轮通过数、失败样例、失败摘要和最终概念版本草案。
+3. 新增批量标注上下文构建器，prompt 现在包含稳定概念版本、相似样例、边界远例和失败模式摘要。
+4. 批量候选评分从 exact signature 升级为 span-F1、完全一致率、模型自评和规则风险组合。
+5. `Prediction.meta` 记录采样序号、共识分组、span-F1、规则风险和上下文样例 id。
+6. 审核队列新增错误类型和 gold-like 晋升开关，审核保存会写入 hard example、人工修改和候选选择信息。
+7. 导出报告升级为实验报告，包含概念版本、疑难样例、人工修改、候选一致性和主动审核反馈。
+8. 更新 README、用户教程、架构文档和核心 idea 文档，明确主线是 concept bootstrap loop。
+9. 新增概念自举、上下文构建、自洽性评分和审核反馈单测。
+10. 首页页脚版本更新为 `v4.2.0`。
+
 ## 2026-04-29
 
 ### Fix / Busy button guard v4.1.2

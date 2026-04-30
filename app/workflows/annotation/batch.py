@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import replace
 from hashlib import sha1
 from typing import Callable
 
@@ -19,6 +21,7 @@ from app.core.models import (
 from app.data.prodigy_jsonl import task_from_dict
 from app.runtime.store import RuntimeStore
 from app.services.annotation_service import build_annotation_prompt, parse_annotation_response
+from app.workflows.annotation.context import build_annotation_context
 
 Predictor = Callable[[str, list[dict], float], str]
 
@@ -115,18 +118,44 @@ def run_batch_worker(
 
 def score_candidates(predictions: list[Prediction]) -> dict:
     if not predictions:
-        return {"score": 0.0, "agreement": 0.0, "avg_confidence": 0.0, "route_reason": "无候选"}
+        return {
+            "score": 0.0,
+            "agreement": 0.0,
+            "exact_match_rate": 0.0,
+            "avg_confidence": 0.0,
+            "avg_rule_risk": 1.0,
+            "route_reason": "无候选",
+            "candidate_scores": [],
+            "consensus_signature": (),
+        }
     signatures = [_prediction_signature(prediction) for prediction in predictions]
-    best_count = max(signatures.count(signature) for signature in signatures)
-    agreement = best_count / len(signatures)
+    signature_counter = Counter(signatures)
+    consensus_signature, best_count = sorted(signature_counter.items(), key=lambda item: (-item[1], item[0]))[0]
+    exact_match_rate = best_count / len(signatures)
+    span_f1_values = [_span_f1_signature(signature, consensus_signature) for signature in signatures]
+    agreement = sum(span_f1_values) / len(span_f1_values)
     confidences = [prediction.score for prediction in predictions if prediction.score is not None]
     avg_confidence = sum(confidences) / len(confidences) if confidences else 0.5
-    score = round((agreement * 0.7) + (avg_confidence * 0.3), 4)
+    rule_risks = [float(prediction.meta.get("rule_risk", 0.0)) for prediction in predictions]
+    avg_rule_risk = sum(rule_risks) / len(rule_risks) if rule_risks else 0.0
+    score = round((agreement * 0.5) + (exact_match_rate * 0.2) + (avg_confidence * 0.2) + ((1 - avg_rule_risk) * 0.1), 4)
     return {
         "score": score,
         "agreement": round(agreement, 4),
+        "exact_match_rate": round(exact_match_rate, 4),
         "avg_confidence": round(avg_confidence, 4),
-        "route_reason": "自洽性与模型自评分组合",
+        "avg_rule_risk": round(avg_rule_risk, 4),
+        "route_reason": "span-F1 自洽性、完全一致率、模型自评和规则风险组合",
+        "candidate_scores": [
+            {
+                "prediction_id": prediction.id,
+                "span_f1_to_consensus": round(span_f1_values[index], 4),
+                "model_confidence": prediction.score,
+                "rule_risk": prediction.meta.get("rule_risk", 0.0),
+            }
+            for index, prediction in enumerate(predictions)
+        ],
+        "consensus_signature": consensus_signature,
     }
 
 
@@ -146,10 +175,11 @@ def _run_one_item(
     if task_row is None:
         raise ValueError(f"未找到任务: {item.task_id}")
     task = task_from_dict(task_row["payload"])
+    context = build_annotation_context(store, job.guideline_id, item.task_id)
     concept = {
         "name": guideline.get("name", "概念"),
-        "prompt": guideline.get("stable_description") or guideline.get("brief", ""),
-        "examples": [],
+        "prompt": context["prompt"],
+        "examples": context["examples"],
     }
     predictions: list[Prediction] = []
     for run_index in range(job.sample_count):
@@ -161,6 +191,7 @@ def _run_one_item(
         parsed, warning = parse_annotation_response(raw)
         spans = _spans_from_parsed(parsed, source_text=task.text)
         confidence = _confidence_from_raw(raw, default=0.7 if parsed and not warning else 0.2)
+        rule_risk = _rule_risk(warning, spans, task.text)
         prediction = Prediction(
             id=f"pred-{uuid.uuid4().hex[:10]}",
             task_id=task.id,
@@ -169,12 +200,20 @@ def _run_one_item(
             spans=tuple(spans),
             score=confidence,
             raw_response=raw,
-            meta={"job_id": job.id, "run_index": run_index + 1, "parse_warning": warning or ""},
+            meta={
+                "job_id": job.id,
+                "sample_index": run_index + 1,
+                "run_index": run_index + 1,
+                "parse_warning": warning or "",
+                "rule_risk": rule_risk,
+                "context_example_ids": context["context_example_ids"],
+            },
         )
         store.upsert_prediction(prediction)
         predictions.append(prediction)
 
     score = score_candidates(predictions)
+    predictions = _persist_candidate_metrics(store, predictions, score)
     audit_sample = _should_audit_sample(job, task)
     route = "auto_accept" if score["score"] >= job.review_threshold and not audit_sample else "review"
     route_reason = "高置信抽检" if audit_sample and score["score"] >= job.review_threshold else score["route_reason"]
@@ -232,8 +271,61 @@ def _confidence_from_raw(raw: str, default: float) -> float:
     return round(max(0.0, min(1.0, confidence)), 4)
 
 
+def _rule_risk(warning: str | None, spans: list[AnnotationSpan], source_text: str) -> float:
+    if warning:
+        return 1.0
+    invalid = 0
+    for span in spans:
+        if span.implicit:
+            continue
+        if span.start < 0 or span.end > len(source_text) or source_text[span.start : span.end] != span.text:
+            invalid += 1
+    if invalid:
+        return min(1.0, invalid / max(len(spans), 1))
+    return 0.0
+
+
 def _prediction_signature(prediction: Prediction) -> tuple:
     return tuple((span.start, span.end, span.text, span.label) for span in prediction.spans)
+
+
+def _span_f1_signature(left: tuple, right: tuple) -> float:
+    left_set = set(left)
+    right_set = set(right)
+    if not left_set and not right_set:
+        return 1.0
+    if not left_set or not right_set:
+        return 0.0
+    overlap = len(left_set & right_set)
+    precision = overlap / len(left_set)
+    recall = overlap / len(right_set)
+    if precision + recall == 0:
+        return 0.0
+    return (2 * precision * recall) / (precision + recall)
+
+
+def _persist_candidate_metrics(store: RuntimeStore, predictions: list[Prediction], score: dict) -> list[Prediction]:
+    metrics_by_id = {row["prediction_id"]: row for row in score.get("candidate_scores", [])}
+    updated_predictions: list[Prediction] = []
+    consensus = score.get("consensus_signature", ())
+    for prediction in predictions:
+        metric = metrics_by_id.get(prediction.id, {})
+        updated = replace(
+            prediction,
+            meta={
+                **prediction.meta,
+                "agreement_group": _signature_group(_prediction_signature(prediction)),
+                "consensus_group": _signature_group(consensus),
+                "span_f1_to_consensus": metric.get("span_f1_to_consensus", 0.0),
+            },
+        )
+        store.upsert_prediction(updated)
+        updated_predictions.append(updated)
+    return updated_predictions
+
+
+def _signature_group(signature: tuple) -> str:
+    return sha1(json.dumps(signature, ensure_ascii=False).encode("utf-8")).hexdigest()[:12]
 
 
 def _best_prediction(predictions: list[Prediction]) -> Prediction | None:
@@ -264,6 +356,9 @@ def _task_with_route(
             "agreement": score["agreement"],
             "avg_confidence": score["avg_confidence"],
             "route_reason": route_reason,
+            "exact_match_rate": score["exact_match_rate"],
+            "rule_risk": score["avg_rule_risk"],
+            "source_pool": "auto" if route == "auto_accept" else "review",
         },
     )
 
@@ -294,8 +389,11 @@ def _build_review_task(
             "job_id": job.id,
             "score": score["score"],
             "agreement": score["agreement"],
+            "exact_match_rate": score["exact_match_rate"],
             "avg_confidence": score["avg_confidence"],
+            "rule_risk": score["avg_rule_risk"],
             "route_reason": route_reason,
+            "candidate_scores": score["candidate_scores"],
             "source_text": task.text,
         },
     )

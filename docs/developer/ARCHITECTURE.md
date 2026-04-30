@@ -1,6 +1,6 @@
 # Architecture (Developer)
 
-更新时间: 2026-04-29
+更新时间: 2026-05-01
 
 ## 1. 目标定位
 
@@ -101,6 +101,7 @@ rosetta/
 ```text
 工作台
   -> 概念实验室
+  -> 概念自举校准
   -> 批量标注
   -> 审核队列
   -> 导出与可视化
@@ -109,10 +110,12 @@ rosetta/
 页面职责：
 
 1. `工作台`: 展示核心指标、最近任务、最近审核状态和一个继续下一步入口。
-2. `概念实验室`: 创建项目，编辑概念阐释，维护金样例，验证并修订概念。
-3. `批量标注`: 导入 TXT/JSONL/CSV，分句、tokenize、提交本地 SQLite 任务队列。
-4. `审核队列`: 按阈值、抽检和路由原因逐条展示候选，让专家选择或修正。
-5. `导出与可视化`: 导出 Prodigy-compatible JSONL、报告和运行清单，展示统计图。
+2. `概念实验室`: 创建项目，维护 15 条金样例，运行 concept bootstrap loop，生成概念版本和失败摘要。
+3. `批量标注`: 导入 TXT/JSONL/CSV，分句、tokenize，并用概念版本、相似样例、边界远例和失败记忆构建标注上下文。
+4. `审核队列`: 按阈值、抽检和路由原因逐条展示候选，让专家选择或修正，并记录错误类型、hard example 和 gold-like 反馈。
+5. `导出与可视化`: 导出 Prodigy-compatible JSONL、实验报告和运行清单，展示统计图。
+
+概念自举闭环不新增顶层产品边界，优先落在 `app/workflows/bootstrap`、`app/workflows/annotation`、`app/workflows/review` 和 `app/workflows/evaluation`。`app/research` 的 consistency、contrastive retrieval、label statistics、reflection 仍可作为算法参考或兼容实现，但不再作为主入口。
 
 `Corpus Builder` 是高级数据工厂 workflow，保留兼容页面，但不进入默认主导航。
 
