@@ -19,6 +19,7 @@ from app.workflows.bootstrap import (
     gold_task_from_markup,
     revise_guideline,
     run_concept_refinement_loop,
+    sanitize_concept_description,
     save_guideline_package,
     validate_gold_examples,
 )
@@ -355,6 +356,10 @@ else:
         ):
             try:
                 with st.spinner(t("concept_lab.saving_revision_status")):
+                    clean_revised_text, sanitizer_warnings = sanitize_concept_description(
+                        revised_text,
+                        fallback=str(guideline_payload.get("stable_description", "")),
+                    )
                     updated = ConceptGuideline(
                         id=guideline_payload["id"],
                         project_id=guideline_payload["project_id"],
@@ -364,7 +369,7 @@ else:
                         boundary_rules=tuple(guideline_payload.get("boundary_rules", [])),
                         negative_rules=tuple(guideline_payload.get("negative_rules", [])),
                         output_format=guideline_payload.get("output_format", "[原文]{标签}"),
-                        stable_description=revised_text,
+                        stable_description=clean_revised_text,
                         status="draft",
                         metadata=dict(guideline_payload.get("metadata", {})),
                         created_at=guideline_payload.get("created_at", ""),
@@ -377,8 +382,13 @@ else:
                             id=f"concept-version-{uuid.uuid4().hex[:10]}",
                             guideline_id=selected_guideline,
                             version=next_version,
-                            description=revised_text,
+                            description=clean_revised_text,
                             notes="manual revision draft",
+                            metadata={
+                                "revision_source": "manual_revision",
+                                "raw_revision_response": revised_text,
+                                "sanitizer_warnings": sanitizer_warnings,
+                            },
                         )
                     )
                 _set_flash("success", t("concept_lab.revised_saved"))
@@ -442,6 +452,17 @@ else:
             value=bootstrap_result.get("final_description", ""),
             height=180,
         )
+        with st.expander(t("concept_lab.bootstrap_logs"), expanded=False):
+            for round_result in bootstrap_result.get("rounds", []):
+                st.markdown(t("concept_lab.bootstrap_log_round", round=round_result.get("round_index")))
+                st.json(
+                    {
+                        "failure_summary": round_result.get("failure_summary", ""),
+                        "failure_cases": round_result.get("failure_cases", []),
+                        "raw_revision_response": round_result.get("raw_revision_response", ""),
+                        "sanitizer_warnings": round_result.get("sanitizer_warnings", []),
+                    }
+                )
 
     st.divider()
     st.subheader(t("concept_lab.section_export"))

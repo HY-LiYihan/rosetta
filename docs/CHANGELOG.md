@@ -2,6 +2,16 @@
 
 ## 2026-05-01
 
+### Fix / Clean concept revision prompts v4.2.1
+
+1. 概念自举修订不再把失败样例编号、失败摘要、漏标/多标诊断直接拼入 `ConceptVersion.description`。
+2. 大模型修订任务简化为“只返回优化后的概念阐释正文”，系统侧负责保存失败详情、原始响应和净化警告。
+3. 新增概念阐释净化 guard，拦截 `gold-000xx`、`失败摘要`、`修订建议`、`漏标`、`多标` 等诊断内容进入最终提示词。
+4. 概念实验室新增“失败详情与修订日志”折叠区，最终概念版本草案只展示干净提示词。
+5. DeepSeek 默认模型更新为 `deepseek-v4-pro`，并同步示例配置。
+6. 新增概念自举净化、修订日志和默认模型单测。
+7. 首页页脚版本更新为 `v4.2.1`。
+
 ### Feature / Concept bootstrap loop v4.2.0
 
 1. 新增 `run_concept_refinement_loop`，正式自举要求 15 条金样例，并按轮次写入 `ConceptVersion.metadata`。

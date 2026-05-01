@@ -2,7 +2,7 @@
   "name": "projection-pilot",
   "description": "Pilot pipeline for LLM-assisted iterative annotation with dynamic few-shot retrieval and review queues.",
   "platform": "deepseek",
-  "model": "deepseek-chat",
+  "model": "deepseek-v4-pro",
   "api_key_env": "DEEPSEEK_API_KEY",
   "system_prompt": "你是一个严谨的语言学科研标注助手，必须严格遵守定义、负向约束与 JSON 输出要求。",
   "definition": "Projection 指一个小句通过言语过程或心理过程引入另一个被说出、被想出或被感知的命题内容。只有当文本中存在可识别的投射触发器与被投射内容时，才进行标注。",

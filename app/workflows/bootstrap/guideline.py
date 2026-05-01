@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from typing import Callable
 
@@ -18,6 +19,11 @@ from app.runtime.store import RuntimeStore
 from app.services.annotation_service import parse_annotation_response
 
 Predictor = Callable[[str, list[dict], float], str]
+
+DIAGNOSTIC_PATTERNS = (
+    re.compile(r"\bgold-\d+\b", re.IGNORECASE),
+    re.compile(r"失败摘要|失败样例|本轮失败|修订建议|漏标|多标|边界不稳定样例|失败/不稳定样例"),
+)
 
 
 def build_guideline(
@@ -146,7 +152,11 @@ def validate_gold_examples(
             failed.append(task_id)
 
     status = "stable" if not failed and not unstable else "needs_revision"
-    updated_guideline = _guideline_from_payload(guideline, status=status)
+    clean_description, sanitizer_warnings = sanitize_concept_description(
+        str(guideline.get("stable_description") or guideline.get("brief", "")),
+        fallback=_compose_description_from_payload(guideline),
+    )
+    updated_guideline = _guideline_from_payload(guideline, status=status, stable_description=clean_description)
     store.upsert_guideline(updated_guideline)
     versions = store.list_concept_versions(guideline_id=guideline_id, limit=1000)
     next_version = max((int(row["payload"].get("version", 0)) for row in versions), default=0) + 1
@@ -159,6 +169,7 @@ def validate_gold_examples(
             failed_task_ids=tuple(failed),
             unstable_task_ids=tuple(unstable),
             notes="概念验证结果。",
+            metadata={"sanitizer_warnings": sanitizer_warnings},
         )
     )
     return {
@@ -193,7 +204,11 @@ def run_concept_refinement_loop(
     if len(task_ids) < target_count:
         raise ValueError(f"正式概念自举需要 {target_count} 条金样例，当前只有 {len(task_ids)} 条")
 
-    current_description = str(guideline.get("stable_description") or guideline.get("brief", ""))
+    current_description, initial_warnings = sanitize_concept_description(
+        str(guideline.get("stable_description") or guideline.get("brief", "")),
+        fallback=_compose_description_from_payload(guideline),
+    )
+    initial_clean_description = current_description
     rounds: list[dict] = []
     final_status = "needs_revision"
     final_description = current_description
@@ -204,7 +219,23 @@ def run_concept_refinement_loop(
         result = _evaluate_gold_tasks(store, guideline_id, round_guideline, task_ids, predictor, temperature, round_index)
         failure_summary = _failure_summary(result["details"])
         status = "stable" if not result["failed"] and not result["unstable"] else "needs_revision"
-        revised_description = current_description if status == "stable" else _revise_description(round_guideline, result, failure_summary)
+        revision = (
+            {
+                "description": current_description,
+                "raw_response": "",
+                "sanitizer_warnings": list(initial_warnings) if round_index == 1 else [],
+                "source": "stable_no_revision",
+            }
+            if status == "stable"
+            else revise_concept_description(
+                round_guideline,
+                result,
+                failure_summary,
+                predictor=predictor,
+                temperature=temperature,
+            )
+        )
+        revised_description = revision["description"]
         version = ConceptVersion(
             id=f"concept-version-{uuid.uuid4().hex[:10]}",
             guideline_id=guideline_id,
@@ -219,7 +250,11 @@ def run_concept_refinement_loop(
                 "failed_task_ids": result["failed"],
                 "unstable_task_ids": result["unstable"],
                 "failure_summary": failure_summary,
+                "failure_cases": _failure_cases(result["details"]),
+                "raw_revision_response": revision["raw_response"],
+                "sanitizer_warnings": revision["sanitizer_warnings"],
                 "revision_source": "concept_refinement_loop",
+                "revision_mode": revision["source"],
                 "auto_generated": True,
                 "auto_applied": auto_apply,
             },
@@ -233,6 +268,9 @@ def run_concept_refinement_loop(
                 "failed": result["failed"],
                 "unstable": result["unstable"],
                 "failure_summary": failure_summary,
+                "failure_cases": _failure_cases(result["details"]),
+                "raw_revision_response": revision["raw_response"],
+                "sanitizer_warnings": revision["sanitizer_warnings"],
                 "description": revised_description,
             }
         )
@@ -246,7 +284,7 @@ def run_concept_refinement_loop(
     updated_guideline = _guideline_from_payload(
         guideline,
         status="stable" if final_status == "stable" else "needs_revision",
-        stable_description=final_description if auto_apply else None,
+        stable_description=final_description if auto_apply else initial_clean_description if initial_warnings else None,
     )
     store.upsert_guideline(updated_guideline)
     return {
@@ -259,15 +297,89 @@ def run_concept_refinement_loop(
 
 
 def revise_guideline(guideline: dict, validation_result: dict) -> str:
-    failed = ", ".join(validation_result.get("failed", [])) or "无"
-    unstable = ", ".join(validation_result.get("unstable", [])) or "无"
-    return (
-        f"{guideline.get('stable_description') or guideline.get('brief', '')}\n\n"
-        "修订建议：\n"
-        f"1. 明确失败样例范围：{failed}。\n"
-        f"2. 对边界不稳定样例增加排除条件：{unstable}。\n"
-        "3. 标注时必须只标出符合概念定义且能在原文中定位的片段；边界不完整时优先进入人工审核。"
+    revised = _fallback_revised_description(guideline, validation_result)
+    cleaned, _warnings = sanitize_concept_description(
+        revised,
+        fallback=str(guideline.get("stable_description") or guideline.get("brief", "")),
     )
+    return cleaned
+
+
+def revise_concept_description(
+    guideline: dict,
+    validation_result: dict,
+    failure_summary: str,
+    predictor: Predictor | None = None,
+    temperature: float = 0.0,
+) -> dict:
+    fallback = _fallback_revised_description(guideline, validation_result)
+    if predictor is None:
+        cleaned, warnings = sanitize_concept_description(
+            fallback,
+            fallback=str(guideline.get("stable_description") or guideline.get("brief", "")),
+        )
+        return {
+            "description": cleaned,
+            "raw_response": "",
+            "sanitizer_warnings": [*warnings, "local_fallback_revision"],
+            "source": "local_fallback",
+        }
+
+    current_description, input_warnings = sanitize_concept_description(
+        str(guideline.get("stable_description") or guideline.get("brief", "")),
+        fallback=_compose_description_from_payload(guideline),
+    )
+    prompt = _build_revision_prompt(current_description, validation_result, failure_summary)
+    raw = predictor("你是概念阐释改写助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
+    cleaned, output_warnings = sanitize_concept_description(raw, fallback=fallback)
+    return {
+        "description": cleaned,
+        "raw_response": raw,
+        "sanitizer_warnings": [*input_warnings, *output_warnings],
+        "source": "llm_revision",
+    }
+
+
+def sanitize_concept_description(text: str, fallback: str = "") -> tuple[str, list[str]]:
+    warnings: list[str] = []
+    raw = str(text or "").strip()
+    if not raw:
+        return str(fallback or "").strip(), ["empty_revision_response"]
+
+    candidate = _extract_revision_text(raw, warnings)
+    lines = candidate.splitlines()
+    start_index = next(
+        (
+            index
+            for index, line in enumerate(lines)
+            if line.strip().startswith(("概念描述：", "Concept description:", "Concept Description:"))
+        ),
+        None,
+    )
+    if start_index is not None:
+        lines = lines[start_index:]
+
+    cleaned_lines: list[str] = []
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            if cleaned_lines and cleaned_lines[-1] != "":
+                cleaned_lines.append("")
+            continue
+        if _contains_diagnostic_text(stripped):
+            warnings.append(f"removed_diagnostic_line:{index + 1}")
+            continue
+        if index <= 2 and _looks_like_preface(stripped):
+            warnings.append(f"removed_preface_line:{index + 1}")
+            continue
+        cleaned_lines.append(line.rstrip())
+
+    cleaned = "\n".join(cleaned_lines).strip()
+    removed_diagnostics = any(warning.startswith("removed_diagnostic_line") for warning in warnings)
+    if not cleaned or _contains_diagnostic_text(cleaned) or (removed_diagnostics and not _has_minimum_guideline_shape(cleaned)):
+        warnings.append("fallback_to_previous_description")
+        cleaned = str(fallback or "").strip()
+    return cleaned, warnings
 
 
 def _evaluate_gold_tasks(
@@ -348,13 +460,139 @@ def _failure_summary(details: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _revise_description(guideline: dict, validation_result: dict, failure_summary: str) -> str:
-    return (
-        f"{guideline.get('stable_description') or guideline.get('brief', '')}\n\n"
-        "概念自举修订建议：\n"
-        f"- 本轮失败/不稳定样例：{len(validation_result.get('failed', [])) + len(validation_result.get('unstable', []))} 条。\n"
-        f"- 失败摘要：\n{failure_summary}\n"
-        "- 修订原则：补充遗漏术语的纳入条件，收紧多标片段的边界，保留最小完整语义片段。"
+def _failure_cases(details: list[dict]) -> list[dict]:
+    return [detail for detail in details if detail.get("route") != "passed"]
+
+
+def _fallback_revised_description(guideline: dict, validation_result: dict) -> str:
+    base, _warnings = sanitize_concept_description(
+        str(guideline.get("stable_description") or guideline.get("brief", "")),
+        fallback=_compose_description_from_payload(guideline),
+    )
+    if "边界补充：" in base or "Boundary supplement:" in base:
+        return base
+    supplement = (
+        "边界补充：应纳入与任务领域直接相关、在原文中明确出现且具有专业概念含义的完整片段；"
+        "多词术语保持整体边界；普通泛化词、人物机构名、新闻来源和非术语性修饰语不纳入。"
+    )
+    return f"{base}\n{supplement}" if base else supplement
+
+
+def _build_revision_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
+    missing_terms, extra_terms = _revision_terms(validation_result.get("details", []))
+    failed_count = len(validation_result.get("failed", []))
+    unstable_count = len(validation_result.get("unstable", []))
+    missing_line = "；".join(missing_terms[:12]) or "无"
+    extra_line = "；".join(extra_terms[:8]) or "无"
+    return f"""请根据金样例校准结果，优化下面的概念阐释。
+
+你的任务很简单：只返回优化后的概念阐释正文，不要返回解释、分析过程或列表化日志。
+
+当前概念阐释：
+{current_description}
+
+需要吸收进概念阐释的现象（只供理解，不要原样复述）：
+- 需要更明确纳入的片段类型：{missing_line}
+- 需要更明确排除或收紧边界的片段类型：{extra_line}
+- 受影响样例数量：未通过 {failed_count} 条，边界不稳定 {unstable_count} 条。
+
+输出要求：
+1. 只输出可以直接用于下一轮标注的概念阐释正文。
+2. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”这类清晰字段。
+3. 不要输出解释、失败样例编号、失败摘要或修订日志。
+4. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
+
+
+def _revision_terms(details: list[dict]) -> tuple[list[str], list[str]]:
+    missing_terms: list[str] = []
+    extra_terms: list[str] = []
+    for detail in details:
+        if detail.get("route") == "passed":
+            continue
+        missing_terms.extend(str(item.get("text", "")).strip() for item in detail.get("missing_spans", []))
+        extra_terms.extend(str(item.get("text", "")).strip() for item in detail.get("extra_spans", []))
+    return _dedupe_nonempty(missing_terms), _dedupe_nonempty(extra_terms)
+
+
+def _dedupe_nonempty(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for value in values:
+        normalized = value.strip()
+        key = normalized.lower()
+        if not normalized or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(normalized)
+    return deduped
+
+
+def _extract_revision_text(raw: str, warnings: list[str]) -> str:
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, dict):
+        for key in ("optimized_description", "description", "final_description", "guideline"):
+            value = parsed.get(key)
+            if isinstance(value, str) and value.strip():
+                warnings.append(f"extracted_json_field:{key}")
+                return value.strip()
+        warnings.append("unsupported_json_revision_response")
+        return ""
+
+    if "```" not in raw:
+        return raw
+    fenced = re.findall(r"```(?:\w+)?\s*(.*?)```", raw, flags=re.DOTALL)
+    if fenced:
+        warnings.append("extracted_markdown_fence")
+        return fenced[0].strip()
+    return raw.replace("```", "").strip()
+
+
+def _contains_diagnostic_text(text: str) -> bool:
+    return any(pattern.search(text) for pattern in DIAGNOSTIC_PATTERNS)
+
+
+def _looks_like_preface(line: str) -> bool:
+    prefixes = (
+        "以下是",
+        "下面是",
+        "这里是",
+        "已根据",
+        "我已",
+        "好的",
+        "Here is",
+        "Below is",
+        "I have",
+        "Explanation",
+        "Change log",
+    )
+    return line.startswith(prefixes)
+
+
+def _has_minimum_guideline_shape(text: str) -> bool:
+    has_description = "概念描述：" in text or "Concept description:" in text or "Concept Description:" in text
+    supporting_fields = (
+        "标签集合：",
+        "边界规则：",
+        "排除规则：",
+        "输出格式：",
+        "Labels:",
+        "Boundary",
+        "Negative",
+        "Output",
+    )
+    return has_description and any(field in text for field in supporting_fields)
+
+
+def _compose_description_from_payload(payload: dict) -> str:
+    return _compose_description(
+        brief=str(payload.get("brief", "")),
+        labels=[str(label) for label in payload.get("labels", [])],
+        boundary_rules=[str(rule) for rule in payload.get("boundary_rules", [])],
+        negative_rules=[str(rule) for rule in payload.get("negative_rules", [])],
+        output_format=str(payload.get("output_format", "[原文]{标签}")),
     )
 
 

@@ -17,7 +17,7 @@ PLATFORM_CONFIGS: dict[str, PlatformConfig] = {
         name="DeepSeek",
         base_url="https://api.deepseek.com",
         key_name="deepseek_api_key",
-        default_model="deepseek-chat",
+        default_model="deepseek-v4-pro",
         model_filter=_filter_deepseek,
     ),
     "kimi": PlatformConfig(

@@ -48,7 +48,9 @@ class TestBatchAnnotationTool(unittest.TestCase):
             self.assertEqual(result["status"], "stable")
             self.assertEqual(result["passed"], ["g1"])
             revised = revise_guideline({"stable_description": "旧描述"}, {"failed": ["g2"], "unstable": []})
-            self.assertIn("失败样例范围", revised)
+            self.assertIn("边界补充", revised)
+            self.assertNotIn("失败样例范围", revised)
+            self.assertNotIn("g2", revised)
 
     def test_batch_worker_review_and_export_roundtrip(self):
         with tempfile.TemporaryDirectory() as tmp:

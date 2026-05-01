@@ -39,15 +39,16 @@
 
 ## 当前状态
 
-1. v4.2.0 默认主线是 concept bootstrap loop：15 条金样例校准、概念版本、失败摘要、增强上下文标注和主动审核反馈。
-2. v4.1.2 默认 UI 对长耗时按钮使用运行中禁用状态，避免重复触发验证、批量提交和审核保存。
-3. 工作台收敛为轻量状态入口，概念实验室内置“硬科学科普术语标注”填表示例。
-4. 本地批量任务队列使用 SQLite 存储 `jobs / job_items / job_events`。
-5. 概念阐释与金样例模型使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
-6. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。
-7. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
-8. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
-9. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
+1. v4.2.1 修正概念修订边界：`ConceptVersion.description` 只保存干净提示词，失败摘要和原始响应进入 `metadata`。
+2. v4.2.0 默认主线是 concept bootstrap loop：15 条金样例校准、概念版本、失败摘要、增强上下文标注和主动审核反馈。
+3. v4.1.2 默认 UI 对长耗时按钮使用运行中禁用状态，避免重复触发验证、批量提交和审核保存。
+4. 工作台收敛为轻量状态入口，概念实验室内置“硬科学科普术语标注”填表示例。
+5. 本地批量任务队列使用 SQLite 存储 `jobs / job_items / job_events`。
+6. 概念阐释与金样例模型使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
+7. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。
+8. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
+9. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
+10. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
 
 ## 修改建议
 
