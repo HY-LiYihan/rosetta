@@ -157,7 +157,12 @@ gold-00001: 漏标 Quantum dots
         generated = [row for row in versions if row["payload"].get("metadata", {}).get("revision_source") == "concept_refinement_loop"]
         metadata = generated[0]["payload"]["metadata"]
         self.assertEqual(metadata["optimizer"], "loss_search")
-        self.assertEqual(metadata["selected_loss"]["loss"], 0.0)
+        self.assertEqual(metadata["prompt_optimizer"], "llm_adamw")
+        self.assertEqual(metadata["selected_loss"]["raw_loss"], 0.0)
+        self.assertGreaterEqual(metadata["selected_loss"]["loss"], 0.0)
+        self.assertEqual(metadata["prompt_optimization_trace"]["optimizer"], "llm_adamw")
+        self.assertTrue(metadata["prompt_optimization_trace"]["trace"]["accepted"])
+        self.assertGreater(metadata["prompt_optimization_trace"]["trace"]["loss_delta"], 0.0)
         self.assertTrue(metadata["candidate_evaluations"])
 
     def test_llm_revision_saves_only_clean_description(self):
@@ -195,6 +200,14 @@ gold-00001: 漏标 Quantum dots
         self.assertTrue(metadata["failure_cases"])
         self.assertIn("概念描述：标出英文科普新闻中的硬科学专业术语", metadata["raw_revision_response"])
         self.assertNotEqual(metadata["accepted_candidate_id"], "current")
+        self.assertEqual(metadata["prompt_optimizer"], "llm_adamw")
+        self.assertIn("prompt_optimization_trace", metadata)
+        self.assertTrue(
+            any(
+                candidate.get("prompt_optimization_trace", {}).get("trace", {}).get("accepted")
+                for candidate in metadata["candidate_evaluations"]
+            )
+        )
 
     def test_dirty_llm_revision_falls_back_to_clean_prompt(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=15)

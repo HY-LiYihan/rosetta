@@ -17,6 +17,11 @@ from app.core.models import (
 from app.domain.annotation_doc import legacy_string_to_spans
 from app.runtime.store import RuntimeStore
 from app.services.annotation_service import parse_annotation_response
+from app.workflows.bootstrap.prompt_optimizer import (
+    build_llm_adamw_trace,
+    finalize_candidate_trace,
+    length_penalized_loss,
+)
 
 Predictor = Callable[[str, list[dict], float], str]
 
@@ -240,6 +245,7 @@ def run_concept_refinement_loop(
                 predictor=predictor,
                 temperature=temperature,
                 candidate_count=candidate_count,
+                current_loss=current_loss,
             )
             seen_descriptions = {current_description}
             for candidate_index, candidate in enumerate(candidates, start=1):
@@ -268,8 +274,18 @@ def run_concept_refinement_loop(
                     source="concept_candidate_evaluation",
                     candidate_id=candidate["candidate_id"],
                 )
-                candidate_loss = _concept_loss(candidate_result)
+                raw_candidate_loss = _concept_loss(candidate_result)
+                candidate_loss = length_penalized_loss(raw_candidate_loss, current_description, candidate_description)
                 accepted = candidate_loss["loss"] + min_loss_delta < selected_loss["loss"]
+                optimization_trace = finalize_candidate_trace(
+                    candidate.get("prompt_optimization", {}),
+                    candidate["candidate_id"],
+                    current_description,
+                    candidate_description,
+                    current_loss,
+                    candidate_loss,
+                    accepted,
+                )
                 candidate_evaluations.append(
                     {
                         "candidate_id": candidate["candidate_id"],
@@ -277,12 +293,14 @@ def run_concept_refinement_loop(
                         "status": "accepted" if accepted else "rejected",
                         "loss": candidate_loss["loss"],
                         "loss_detail": candidate_loss,
+                        "raw_loss_detail": raw_candidate_loss,
                         "pass_count": len(candidate_result["passed"]),
                         "failed_count": len(candidate_result["failed"]),
                         "unstable_count": len(candidate_result["unstable"]),
                         "raw_revision_response": candidate["raw_response"],
                         "sanitizer_warnings": candidate["sanitizer_warnings"],
                         "direction": candidate.get("direction", ""),
+                        "prompt_optimization_trace": optimization_trace,
                         "description_preview": candidate_description[:240],
                         "evaluation_index": candidate_index,
                     }
@@ -321,11 +339,13 @@ def run_concept_refinement_loop(
                 "revision_source": "concept_refinement_loop",
                 "revision_mode": revision["source"],
                 "optimizer": "loss_search",
+                "prompt_optimizer": "llm_adamw",
                 "current_loss": current_loss,
                 "selected_loss": selected_loss,
                 "loss_delta": round(current_loss["loss"] - selected_loss["loss"], 4),
                 "accepted_candidate_id": selected_candidate_id,
                 "candidate_evaluations": candidate_evaluations,
+                "prompt_optimization_trace": _accepted_prompt_trace(candidate_evaluations, selected_candidate_id),
                 "auto_generated": True,
                 "auto_applied": auto_apply,
             },
@@ -404,11 +424,18 @@ def generate_revision_candidates(
     predictor: Predictor | None = None,
     temperature: float = 0.0,
     candidate_count: int = 3,
+    current_loss: dict | None = None,
 ) -> list[dict]:
     target_count = max(1, min(candidate_count, 5))
     fallback = _fallback_revised_description(guideline, validation_result)
     candidates: list[dict] = []
     if predictor is None:
+        optimizer_context = build_llm_adamw_trace(
+            str(guideline.get("stable_description") or guideline.get("brief", "")),
+            validation_result,
+            failure_summary,
+            current_loss or {"loss": 0.0},
+        )
         cleaned, warnings = sanitize_concept_description(
             fallback,
             fallback=str(guideline.get("stable_description") or guideline.get("brief", "")),
@@ -421,6 +448,7 @@ def generate_revision_candidates(
                 "sanitizer_warnings": [*warnings, "local_fallback_revision"],
                 "source": "local_fallback",
                 "direction": "balanced",
+                "prompt_optimization": optimizer_context,
             }
         ]
 
@@ -429,8 +457,20 @@ def generate_revision_candidates(
         fallback=_compose_description_from_payload(guideline),
     )
     directions = _candidate_directions(validation_result)[:target_count]
+    optimizer_context = build_llm_adamw_trace(
+        current_description,
+        validation_result,
+        failure_summary,
+        current_loss or {"loss": 0.0},
+    )
     for index, direction in enumerate(directions, start=1):
-        prompt = _build_revision_prompt(current_description, validation_result, failure_summary, direction)
+        prompt = _build_revision_prompt(
+            current_description,
+            validation_result,
+            failure_summary,
+            direction,
+            optimizer_context,
+        )
         raw = predictor("你是概念阐释改写助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, output_warnings = sanitize_concept_description(raw, fallback=fallback)
         candidates.append(
@@ -441,6 +481,7 @@ def generate_revision_candidates(
                 "sanitizer_warnings": [*input_warnings, *output_warnings],
                 "source": "llm_revision",
                 "direction": direction["id"],
+                "prompt_optimization": optimizer_context,
             }
         )
     fallback_cleaned, fallback_warnings = sanitize_concept_description(
@@ -455,6 +496,7 @@ def generate_revision_candidates(
             "sanitizer_warnings": [*fallback_warnings, "local_fallback_revision"],
             "source": "local_fallback",
             "direction": "balanced_fallback",
+            "prompt_optimization": optimizer_context,
         }
     )
     return candidates
@@ -660,13 +702,44 @@ def _candidate_directions(validation_result: dict) -> list[dict]:
     return directions
 
 
-def _build_revision_prompt(current_description: str, validation_result: dict, failure_summary: str, direction: dict) -> str:
+def _accepted_prompt_trace(candidate_evaluations: list[dict], selected_candidate_id: str) -> dict:
+    if selected_candidate_id == "current":
+        return {
+            "optimizer": "llm_adamw",
+            "candidate_id": "current",
+            "accepted": False,
+            "reason": "no_candidate_improved_loss",
+            "rejected_candidate_ids": [
+                evaluation.get("candidate_id", "")
+                for evaluation in candidate_evaluations
+                if evaluation.get("candidate_id")
+            ],
+        }
+    for evaluation in candidate_evaluations:
+        if evaluation.get("candidate_id") == selected_candidate_id:
+            return dict(evaluation.get("prompt_optimization_trace") or {})
+    return {
+        "optimizer": "llm_adamw",
+        "candidate_id": selected_candidate_id,
+        "accepted": False,
+        "reason": "selected_candidate_trace_missing",
+    }
+
+
+def _build_revision_prompt(
+    current_description: str,
+    validation_result: dict,
+    failure_summary: str,
+    direction: dict,
+    optimizer_context: dict,
+) -> str:
     missing_terms, extra_terms = _revision_terms(validation_result.get("details", []))
     failed_count = len(validation_result.get("failed", []))
     unstable_count = len(validation_result.get("unstable", []))
     missing_line = "；".join(missing_terms[:12]) or "无"
     extra_line = "；".join(extra_terms[:8]) or "无"
     case_context = _failure_case_prompt_context(validation_result.get("details", []))
+    gradient_context = _gradient_prompt_context(optimizer_context)
     return f"""请根据金样例校准结果，优化下面的概念阐释。
 
 你的任务很简单：只返回优化后的概念阐释正文，不要返回解释、分析过程或列表化日志。
@@ -676,6 +749,9 @@ def _build_revision_prompt(current_description: str, validation_result: dict, fa
 
 本次探索方向：
 {direction['title']}：{direction['instruction']}
+
+文本梯度信号（只供判断改写方向，不要原样复述）：
+{gradient_context}
 
 需要吸收进概念阐释的现象（只供理解，不要原样复述）：
 - 需要更明确纳入的片段类型：{missing_line}
@@ -690,6 +766,26 @@ def _build_revision_prompt(current_description: str, validation_result: dict, fa
 2. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”这类清晰字段。
 3. 不要输出解释、失败样例编号、失败摘要或修订日志。
 4. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
+
+
+def _gradient_prompt_context(optimizer_context: dict) -> str:
+    gradients = list(optimizer_context.get("text_gradients", []))
+    if not gradients:
+        return "没有检测到明确文本梯度，保持最小改动。"
+    segments = {
+        str(segment.get("id", "")): segment
+        for segment in optimizer_context.get("segments", [])
+        if segment.get("id")
+    }
+    lines: list[str] = []
+    for gradient in gradients[:3]:
+        segment = segments.get(str(gradient.get("segment_id", "")), {})
+        kind = str(segment.get("kind") or gradient.get("segment_id") or "unknown")
+        direction = str(gradient.get("direction", "minimal_revision"))
+        score = gradient.get("score", 0)
+        evidence = str(gradient.get("evidence", ""))
+        lines.append(f"- 片段类型 {kind}，方向 {direction}，影响度 {score}。{evidence}")
+    return "\n".join(lines)
 
 
 def _failure_case_prompt_context(details: list[dict]) -> str:

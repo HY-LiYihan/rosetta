@@ -1,10 +1,10 @@
 # Prompt-as-Parameter: Text Gradient Optimization
 
-更新时间: 2026-05-02
+更新时间: 2026-05-03
 
 ## 1. 核心定义
 
-Prompt-as-Parameter 是 Rosetta 下一阶段最核心的方法假设：把概念阐释、标注规则、负例约束、输出格式和示例组织方式视为一组可训练的文本参数，而不是一次性手写的静态 prompt。
+Prompt-as-Parameter 是 Rosetta 最核心的方法假设之一：把概念阐释、标注规则、负例约束、输出格式和示例组织方式视为一组可训练的文本参数，而不是一次性手写的静态 prompt。
 
 在传统模型训练中，参数是连续向量，优化器通过解析梯度更新权重。Rosetta 面对的是自然语言 prompt，无法直接计算解析梯度，因此需要估算“文本梯度”：
 
@@ -21,7 +21,7 @@ Prompt-as-Parameter 是 Rosetta 下一阶段最核心的方法假设：把概念
 3. `Text Gradient`：通过扰动、替换、消融或 LLM 诊断估算出的文本改写方向。
 4. `Prompt Optimizer`：根据文本梯度生成候选 prompt，并用 gold loss 验证是否接受。
 
-当前代码已经有 `loss-guided candidate search`：候选概念必须回到 15 条金样例上验证，只接受 loss 下降的版本。完整 Prompt-as-Parameter 优化器是下一阶段工作：把候选生成从“让 LLM 改写”升级为“显式估算文本梯度，再由优化器更新 prompt 参数”。
+当前代码已经从 `loss-guided candidate search` 推进到 `v4.3.0` 最小 Prompt-as-Parameter 内核：候选概念必须回到 15 条金样例上验证，只接受惩罚后 loss 下降的版本；系统会切分 prompt 片段、估算启发式 Mask 文本梯度、记录 `LLM-AdamW` trace 和 prompt 长度变化。完整优化器仍不是终局：对比替换、真实消融链路、优化器历史状态和多策略 ablation 是下一阶段工作。
 
 ## 2. 参数空间
 
@@ -204,7 +204,7 @@ Prompt-as-Parameter 必须通过实验被证明，而不能只作为漂亮类比
 
 ## 7. 未来代码接口草案
 
-以下是概念接口，不表示当前已经完整实现：
+以下是概念接口。`v4.3.0` 已实现其中的最小版本：`PromptSegment`、`TextGradient`、`PromptOptimizationTrace`、`segment_prompt()`、`estimate_text_gradients()`、`build_llm_adamw_trace()`、`length_penalized_loss()` 和 `finalize_candidate_trace()`。尚未实现的是跨轮 optimizer state、真实 Mask 重跑、对比替换、消融链路和完整 artifact 化 trace。
 
 ```text
 PromptSegmenter

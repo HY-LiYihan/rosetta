@@ -1,6 +1,6 @@
 # Architecture (Developer)
 
-更新时间: 2026-05-02
+更新时间: 2026-05-03
 
 ## 1. 目标定位
 
@@ -109,11 +109,12 @@ core models -> workflows -> agents/tools -> data formats -> runtime store
 5. `WorkflowRun`: bootstrap、annotation、corpus、evaluation 等运行记录。
 6. `AgentStep`: 每一步 tool 调用、检索、judge、repair 的 trace。
 7. `ConceptGuideline / GoldExampleSet / ConceptVersion`: 概念阐释、金样例库和修订历史。
-8. `BatchJob / BatchJobItem`: 本地批量标注队列与 checkpoint。
+8. `PromptOptimizationTrace`: Prompt-as-Parameter 自举过程中的文本梯度、候选 loss、长度变化和接受/拒绝轨迹。
+9. `BatchJob / BatchJobItem`: 本地批量标注队列与 checkpoint。
 
 这些模型还承担实验记录职责：
 
-1. `ConceptVersion.metadata` 必须能复现每轮概念修订、loss、失败样例和候选选择。
+1. `ConceptVersion.metadata` 必须能复现每轮概念修订、loss、失败样例、文本梯度、长度惩罚和候选选择。
 2. `Prediction.meta` 必须能复现每次采样、上下文样例、解析风险和自洽性。
 3. `ReviewTask.meta` 必须能复现人类选择、错误类型、疑难样例和 gold-like 晋升。
 4. `WorkflowRun / AgentStep` 必须能复现模型调用、工具调用、失败修复和成本信息。

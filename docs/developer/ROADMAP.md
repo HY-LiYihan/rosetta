@@ -1,6 +1,6 @@
 # Roadmap (Developer)
 
-更新时间: 2026-05-02
+更新时间: 2026-05-03
 
 ## 阶段状态
 
@@ -11,17 +11,18 @@
 5. `v4.2.2`：Loss-guided concept refinement，避免越优化越差。
 6. `v4.2.3`：文档架构重排，明确 user / developer / research claims 三条入口。
 7. `v4.2.4`：Prompt-as-Parameter 文档升级，明确 Text Gradient 和 `LLM-AdamW` 是下一阶段核心方法。
+8. `v4.3.0`：Prompt-as-Parameter 最小实现，接入 prompt 分段、Mask 启发式文本梯度、LLM-AdamW trace、长度惩罚和 gold loss validation。
 
 ## 下一阶段路线
 
-1. `v4.3`：Prompt-as-Parameter 实现。补齐 `PromptSegmenter / TextGradientEstimator / PromptOptimizer / PromptOptimizationTrace`。
-2. `v4.4`：实验闭环。补齐 PLM / LLM 对比报告字段，支持 15 / 50 / 100 gold budget 汇总。
-3. `v4.5`：检索增强。把轻量 lexical retrieval 替换或扩展为本地 CPU embedding index，并保留可解释 fallback。
-4. `v4.6`：LLM-as-a-judge。引入候选评审、错误类型归因和 judge disagreement。
-5. `v4.7`：主动学习报告。输出人工审核收益曲线、自动通过抽检误差和 hard example 贡献。
-6. `v4.8`：跨任务格式扩展。稳定支持 span、relation、句子级、段落级、文章级标注任务。
-7. `v4.9`：数据集级实验 runner。支持 ACTER、NCBI-disease、BC2GM、CoNLL03 等数据转换与批量评测。
-8. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表和 ablation runner。
+1. `v4.3`：Prompt-as-Parameter 核心算法。当前已完成最小内核；后续补真实 Mask 重跑、对比替换、消融链路和跨轮 optimizer state。
+2. `v4.4`：架构边界和 runtime store 优化。统一运行事实来源，补齐 prompt optimization trace、artifact、run manifest、token usage 和 progress event 的持久化边界。
+3. `v4.5`：批量任务并发、队列和断点恢复。稳定 SQLite checkpoint、本地线程池、pause/resume/cancel、单条重试和整批重试。
+4. `v4.6`：过程进度可视化与 token/cost 统计。工作台和批量页展示实时进度、吞吐、预计剩余、并发、token 和成本聚合。
+5. `v4.7`：UI 简化、审核体验和教程优化。继续压缩页面噪声，强化“一条一条蹦出”的审核卡片，并重写 30 分钟最小闭环教程。
+6. `v4.8`：完整项目测试。补齐 mock LLM 全电路、真实 API 小样本 smoke、UI smoke、Docker healthcheck 和文档教程验收。
+7. `v4.9`：实验报告、PLM/LLM 对比和论文级导出。输出 loss 曲线、人工审核收益、token/cost、15/50/100 gold budget、PLM baseline 对比和 ablation 表。
+8. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表、数据集转换和 ablation runner。
 
 ## 优先级判断
 

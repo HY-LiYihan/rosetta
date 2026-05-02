@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-05-03
+
+### Feature / Prompt-as-Parameter optimizer core v4.3.0
+
+1. 新增 `app/workflows/bootstrap/prompt_optimizer.py`，提供 `PromptSegment`、`TextGradient`、`PromptOptimizationTrace`、prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚。
+2. `run_concept_refinement_loop` 接入 prompt optimization context：每轮候选生成前根据当前 gold loss、失败详情和概念阐释片段估算改写方向。
+3. 候选评估新增长度惩罚，避免靠无限加长 prompt 获得短期收益；只有惩罚后的 loss 明确下降才接受候选。
+4. `ConceptVersion.metadata` 新增 `prompt_optimizer`、`prompt_optimization_trace`，候选评估中记录 `raw_loss_detail`、`prompt_optimization_trace`、loss delta、length delta 和 accepted 状态。
+5. 大模型修订 prompt 增加“文本梯度信号”上下文，但仍要求只返回干净概念阐释正文，失败摘要、样例编号、漏标/多标诊断继续只进 metadata。
+6. 新增 [test_prompt_optimizer.py](../tests/unit/test_prompt_optimizer.py)，覆盖 prompt 分段、梯度估算、trace 生成、长度惩罚和候选接受记录。
+7. 更新概念自举循环测试，验证 `LLM-AdamW` trace、长度惩罚和干净提示词边界。
+8. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)、[Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md) 和 [Roadmap](./developer/ROADMAP.md)，明确 v4.3.0 是最小可用实现，并对齐 v4.4-v4.9 的架构、并发、进度、测试和实验报告路线。
+9. 首页页脚版本更新为 `v4.3.0`。
+
 ## 2026-05-02
 
 ### Docs / Prompt-as-Parameter text gradient framework v4.2.4
