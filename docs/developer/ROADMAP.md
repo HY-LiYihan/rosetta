@@ -10,16 +10,18 @@
 4. `v4.2.1`：概念修订提示词净化，日志与最终提示词解耦。
 5. `v4.2.2`：Loss-guided concept refinement，避免越优化越差。
 6. `v4.2.3`：文档架构重排，明确 user / developer / research claims 三条入口。
+7. `v4.2.4`：Prompt-as-Parameter 文档升级，明确 Text Gradient 和 `LLM-AdamW` 是下一阶段核心方法。
 
 ## 下一阶段路线
 
-1. `v4.3`：实验闭环。补齐 PLM / LLM 对比报告字段，支持 15 / 50 / 100 gold budget 汇总。
-2. `v4.4`：检索增强。把轻量 lexical retrieval 替换或扩展为本地 CPU embedding index，并保留可解释 fallback。
-3. `v4.5`：LLM-as-a-judge。引入候选评审、错误类型归因和 judge disagreement。
-4. `v4.6`：主动学习报告。输出人工审核收益曲线、自动通过抽检误差和 hard example 贡献。
-5. `v4.7`：跨任务格式扩展。稳定支持 span、relation、句子级、段落级、文章级标注任务。
-6. `v4.8`：数据集级实验 runner。支持 ACTER、NCBI-disease、BC2GM、CoNLL03 等数据转换与批量评测。
-7. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表和 ablation runner。
+1. `v4.3`：Prompt-as-Parameter 实现。补齐 `PromptSegmenter / TextGradientEstimator / PromptOptimizer / PromptOptimizationTrace`。
+2. `v4.4`：实验闭环。补齐 PLM / LLM 对比报告字段，支持 15 / 50 / 100 gold budget 汇总。
+3. `v4.5`：检索增强。把轻量 lexical retrieval 替换或扩展为本地 CPU embedding index，并保留可解释 fallback。
+4. `v4.6`：LLM-as-a-judge。引入候选评审、错误类型归因和 judge disagreement。
+5. `v4.7`：主动学习报告。输出人工审核收益曲线、自动通过抽检误差和 hard example 贡献。
+6. `v4.8`：跨任务格式扩展。稳定支持 span、relation、句子级、段落级、文章级标注任务。
+7. `v4.9`：数据集级实验 runner。支持 ACTER、NCBI-disease、BC2GM、CoNLL03 等数据转换与批量评测。
+8. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表和 ablation runner。
 
 ## 优先级判断
 

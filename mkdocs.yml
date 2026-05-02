@@ -63,6 +63,7 @@ nav:
       - 用户教程: user/TUTORIAL.md
   - 研究主张:
       - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
+      - Prompt-as-Parameter: ideas/PROMPT_AS_PARAMETER.md
       - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
       - 文档评审迭代: developer/DOCS_REVIEW_ITERATIONS.md
   - Workflows:

@@ -66,12 +66,19 @@ python scripts/research/run_bootstrap.py analyze \
 8. `plm_50_gold_finetune`
 9. `plm_100_gold_finetune`
 10. `plm_full_data_finetune`
+11. `random_rewrite`
+12. `llm_reflection_only`
+13. `mask_gradient_only`
+14. `ablation_gradient_only`
+15. `llm_adamw`
+16. `cma_es_prompt_search`
 
 解释口径：
 
 1. `plm_full_data_finetune` 是强上界和部署成本对照，不是 Rosetta 必须全面超过的唯一目标。
 2. `plm_15/50/100_gold_finetune` 才是低预算主比较对象。
 3. Rosetta 的 ablation 必须显示概念自举、对比式检索、自洽性路由和主动审核各自带来的收益。
+4. Prompt-as-Parameter 的贡献必须通过 ablation 证明：文本梯度估算应优于随机改写、普通 LLM 反思和简单候选搜索。
 
 ## 5. 指标
 
@@ -89,6 +96,11 @@ python scripts/research/run_bootstrap.py analyze \
 10. model call cost
 11. review minutes per accepted sample
 12. PLM retraining cost under label definition change
+13. per-round loss delta
+14. invalid rewrite rate
+15. prompt length growth
+16. accepted candidate rate
+17. gradient-method agreement
 
 ## 6. 参考数据集
 
@@ -110,3 +122,6 @@ python scripts/research/run_bootstrap.py analyze \
 5. 人工审核样本数、选择候选比例、编辑比例和 hard examples 数。
 6. 与 PLM baselines 的 F1 / 人工预算 / 成本对比。
 7. 典型成功样例和失败样例。
+8. Prompt-as-Parameter ablation，说明 Mask 遮挡、对比替换、消融链路、LLM 自诊断和 `LLM-AdamW` 是否真实降低 loss。
+
+论文表述约束：不能只展示最终 F1，就声称文本梯度有效。必须报告每轮 loss delta、候选接受率、无效改写率和 prompt 长度增长，证明优化器不是靠堆叠规则偶然变好。

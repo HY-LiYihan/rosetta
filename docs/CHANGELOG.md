@@ -2,6 +2,17 @@
 
 ## 2026-05-02
 
+### Docs / Prompt-as-Parameter text gradient framework v4.2.4
+
+1. 新增 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，将概念 prompt 定义为可训练文本参数，并系统说明 Text Gradient、Prompt Loss 和 Prompt Optimizer。
+2. 文档化四类文本梯度估算器：Mask 遮挡法、对比替换法、消融链路法和 LLM 自我诊断法。
+3. 文档化 prompt 优化器类比：SGD、Momentum、Adam、AdamW、CMA-ES 和模拟退火，并将 `LLM-AdamW` 作为 Rosetta v1 概念优化器默认叙事。
+4. 更新 [Research Claims](./ideas/RESEARCH_CLAIMS.md) 与 [Core Annotation Bootstrap](./ideas/CORE_ANNOTATION_BOOTSTRAP.md)，把 `Prompt-as-Parameter Optimization` 和文本梯度估算写为核心创新。
+5. 更新 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，新增 Prompt Optimization Subsystem，规定未来 `PromptSegmenter / TextGradientEstimator / PromptOptimizer / CandidateGenerator / PromptOptimizationTrace` 边界。
+6. 更新 [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md)，新增 `random_rewrite / llm_reflection_only / mask_gradient_only / ablation_gradient_only / llm_adamw / cma_es_prompt_search` ablation 和 prompt 长度增长、无效改写率等指标。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[mkdocs.yml](../mkdocs.yml)、开发者入口和路线图，新增 Prompt-as-Parameter 文档入口。
+8. 首页页脚版本更新为 `v4.2.4`。
+
 ### Docs / Research claims and documentation architecture v4.2.3
 
 1. 新增 [Research Claims](./ideas/RESEARCH_CLAIMS.md)，明确 Rosetta 的核心证明目标：LLM agent 在低资源、概念可描述、任务边界会变化或任务不够常规的标注场景中，相比 PLM-first 流程具有样本效率、审核效率和可追溯优势。
