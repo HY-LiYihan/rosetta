@@ -461,6 +461,10 @@ else:
                         "failure_cases": round_result.get("failure_cases", []),
                         "raw_revision_response": round_result.get("raw_revision_response", ""),
                         "sanitizer_warnings": round_result.get("sanitizer_warnings", []),
+                        "loss": round_result.get("loss"),
+                        "loss_delta": round_result.get("loss_delta"),
+                        "accepted_candidate_id": round_result.get("accepted_candidate_id"),
+                        "candidate_evaluations": round_result.get("candidate_evaluations", []),
                     }
                 )
 

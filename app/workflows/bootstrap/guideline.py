@@ -188,6 +188,8 @@ def run_concept_refinement_loop(
     max_rounds: int = 5,
     auto_apply: bool = False,
     temperature: float = 0.0,
+    candidate_count: int = 3,
+    min_loss_delta: float = 0.01,
 ) -> dict:
     if max_rounds <= 0:
         raise ValueError("max_rounds must be positive")
@@ -218,43 +220,112 @@ def run_concept_refinement_loop(
         round_guideline = {**guideline, "stable_description": current_description}
         result = _evaluate_gold_tasks(store, guideline_id, round_guideline, task_ids, predictor, temperature, round_index)
         failure_summary = _failure_summary(result["details"])
+        current_loss = _concept_loss(result)
         status = "stable" if not result["failed"] and not result["unstable"] else "needs_revision"
-        revision = (
-            {
-                "description": current_description,
-                "raw_response": "",
-                "sanitizer_warnings": list(initial_warnings) if round_index == 1 else [],
-                "source": "stable_no_revision",
-            }
-            if status == "stable"
-            else revise_concept_description(
+        selected_result = result
+        selected_loss = current_loss
+        selected_candidate_id = "current"
+        candidate_evaluations: list[dict] = []
+        revision = {
+            "description": current_description,
+            "raw_response": "",
+            "sanitizer_warnings": list(initial_warnings) if round_index == 1 else [],
+            "source": "stable_no_revision",
+        }
+        if status != "stable":
+            candidates = generate_revision_candidates(
                 round_guideline,
                 result,
                 failure_summary,
                 predictor=predictor,
                 temperature=temperature,
+                candidate_count=candidate_count,
             )
-        )
+            seen_descriptions = {current_description}
+            for candidate_index, candidate in enumerate(candidates, start=1):
+                candidate_description = candidate["description"]
+                if candidate_description in seen_descriptions:
+                    candidate_evaluations.append(
+                        {
+                            "candidate_id": candidate["candidate_id"],
+                            "source": candidate["source"],
+                            "status": "skipped_duplicate",
+                            "loss": current_loss["loss"],
+                            "sanitizer_warnings": candidate["sanitizer_warnings"],
+                        }
+                    )
+                    continue
+                seen_descriptions.add(candidate_description)
+                candidate_guideline = {**guideline, "stable_description": candidate_description}
+                candidate_result = _evaluate_gold_tasks(
+                    store,
+                    guideline_id,
+                    candidate_guideline,
+                    task_ids,
+                    predictor,
+                    temperature,
+                    round_index,
+                    source="concept_candidate_evaluation",
+                    candidate_id=candidate["candidate_id"],
+                )
+                candidate_loss = _concept_loss(candidate_result)
+                accepted = candidate_loss["loss"] + min_loss_delta < selected_loss["loss"]
+                candidate_evaluations.append(
+                    {
+                        "candidate_id": candidate["candidate_id"],
+                        "source": candidate["source"],
+                        "status": "accepted" if accepted else "rejected",
+                        "loss": candidate_loss["loss"],
+                        "loss_detail": candidate_loss,
+                        "pass_count": len(candidate_result["passed"]),
+                        "failed_count": len(candidate_result["failed"]),
+                        "unstable_count": len(candidate_result["unstable"]),
+                        "raw_revision_response": candidate["raw_response"],
+                        "sanitizer_warnings": candidate["sanitizer_warnings"],
+                        "direction": candidate.get("direction", ""),
+                        "description_preview": candidate_description[:240],
+                        "evaluation_index": candidate_index,
+                    }
+                )
+                if accepted:
+                    selected_loss = candidate_loss
+                    selected_result = candidate_result
+                    selected_candidate_id = candidate["candidate_id"]
+                    revision = candidate
+            if selected_candidate_id == "current":
+                status = "no_improvement"
+            else:
+                status = "stable" if not selected_result["failed"] and not selected_result["unstable"] else "needs_revision"
         revised_description = revision["description"]
+        selected_failure_summary = _failure_summary(selected_result["details"])
         version = ConceptVersion(
             id=f"concept-version-{uuid.uuid4().hex[:10]}",
             guideline_id=guideline_id,
             version=next_version,
             description=revised_description,
-            failed_task_ids=tuple(result["failed"]),
-            unstable_task_ids=tuple(result["unstable"]),
+            failed_task_ids=tuple(selected_result["failed"]),
+            unstable_task_ids=tuple(selected_result["unstable"]),
             notes="概念自举校准轮次。",
             metadata={
                 "round_index": round_index,
-                "pass_count": len(result["passed"]),
-                "failed_task_ids": result["failed"],
-                "unstable_task_ids": result["unstable"],
+                "pass_count": len(selected_result["passed"]),
+                "pass_count_before": len(result["passed"]),
+                "failed_task_ids": selected_result["failed"],
+                "unstable_task_ids": selected_result["unstable"],
                 "failure_summary": failure_summary,
+                "selected_failure_summary": selected_failure_summary,
                 "failure_cases": _failure_cases(result["details"]),
+                "selected_failure_cases": _failure_cases(selected_result["details"]),
                 "raw_revision_response": revision["raw_response"],
                 "sanitizer_warnings": revision["sanitizer_warnings"],
                 "revision_source": "concept_refinement_loop",
                 "revision_mode": revision["source"],
+                "optimizer": "loss_search",
+                "current_loss": current_loss,
+                "selected_loss": selected_loss,
+                "loss_delta": round(current_loss["loss"] - selected_loss["loss"], 4),
+                "accepted_candidate_id": selected_candidate_id,
+                "candidate_evaluations": candidate_evaluations,
                 "auto_generated": True,
                 "auto_applied": auto_apply,
             },
@@ -264,20 +335,24 @@ def run_concept_refinement_loop(
             {
                 "round_index": round_index,
                 "status": status,
-                "pass_count": len(result["passed"]),
-                "failed": result["failed"],
-                "unstable": result["unstable"],
-                "failure_summary": failure_summary,
+                "pass_count": len(selected_result["passed"]),
+                "failed": selected_result["failed"],
+                "unstable": selected_result["unstable"],
+                "loss": selected_loss["loss"],
+                "loss_delta": round(current_loss["loss"] - selected_loss["loss"], 4),
+                "accepted_candidate_id": selected_candidate_id,
+                "failure_summary": selected_failure_summary,
                 "failure_cases": _failure_cases(result["details"]),
+                "candidate_evaluations": candidate_evaluations,
                 "raw_revision_response": revision["raw_response"],
                 "sanitizer_warnings": revision["sanitizer_warnings"],
                 "description": revised_description,
             }
         )
         next_version += 1
-        final_status = status
+        final_status = "needs_revision" if status == "no_improvement" else status
         final_description = revised_description
-        if status == "stable":
+        if status in {"stable", "no_improvement"}:
             break
         current_description = revised_description
 
@@ -312,32 +387,77 @@ def revise_concept_description(
     predictor: Predictor | None = None,
     temperature: float = 0.0,
 ) -> dict:
+    return generate_revision_candidates(
+        guideline,
+        validation_result,
+        failure_summary,
+        predictor=predictor,
+        temperature=temperature,
+        candidate_count=1,
+    )[0]
+
+
+def generate_revision_candidates(
+    guideline: dict,
+    validation_result: dict,
+    failure_summary: str,
+    predictor: Predictor | None = None,
+    temperature: float = 0.0,
+    candidate_count: int = 3,
+) -> list[dict]:
+    target_count = max(1, min(candidate_count, 5))
     fallback = _fallback_revised_description(guideline, validation_result)
+    candidates: list[dict] = []
     if predictor is None:
         cleaned, warnings = sanitize_concept_description(
             fallback,
             fallback=str(guideline.get("stable_description") or guideline.get("brief", "")),
         )
-        return {
-            "description": cleaned,
-            "raw_response": "",
-            "sanitizer_warnings": [*warnings, "local_fallback_revision"],
-            "source": "local_fallback",
-        }
+        return [
+            {
+                "candidate_id": "candidate-local-fallback",
+                "description": cleaned,
+                "raw_response": "",
+                "sanitizer_warnings": [*warnings, "local_fallback_revision"],
+                "source": "local_fallback",
+                "direction": "balanced",
+            }
+        ]
 
     current_description, input_warnings = sanitize_concept_description(
         str(guideline.get("stable_description") or guideline.get("brief", "")),
         fallback=_compose_description_from_payload(guideline),
     )
-    prompt = _build_revision_prompt(current_description, validation_result, failure_summary)
-    raw = predictor("你是概念阐释改写助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
-    cleaned, output_warnings = sanitize_concept_description(raw, fallback=fallback)
-    return {
-        "description": cleaned,
-        "raw_response": raw,
-        "sanitizer_warnings": [*input_warnings, *output_warnings],
-        "source": "llm_revision",
-    }
+    directions = _candidate_directions(validation_result)[:target_count]
+    for index, direction in enumerate(directions, start=1):
+        prompt = _build_revision_prompt(current_description, validation_result, failure_summary, direction)
+        raw = predictor("你是概念阐释改写助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
+        cleaned, output_warnings = sanitize_concept_description(raw, fallback=fallback)
+        candidates.append(
+            {
+                "candidate_id": f"candidate-{index:02d}-{direction['id']}",
+                "description": cleaned,
+                "raw_response": raw,
+                "sanitizer_warnings": [*input_warnings, *output_warnings],
+                "source": "llm_revision",
+                "direction": direction["id"],
+            }
+        )
+    fallback_cleaned, fallback_warnings = sanitize_concept_description(
+        fallback,
+        fallback=str(guideline.get("stable_description") or guideline.get("brief", "")),
+    )
+    candidates.append(
+        {
+            "candidate_id": "candidate-fallback",
+            "description": fallback_cleaned,
+            "raw_response": "",
+            "sanitizer_warnings": [*fallback_warnings, "local_fallback_revision"],
+            "source": "local_fallback",
+            "direction": "balanced_fallback",
+        }
+    )
+    return candidates
 
 
 def sanitize_concept_description(text: str, fallback: str = "") -> tuple[str, list[str]]:
@@ -390,6 +510,8 @@ def _evaluate_gold_tasks(
     predictor: Predictor | None,
     temperature: float,
     round_index: int,
+    source: str = "concept_refinement",
+    candidate_id: str | None = None,
 ) -> dict:
     passed: list[str] = []
     failed: list[str] = []
@@ -407,7 +529,7 @@ def _evaluate_gold_tasks(
         prediction = Prediction(
             id=f"pred-{uuid.uuid4().hex[:10]}",
             task_id=task_id,
-            source="concept_refinement",
+            source=source,
             model=prediction_payload.get("model", "local-rule"),
             spans=tuple(prediction_payload.get("predicted_spans", ())),
             score=prediction_payload["score"],
@@ -415,6 +537,7 @@ def _evaluate_gold_tasks(
             meta={
                 "guideline_id": guideline_id,
                 "round_index": round_index,
+                "candidate_id": candidate_id,
                 "route": prediction_payload["route"],
                 "failure_detail": detail,
             },
@@ -438,6 +561,9 @@ def _gold_comparison_detail(task_payload: dict, prediction_payload: dict, route:
     return {
         "route": route,
         "score": prediction_payload.get("score", 0.0),
+        "text": task_payload.get("text", ""),
+        "gold_spans": [_span_key_to_dict(key) for key in sorted(gold_keys)],
+        "predicted_spans": [_span_key_to_dict(key) for key in sorted(pred_keys)],
         "missing_spans": [_span_key_to_dict(key) for key in missing],
         "extra_spans": [_span_key_to_dict(key) for key in extra],
     }
@@ -464,6 +590,32 @@ def _failure_cases(details: list[dict]) -> list[dict]:
     return [detail for detail in details if detail.get("route") != "passed"]
 
 
+def _concept_loss(result: dict) -> dict:
+    details = result.get("details", [])
+    failed_count = len(result.get("failed", []))
+    unstable_count = len(result.get("unstable", []))
+    missing_count = sum(len(detail.get("missing_spans", [])) for detail in details)
+    extra_count = sum(len(detail.get("extra_spans", [])) for detail in details)
+    scores = [float(detail.get("score", 0.0)) for detail in details]
+    mean_score = sum(scores) / len(scores) if scores else 0.0
+    loss = (
+        failed_count * 10.0
+        + unstable_count * 5.0
+        + missing_count * 1.5
+        + extra_count * 1.0
+        + (1.0 - mean_score) * 2.0
+    )
+    return {
+        "loss": round(loss, 4),
+        "failed_count": failed_count,
+        "unstable_count": unstable_count,
+        "missing_count": missing_count,
+        "extra_count": extra_count,
+        "mean_score": round(mean_score, 4),
+        "passed_count": len(result.get("passed", [])),
+    }
+
+
 def _fallback_revised_description(guideline: dict, validation_result: dict) -> str:
     base, _warnings = sanitize_concept_description(
         str(guideline.get("stable_description") or guideline.get("brief", "")),
@@ -478,12 +630,43 @@ def _fallback_revised_description(guideline: dict, validation_result: dict) -> s
     return f"{base}\n{supplement}" if base else supplement
 
 
-def _build_revision_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
+def _candidate_directions(validation_result: dict) -> list[dict]:
+    missing_count = sum(len(detail.get("missing_spans", [])) for detail in validation_result.get("details", []))
+    extra_count = sum(len(detail.get("extra_spans", [])) for detail in validation_result.get("details", []))
+    directions = [
+        {
+            "id": "recall",
+            "title": "提高召回",
+            "instruction": "重点补充应该纳入但被漏掉的术语类型，避免定义过窄。",
+        },
+        {
+            "id": "precision",
+            "title": "收紧边界",
+            "instruction": "重点收紧边界和排除条件，避免过度泛化或多标普通片段。",
+        },
+        {
+            "id": "balanced",
+            "title": "平衡改写",
+            "instruction": "在不扩大噪声的前提下，同时提高召回和边界稳定性。",
+        },
+        {
+            "id": "minimal",
+            "title": "最小改动",
+            "instruction": "只做必要的最小改动，保留原始概念阐释中已经有效的部分。",
+        },
+    ]
+    if extra_count > missing_count:
+        return [directions[1], directions[2], directions[3], directions[0]]
+    return directions
+
+
+def _build_revision_prompt(current_description: str, validation_result: dict, failure_summary: str, direction: dict) -> str:
     missing_terms, extra_terms = _revision_terms(validation_result.get("details", []))
     failed_count = len(validation_result.get("failed", []))
     unstable_count = len(validation_result.get("unstable", []))
     missing_line = "；".join(missing_terms[:12]) or "无"
     extra_line = "；".join(extra_terms[:8]) or "无"
+    case_context = _failure_case_prompt_context(validation_result.get("details", []))
     return f"""请根据金样例校准结果，优化下面的概念阐释。
 
 你的任务很简单：只返回优化后的概念阐释正文，不要返回解释、分析过程或列表化日志。
@@ -491,16 +674,39 @@ def _build_revision_prompt(current_description: str, validation_result: dict, fa
 当前概念阐释：
 {current_description}
 
+本次探索方向：
+{direction['title']}：{direction['instruction']}
+
 需要吸收进概念阐释的现象（只供理解，不要原样复述）：
 - 需要更明确纳入的片段类型：{missing_line}
 - 需要更明确排除或收紧边界的片段类型：{extra_line}
 - 受影响样例数量：未通过 {failed_count} 条，边界不稳定 {unstable_count} 条。
+
+参考失败片段（只供理解，不要原样复述样例编号）：
+{case_context}
 
 输出要求：
 1. 只输出可以直接用于下一轮标注的概念阐释正文。
 2. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”这类清晰字段。
 3. 不要输出解释、失败样例编号、失败摘要或修订日志。
 4. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
+
+
+def _failure_case_prompt_context(details: list[dict]) -> str:
+    failed = [detail for detail in details if detail.get("route") != "passed"][:6]
+    if not failed:
+        return "无"
+    lines: list[str] = []
+    for index, detail in enumerate(failed, start=1):
+        missing = ", ".join(item["text"] for item in detail.get("missing_spans", [])[:4]) or "无"
+        extra = ", ".join(item["text"] for item in detail.get("extra_spans", [])[:4]) or "无"
+        gold = ", ".join(item["text"] for item in detail.get("gold_spans", [])[:6]) or "无"
+        predicted = ", ".join(item["text"] for item in detail.get("predicted_spans", [])[:6]) or "无"
+        text = str(detail.get("text", "")).strip()
+        lines.append(
+            f"样例{index}: 原文={text} | 应标={gold} | 模型标={predicted} | 应补={missing} | 应排除={extra}"
+        )
+    return "\n".join(lines)
 
 
 def _revision_terms(details: list[dict]) -> tuple[list[str], list[str]]:
@@ -645,8 +851,8 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
     gold_spans = task_payload.get("spans", [])
     gold_set = {_span_key_from_dict(span) for span in gold_spans}
     pred_set = {_span_key_from_dict(span) for span in predicted_spans}
-    score = len(gold_set & pred_set) / len(gold_set) if gold_set else 0.0
-    route = "passed" if score >= 1.0 else "unstable" if score >= 0.5 else "failed"
+    score = _span_f1(gold_set, pred_set)
+    route = "passed" if gold_set == pred_set else "unstable" if score >= 0.5 else "failed"
     return {
         "score": round(score, 4),
         "route": route,
@@ -708,3 +914,12 @@ def _span_key_from_dict(span: dict) -> tuple[int, int, str, str, bool]:
 def _span_key_to_dict(key: tuple[int, int, str, str, bool]) -> dict:
     start, end, text, label, implicit = key
     return {"start": start, "end": end, "text": text, "label": label, "implicit": implicit}
+
+
+def _span_f1(gold_set: set[tuple[int, int, str, str, bool]], pred_set: set[tuple[int, int, str, str, bool]]) -> float:
+    if not gold_set and not pred_set:
+        return 1.0
+    if not gold_set or not pred_set:
+        return 0.0
+    true_positive = len(gold_set & pred_set)
+    return 2 * true_positive / (len(gold_set) + len(pred_set))

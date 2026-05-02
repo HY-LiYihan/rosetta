@@ -1,6 +1,7 @@
 from app.workflows.bootstrap.runner import analyze_bootstrap
 from app.workflows.bootstrap.guideline import (
     build_guideline,
+    generate_revision_candidates,
     gold_task_from_markup,
     revise_guideline,
     revise_concept_description,
@@ -13,6 +14,7 @@ from app.workflows.bootstrap.guideline import (
 __all__ = [
     "analyze_bootstrap",
     "build_guideline",
+    "generate_revision_candidates",
     "gold_task_from_markup",
     "revise_guideline",
     "revise_concept_description",

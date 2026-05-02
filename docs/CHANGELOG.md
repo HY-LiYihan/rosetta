@@ -2,6 +2,17 @@
 
 ## 2026-05-01
 
+### Fix / Loss-guided concept refinement v4.2.2
+
+1. 概念自举从单路径贪心改写升级为 loss-guided candidate search：每轮先评估当前概念，再生成多个候选概念版本。
+2. 每个候选版本都会回到 15 条金样例上试标，并计算 loss、通过数、失败数、漏标数、多标数和平均 span-F1。
+3. 系统只接受 loss 明确下降的候选；如果没有候选变好，则保持当前最优概念并停止本轮搜索，避免“越优化越烂”。
+4. 大模型修订 prompt 增加探索方向、失败片段上下文、应补/应排除片段类型，但最终仍只允许返回干净概念阐释正文。
+5. `ConceptVersion.metadata` 新增 `optimizer/current_loss/selected_loss/loss_delta/accepted_candidate_id/candidate_evaluations`，用于复现每轮选择。
+6. 概念实验室日志区展示 loss、loss delta、被接受候选和候选评估详情。
+7. 新增完整概念自举电路测试，验证系统会选择让 gold loss 下降的候选，并拒绝无改进候选。
+8. 首页页脚版本更新为 `v4.2.2`。
+
 ### Fix / Clean concept revision prompts v4.2.1
 
 1. 概念自举修订不再把失败样例编号、失败摘要、漏标/多标诊断直接拼入 `ConceptVersion.description`。

@@ -287,16 +287,17 @@ app/research/                # legacy algorithms and offline compatibility
 
 后续任何实现如果只是在做“上传数据 -> 调模型 -> 下载结果”，就偏离了这条主线。
 
-## 11. v4.2.0 落地状态
+## 11. v4.2.x 落地状态
 
 当前主线已从“普通批量标注工具”升级为 concept bootstrap loop 的第一版实现：
 
 1. `app/workflows/bootstrap` 提供 `run_concept_refinement_loop`，正式自举要求 15 条金样例，并逐轮写入 `ConceptVersion`。
-2. 概念实验室提供“开始自举校准”，展示每轮通过数、失败样例、失败摘要和最终概念草案；最终草案不混入样例编号或诊断日志。
-3. `app/workflows/annotation` 新增标注上下文构建器，每次批量标注会组合概念版本、相似样例、边界远例和失败模式摘要。
-4. 候选自洽性从简单 exact signature 升级为 span-F1、完全一致率、模型自评和规则风险组合。
-5. 审核队列开始记录错误类型、hard example、人工修改和 gold-like 晋升信号。
-6. 导出报告开始包含概念版本和主动审核反馈。
+2. 概念实验室提供“开始自举校准”，展示每轮通过数、失败样例、失败摘要、loss、候选评估和最终概念草案；最终草案不混入样例编号或诊断日志。
+3. 概念修订不再单路径贪心追加，而是生成多个候选概念版本，在 15 条金样例上重新试标并计算 gold loss，只接受让 loss 下降的候选。
+4. `app/workflows/annotation` 新增标注上下文构建器，每次批量标注会组合概念版本、相似样例、边界远例和失败模式摘要。
+5. 候选自洽性从简单 exact signature 升级为 span-F1、完全一致率、模型自评和规则风险组合。
+6. 审核队列开始记录错误类型、hard example、人工修改和 gold-like 晋升信号。
+7. 导出报告开始包含概念版本和主动审核反馈。
 
 仍未完成的研究级增强：
 

@@ -77,7 +77,22 @@ gold-00001: 漏标 Quantum dots
         guideline = store.get_guideline(guideline_id)["payload"]
         self.assertEqual(guideline["status"], "stable")
 
-    def test_writes_failure_versions_until_max_rounds(self):
+    def test_extra_spans_are_not_counted_as_passed(self):
+        tmp, store, guideline_id = _store_with_guideline(gold_count=15)
+        self.addCleanup(tmp.cleanup)
+
+        def extra_predictor(system_prompt, messages, temperature):
+            text = messages[-1]["content"].split("文本：", 1)[-1].strip()
+            term = text.split(" appears here.", 1)[0]
+            return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears [here]{{Term}}.", "explanation": "extra"})
+
+        result = run_concept_refinement_loop(store, guideline_id, predictor=extra_predictor, max_rounds=1)
+
+        self.assertFalse(result["stable"])
+        self.assertEqual(result["rounds"][0]["pass_count"], 0)
+        self.assertGreater(result["rounds"][0]["loss"], 0.0)
+
+    def test_stops_without_improving_candidate_and_records_loss(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=15)
         self.addCleanup(tmp.cleanup)
 
@@ -88,12 +103,62 @@ gold-00001: 漏标 Quantum dots
         result = run_concept_refinement_loop(store, guideline_id, predictor=bad_predictor, max_rounds=2)
 
         self.assertFalse(result["stable"])
-        self.assertEqual(len(result["rounds"]), 2)
+        self.assertEqual(len(result["rounds"]), 1)
+        self.assertEqual(result["rounds"][0]["status"], "no_improvement")
         self.assertEqual(result["rounds"][0]["pass_count"], 0)
         versions = store.list_concept_versions(guideline_id=guideline_id, limit=10)
         generated = [row for row in versions if row["payload"].get("metadata", {}).get("revision_source") == "concept_refinement_loop"]
-        self.assertEqual(len(generated), 2)
+        self.assertEqual(len(generated), 1)
         self.assertTrue(generated[0]["payload"]["metadata"]["failure_summary"])
+        self.assertEqual(generated[0]["payload"]["metadata"]["accepted_candidate_id"], "current")
+        self.assertGreater(generated[0]["payload"]["metadata"]["current_loss"]["loss"], 0.0)
+
+    def test_loss_search_selects_candidate_that_improves_gold_score(self):
+        tmp, store, guideline_id = _store_with_guideline(gold_count=15)
+        self.addCleanup(tmp.cleanup)
+
+        def predictor(system_prompt, messages, temperature):
+            prompt = messages[-1]["content"]
+            if "优化下面的概念阐释" in prompt:
+                if "提高召回" in prompt:
+                    return "\n".join(
+                        [
+                            "概念描述：标出英文科普新闻中的硬科学专业术语，必须包含 Quantum term 这类明确科学术语。",
+                            "标签集合：Term",
+                            "边界规则：保留最小完整术语，Quantum term 加数字编号时整体标注。",
+                            "排除规则：不标普通泛化词。",
+                            "输出格式：[原文]{标签}",
+                        ]
+                    )
+                return "\n".join(
+                    [
+                        "概念描述：只标非常保守的科学术语。",
+                        "标签集合：Term",
+                        "边界规则：边界不确定时不标。",
+                        "排除规则：不标普通词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            text = prompt.split("文本：", 1)[-1].strip()
+            if "Quantum term 这类" not in prompt:
+                return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
+            term = text.split(" appears here.", 1)[0]
+            return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears here.", "explanation": "matched"})
+
+        result = run_concept_refinement_loop(store, guideline_id, predictor=predictor, max_rounds=3, candidate_count=3)
+
+        self.assertTrue(result["stable"])
+        self.assertEqual(len(result["rounds"]), 1)
+        self.assertEqual(result["rounds"][0]["status"], "stable")
+        self.assertNotEqual(result["rounds"][0]["accepted_candidate_id"], "current")
+        self.assertGreater(result["rounds"][0]["loss_delta"], 0.0)
+        self.assertIn("Quantum term 这类", result["final_description"])
+        versions = store.list_concept_versions(guideline_id=guideline_id, limit=10)
+        generated = [row for row in versions if row["payload"].get("metadata", {}).get("revision_source") == "concept_refinement_loop"]
+        metadata = generated[0]["payload"]["metadata"]
+        self.assertEqual(metadata["optimizer"], "loss_search")
+        self.assertEqual(metadata["selected_loss"]["loss"], 0.0)
+        self.assertTrue(metadata["candidate_evaluations"])
 
     def test_llm_revision_saves_only_clean_description(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=15)
@@ -104,15 +169,18 @@ gold-00001: 漏标 Quantum dots
             if "优化下面的概念阐释" in prompt:
                 return "\n".join(
                     [
-                        "概念描述：标出英文科普新闻中的硬科学专业术语。",
+                        "概念描述：标出英文科普新闻中的硬科学专业术语，必须包含 Quantum term 这类明确科学术语。",
                         "标签集合：Term",
-                        "边界规则：多词术语保持完整边界，只标注原文中明确出现的专业概念。",
+                        "边界规则：多词术语保持完整边界，只标注原文中明确出现的专业概念；Quantum term 加数字编号时整体标注。",
                         "排除规则：不纳入普通泛化词、人物名、机构名和新闻来源。",
                         "输出格式：[原文]{标签}",
                     ]
                 )
             text = prompt.split("文本：", 1)[-1].strip()
-            return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
+            if "Quantum term 这类" not in prompt:
+                return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
+            term = text.split(" appears here.", 1)[0]
+            return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears here.", "explanation": "matched"})
 
         run_concept_refinement_loop(store, guideline_id, predictor=predictor, max_rounds=1)
 
@@ -120,12 +188,13 @@ gold-00001: 漏标 Quantum dots
         generated = [row for row in versions if row["payload"].get("metadata", {}).get("revision_source") == "concept_refinement_loop"]
         description = generated[0]["payload"]["description"]
         metadata = generated[0]["payload"]["metadata"]
-        self.assertIn("概念描述：标出英文科普新闻中的硬科学专业术语。", description)
+        self.assertIn("概念描述：标出英文科普新闻中的硬科学专业术语", description)
         self.assertNotIn("gold-", description)
         self.assertNotIn("失败摘要", description)
         self.assertTrue(metadata["failure_summary"])
         self.assertTrue(metadata["failure_cases"])
-        self.assertIn("概念描述：标出英文科普新闻中的硬科学专业术语。", metadata["raw_revision_response"])
+        self.assertIn("概念描述：标出英文科普新闻中的硬科学专业术语", metadata["raw_revision_response"])
+        self.assertNotEqual(metadata["accepted_candidate_id"], "current")
 
     def test_dirty_llm_revision_falls_back_to_clean_prompt(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=15)
@@ -146,7 +215,13 @@ gold-00001: 漏标 Quantum dots
         self.assertNotIn("gold-00001", payload["description"])
         self.assertNotIn("失败摘要", payload["description"])
         self.assertNotIn("漏标", payload["description"])
-        self.assertIn("fallback_to_previous_description", payload["metadata"]["sanitizer_warnings"])
+        candidate_warnings = [
+            warning
+            for candidate in payload["metadata"]["candidate_evaluations"]
+            for warning in candidate.get("sanitizer_warnings", [])
+        ]
+        self.assertIn("fallback_to_previous_description", candidate_warnings)
+        self.assertEqual(payload["metadata"]["accepted_candidate_id"], "current")
 
     def test_default_deepseek_model_is_v4_pro(self):
         self.assertEqual(PLATFORM_CONFIGS["deepseek"].default_model, "deepseek-v4-pro")
