@@ -61,8 +61,11 @@ nav:
   - 首页: README.md
   - 快速使用:
       - 用户教程: user/TUTORIAL.md
-  - Workflows:
+  - 研究主张:
+      - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
       - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
+      - 文档评审迭代: developer/DOCS_REVIEW_ITERATIONS.md
+  - Workflows:
       - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
       - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
       - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md

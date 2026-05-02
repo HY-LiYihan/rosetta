@@ -1,12 +1,13 @@
 # Scripts Reference (Developer)
 
-更新时间: 2026-04-29
+更新时间: 2026-05-02
 
 ## 1. 设计目标
 
 1. 新功能统一走 [rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
 2. 部署、运维、备份脚本职责单一。
 3. legacy research/corpusgen 脚本保留兼容，但不再作为新入口。
+4. 后续 PLM / LLM 对比实验应优先沉淀到统一 CLI，而不是只依赖 Streamlit 页面点击。
 
 ## 2. 统一 CLI
 
@@ -26,6 +27,13 @@ python scripts/tool/rosetta_tool.py --help
 | `runs` | 查看本地 SQLite runtime store 中的 workflow runs |
 
 `--record` 会将运行写入本地 `RuntimeStore`。
+
+下一阶段 CLI 需要补齐：
+
+1. 概念自举正式运行命令。
+2. 批量标注任务提交与恢复命令。
+3. PLM / LLM 对比实验报告命令。
+4. JSONL 数据集转换与验证命令。
 
 ## 3. 部署脚本
 
@@ -74,4 +82,10 @@ python scripts/tool/rosetta_tool.py --help
 python -m compileall app streamlit_app.py scripts/tool/rosetta_tool.py
 python -m unittest discover -s tests -p 'test_*.py'
 for f in $(find scripts -type f -name '*.sh'); do bash -n "$f"; done
+```
+
+文档改动还需执行：
+
+```bash
+mkdocs build --strict --clean
 ```

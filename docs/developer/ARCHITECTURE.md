@@ -1,12 +1,14 @@
 # Architecture (Developer)
 
-更新时间: 2026-05-01
+更新时间: 2026-05-02
 
 ## 1. 目标定位
 
 Rosetta 是一个基于 Streamlit 的本地优先 Agentic Annotation Tool。
 
 当前架构不再把 `research` / `corpusgen` 作为产品边界。它们只作为历史兼容层保留；新功能应进入 `core / workflows / agents / data / runtime`。
+
+架构必须服务一个研究主张：Rosetta 通过 agentic concept bootstrap，在低资源、概念可描述、任务边界会变化或任务不够常规的场景中，提供比 PLM-first 标注流程更高的样本效率、可审计性和迭代速度。这个主张的边界见 [Research Claims](../ideas/RESEARCH_CLAIMS.md)。
 
 核心目标：
 
@@ -60,6 +62,44 @@ rosetta/
 | `app/services` | 旧页面 flow 兼容入口 | 逐步收敛为 UI controller |
 | `app/research`, `app/corpusgen` | 旧实现 | 不再作为新架构边界 |
 
+## 3.1 主数据流
+
+```text
+ConceptGuideline + GoldExampleSet
+  -> bootstrap workflow
+  -> ConceptVersion + failure memory
+  -> annotation context builder
+  -> k Prediction per AnnotationTask
+  -> consistency / confidence / rule risk
+  -> ReviewTask or auto-accepted task
+  -> export / report / experiment comparison
+```
+
+这个流向是后续开发的硬约束。任何新功能如果不能说明自己处于这条链路的哪一段，就应该先写设计文档再实现。
+
+## 3.2 User / Developer 双视角
+
+用户看到的是 5 个页面：
+
+```text
+工作台 -> 概念实验室 -> 批量标注 -> 审核队列 -> 导出与可视化
+```
+
+开发者维护的是 5 类能力：
+
+```text
+core models -> workflows -> agents/tools -> data formats -> runtime store
+```
+
+两者的对应关系：
+
+| 用户页面 | 主要 workflow | 主要数据 |
+| --- | --- | --- |
+| 概念实验室 | `app/workflows/bootstrap` | `ConceptGuideline / GoldExampleSet / ConceptVersion` |
+| 批量标注 | `app/workflows/annotation` | `AnnotationTask / Prediction / BatchJob` |
+| 审核队列 | `app/workflows/review` | `ReviewTask / hard examples / gold-like feedback` |
+| 导出与可视化 | `app/workflows/evaluation`、`app/data` | JSONL exports / report / manifest |
+
 ## 4. 核心数据模型
 
 1. `Project`: 标注项目，包含 schema、labels、guidelines、metadata。
@@ -70,6 +110,13 @@ rosetta/
 6. `AgentStep`: 每一步 tool 调用、检索、judge、repair 的 trace。
 7. `ConceptGuideline / GoldExampleSet / ConceptVersion`: 概念阐释、金样例库和修订历史。
 8. `BatchJob / BatchJobItem`: 本地批量标注队列与 checkpoint。
+
+这些模型还承担实验记录职责：
+
+1. `ConceptVersion.metadata` 必须能复现每轮概念修订、loss、失败样例和候选选择。
+2. `Prediction.meta` 必须能复现每次采样、上下文样例、解析风险和自洽性。
+3. `ReviewTask.meta` 必须能复现人类选择、错误类型、疑难样例和 gold-like 晋升。
+4. `WorkflowRun / AgentStep` 必须能复现模型调用、工具调用、失败修复和成本信息。
 
 ## 5. Agent 执行模型
 
@@ -134,3 +181,11 @@ rosetta/
 3. 新文件导入导出写到 `app/data`。
 4. 新持久化写到 `app/runtime`。
 5. 页面只做输入、展示和调用 workflow。
+
+## 10. 架构不变量
+
+1. Streamlit 是正式 UI；不在当前阶段引入 React / FastAPI 主界面。
+2. Prodigy-compatible JSONL 是主导出格式；LLM runtime markup 只是运行时便利格式。
+3. 概念自举必须有可计算 loss；候选概念不能无条件覆盖当前概念。
+4. 人类审核必须沉淀为后续检索和概念修订资产，而不是只改一条输出。
+5. Legacy 目录不可承载新产品边界；需要迁移时通过 `app/workflows` 包装。

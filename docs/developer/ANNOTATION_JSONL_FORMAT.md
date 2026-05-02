@@ -1,6 +1,6 @@
 # Annotation JSONL Format
 
-更新时间: 2026-04-28
+更新时间: 2026-05-02
 
 ## 1. 结论
 
@@ -15,6 +15,11 @@ Rosetta 的 schema 名称：
 
 1. Gold / normalized sample：`rosetta.prodigy_jsonl.v1`
 2. Model candidate：`rosetta.prodigy_candidate.v1`
+
+这个格式服务两个目标：
+
+1. 让传统语言学家和领域专家可以从简单行内标注开始，不需要手算 offset。
+2. 让开发者和 PLM 研究者拿到稳定 JSONL，用于训练、评测、复核和跨工具转换。
 
 ## 2. 来源
 
@@ -66,6 +71,8 @@ INCEpTION 推荐复杂项目交换使用 `UIMA CAS JSON`，format id 是 `jsonca
 `answer`: 标注任务状态。沿用 Prodigy 语义，常用值是 `accept / reject / ignore`；未经过人类最终确认的模型候选可为 `null`。
 
 `meta`: 元数据。放数据集、领域、语言、split、来源、模型、置信度、文档 ID、段落编号等。
+
+Rosetta 约定：所有与实验可复现相关但不属于标注本身的信息，都优先放入 `meta` 或 runtime store，而不是污染 `text`、`spans` 或最终概念阐释。例如 concept version、source pool、confidence、route reason、human edit type 和 model cost。
 
 ## 4. Gold / Normalized Sample
 
@@ -324,6 +331,23 @@ INCEpTION 推荐复杂项目交换使用 `UIMA CAS JSON`，format id 是 `jsonca
 
 1. samples: `rosetta.prodigy_jsonl.v1`
 2. candidates: `rosetta.prodigy_candidate.v1`
+
+## 8.1 与 PLM 对比的字段建议
+
+如果导出数据用于 PLM / LLM 对比实验，建议在 `meta` 中保留：
+
+1. `concept_version_id`
+2. `source_pool`: `gold / pseudo_high_confidence / reviewed / hard_example`
+3. `route`: `auto_accept / review / audit / reject`
+4. `score`
+5. `agreement`
+6. `avg_confidence`
+7. `reviewed`
+8. `human_edit_type`
+9. `model`
+10. `run_id`
+
+这些字段不改变 Prodigy-compatible 顶层结构，但能支持后续样本效率、人工审核收益和模型成本分析。
 
 ## 9. LLM 运行时格式
 

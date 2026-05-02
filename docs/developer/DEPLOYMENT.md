@@ -1,6 +1,6 @@
 # Deployment (Developer)
 
-更新时间: 2026-04-29
+更新时间: 2026-05-02
 
 ## 1. 目录约定
 
@@ -54,6 +54,8 @@ cd /opt/streamlit/rosetta
 3. `docker-compose.yml` 将仓库挂载到 `/app:ro`，将 runtime 挂载到 `/opt/rosetta/runtime`。
 4. `.dockerignore` 排除 `.streamlit/secrets.toml`、`.runtime`、PDF 和本地缓存。
 
+部署约束同样服务 Rosetta 的研究主线：runtime 目录必须能持久保存 SQLite、artifacts、exports 和 logs，否则概念版本、候选分歧、人工审核和实验报告无法回放。
+
 ## 6. 运行目录说明
 
 1. 默认使用 `ROSETTA_RUNTIME_DIR=/opt/rosetta/runtime`。
@@ -66,6 +68,13 @@ cd /opt/streamlit/rosetta
 - `/opt/rosetta/runtime/indexes`
 3. SQLite runtime store 默认写入 `/opt/rosetta/runtime/rosetta.sqlite3`。
 4. 如需拆分目录，可在 `.env` 中单独覆盖 `ROSETTA_DATA_DIR`、`ROSETTA_BACKUP_DIR`、`ROSETTA_LOG_DIR`。
+
+建议保留以下目录用于实验复现：
+
+1. `/opt/rosetta/runtime/artifacts`: 概念版本、模型原始响应、报告中间产物。
+2. `/opt/rosetta/runtime/exports`: 导出的 Prodigy-compatible JSONL、report、manifest。
+3. `/opt/rosetta/runtime/indexes`: 本地 CPU 检索索引。
+4. `/opt/rosetta/runtime/logs`: 调试日志和长任务事件。
 
 ## 7. Debug 模式（临时排障）
 

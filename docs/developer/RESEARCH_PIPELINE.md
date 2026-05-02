@@ -1,13 +1,21 @@
 # Research Pipeline (Developer)
 
-更新时间: 2026-04-21
+更新时间: 2026-05-02
+
+> 本文档记录旧 `app/research` 离线研究骨架。它仍可作为算法参考和兼容入口，但不再是 Rosetta 的产品主线。新功能应优先进入 `app/workflows/bootstrap`、`app/workflows/annotation`、`app/workflows/review` 和 `app/workflows/evaluation`。
 
 ## 1. 目标
 
-1. 将 PDF 中提出的“LLM-Assisted Iterative Annotation Framework”落为可执行的研究工程骨架。
+1. 将早期“LLM-Assisted Iterative Annotation Framework”落为可执行的研究工程骨架。
 2. 优先支持 prompt 迭代、pilot audit、批处理推断、规则验证与冲突导出。
 3. 保证实验可复现：配置、prompt、检索示例、模型输出与验证结果全部落盘。
 4. 新增 Concept Bootstrap Pipeline，将“一句话概念描述 + 15 个金样例”扩展为可复核的大规模标注研究流程。
+
+当前需要坚持的迁移方向：
+
+1. `app/research` 中成熟的 consistency、retrieval、reflection、report 能力，可以迁移或包装到 `app/workflows`。
+2. 新的用户可见流程不能直接依赖旧 research runner。
+3. 与 PLM / LLM 对比实验相关的输出字段，应逐步由 runtime store 和 evaluation workflow 统一生成。
 
 ## 2. 当前实现范围（Initial Lab Build）
 
@@ -39,6 +47,16 @@
 - 入口文档：[BOOTSTRAP_PIPELINE.md](./BOOTSTRAP_PIPELINE.md)
 - 面向低资源概念校准、自洽性估计、专家复核队列和实验报告。
 - 离线分析入口：`python scripts/research/run_bootstrap.py analyze --samples ... --candidates ...`
+
+这些能力的长期归宿：
+
+| 旧能力 | 新位置 |
+| --- | --- |
+| prompt 迭代 | `app/workflows/bootstrap` |
+| 多次候选一致性 | `app/workflows/annotation` |
+| review queue | `app/workflows/review` |
+| report generation | `app/workflows/evaluation` |
+| CPU embedding index | `app/agents/context` 或 `app/data/indexes` |
 
 ## 3. 运行产物
 
@@ -115,8 +133,9 @@ python scripts/research/run_pipeline.py run \
 
 ## 6. 下一步演进
 
-1. 按 [BOOTSTRAP_PIPELINE.md](./BOOTSTRAP_PIPELINE.md) 推进 concept bootstrap。
-2. 增加 blind review 与 Kappa 统计。
-3. 增加 discrepancy attribution 报告。
-4. 将 CPU index 扩展为更大规模的 FAISS/HNSW 方案。
-5. 累积 gold data 后接入 SFT / distillation 流程。
+1. 停止向 `app/research` 增加用户可见新功能。
+2. 按 [BOOTSTRAP_PIPELINE.md](./BOOTSTRAP_PIPELINE.md) 迁移 concept bootstrap 到 `app/workflows`。
+3. 增加 blind review 与 Kappa 统计，并由 evaluation workflow 输出。
+4. 增加 discrepancy attribution 报告，用于解释 LLM agent 和 PLM baseline 的差异。
+5. 将 CPU index 扩展为更大规模的 FAISS/HNSW 方案，但保持本地优先可运行。
+6. 累积 gold data 后接入 SFT / distillation 流程，作为 Rosetta 生成数据后的下游路线，而不是主流程前提。

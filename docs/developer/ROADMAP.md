@@ -1,26 +1,37 @@
 # Roadmap (Developer)
 
-更新时间: 2026-03-11
+更新时间: 2026-05-02
 
 ## 阶段状态
 
-1. Stage 1（结构重排）：已完成。
-2. Stage 2（领域模型与数据治理）：已完成。
-3. Stage 3（平台适配抽象）：已完成。
-4. Stage 4（测试体系）：已完成。
-5. Stage 5（工程化/CI）：已完成。
-6. Stage 6（存储升级，可选）：未开始。
+1. `v4.0.0`：Agentic Annotation Tool 架构落地，新增 `core / workflows / agents / data / runtime`。
+2. `v4.1.x`：中文优先 5 页面 UI、完整案例、长耗时按钮防重复提交。
+3. `v4.2.0`：Concept bootstrap loop 接入主工作流。
+4. `v4.2.1`：概念修订提示词净化，日志与最终提示词解耦。
+5. `v4.2.2`：Loss-guided concept refinement，避免越优化越差。
+6. `v4.2.3`：文档架构重排，明确 user / developer / research claims 三条入口。
 
-## Stage 6 预案
+## 下一阶段路线
 
-1. 定义 repository 抽象接口（若需补齐）。
-2. 增加 SQLite 实现（最低成本）。
-3. 增加 JSON -> SQLite 迁移脚本。
-4. 增加回滚策略（SQLite -> JSON 快照）。
-5. 补充 integration tests 覆盖 DB 模式。
+1. `v4.3`：实验闭环。补齐 PLM / LLM 对比报告字段，支持 15 / 50 / 100 gold budget 汇总。
+2. `v4.4`：检索增强。把轻量 lexical retrieval 替换或扩展为本地 CPU embedding index，并保留可解释 fallback。
+3. `v4.5`：LLM-as-a-judge。引入候选评审、错误类型归因和 judge disagreement。
+4. `v4.6`：主动学习报告。输出人工审核收益曲线、自动通过抽检误差和 hard example 贡献。
+5. `v4.7`：跨任务格式扩展。稳定支持 span、relation、句子级、段落级、文章级标注任务。
+6. `v4.8`：数据集级实验 runner。支持 ACTER、NCBI-disease、BC2GM、CoNLL03 等数据转换与批量评测。
+7. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表和 ablation runner。
+
+## 优先级判断
+
+1. 先证明主工作流闭环，再扩展复杂 UI。
+2. 先把实验指标落盘，再追求模型调用花样。
+3. 先保证文档和代码结构一致，再大规模重构目录。
+4. 先让传统语言学家能用，再让 PLM 研究者信服，最后让开发者维护起来不痛苦。
 
 ## 验收口径
 
-1. 页面层不感知存储后端变化。
-2. 数据可迁移可回滚。
-3. CI 中新增 DB 模式测试任务（可选 matrix）。
+1. 用户能按教程从概念、15 条金样例走到导出数据。
+2. 研究者能从报告中比较 Rosetta 与 PLM baseline。
+3. 开发者能从 Architecture 判断新增代码该放哪里。
+4. 每次运行都能回放概念版本、候选、审核和导出产物。
+5. `mkdocs build --strict --clean` 和核心测试通过。

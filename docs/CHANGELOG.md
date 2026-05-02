@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-02
+
+### Docs / Research claims and documentation architecture v4.2.3
+
+1. 新增 [Research Claims](./ideas/RESEARCH_CLAIMS.md)，明确 Rosetta 的核心证明目标：LLM agent 在低资源、概念可描述、任务边界会变化或任务不够常规的标注场景中，相比 PLM-first 流程具有样本效率、审核效率和可追溯优势。
+2. 新增 [Documentation Review Iterations](./developer/DOCS_REVIEW_ITERATIONS.md)，记录 6 轮文档评审：传统语言学家、PLM 计量语言学家和 Rosetta 开发者分别提出问题，再逐轮优化文档。
+3. 更新 [docs/README.md](./README.md) 与 [mkdocs.yml](../mkdocs.yml)，将文档站整理为用户入口、研究主张、workflow、标注格式、开发维护和部署运维。
+4. 更新 [用户教程](./user/TUTORIAL.md)，新增“最少要知道的 4 个词”，强调用户可以按概念、15 条金样例、自举校准、批量标注、审核、导出的顺序直接使用。
+5. 更新 [Core Annotation Bootstrap](./ideas/CORE_ANNOTATION_BOOTSTRAP.md) 与 [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md)，补齐 LLM agent vs PLM 的主张边界、常规数据集 / 非常规任务双实验线和 PLM low-budget / full-data baseline。
+6. 更新 [Architecture](./developer/ARCHITECTURE.md)、[Developer README](./developer/README.md)、[Workflow](./developer/WORKFLOW.md) 和 [Roadmap](./developer/ROADMAP.md)，明确主数据流、代码落点、三角色文档评审和下一阶段路线。
+7. 更新 legacy research / corpus docs，说明 `app/research` 与 `app/corpusgen` 只做兼容层和高级 workflow 来源，不再作为顶层产品边界。
+8. 更新 [README.md](../README.md) 和首页页脚版本为 `v4.2.3`。
+
 ## 2026-05-01
 
 ### Fix / Loss-guided concept refinement v4.2.2

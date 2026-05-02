@@ -1,20 +1,24 @@
 # Corpus Pipeline (Developer)
 
-更新时间: 2026-04-22
+更新时间: 2026-05-02
+
+> 本文档记录 Rosetta 的高级语料生成能力。它现在是 annotation tool 的数据工厂 workflow，不再和标注主线平行作为顶层产品边界。
 
 ## 1. 目标
 
-1. 提供一条独立于 `research` 标注流水线的语料生成工程路径。
+1. 提供一条用于构造 seed corpus、示例语料或压力测试数据的数据工厂路径。
 2. 面向“指定领域 / 题材 / 语言”的合成语料构建，而不是标注审查。
 3. 默认基于 `GLM-5 + Embedding-3 + numpy CPU index` 运行，方便本地科研环境直接落地。
+4. 为主标注流程提供可控文本输入，但不替代概念自举、批量标注和审核队列。
 
 ## 2. 分离边界
 
-`corpusgen` 与 `research` 是两条平行流水线：
+早期 `corpusgen` 与 `research` 是两条平行流水线。当前架构中，它们都应被视为 legacy implementation 或 advanced workflow：
 
 1. `app/corpusgen/*` 不直接依赖 `app/research/*`。
-2. 两条流水线只共享底层 `app/infrastructure/llm/*` 的 provider / 凭据能力。
-3. 配置、脚本入口、运行产物、文档都分别独立维护。
+2. 两者只共享底层 `app/infrastructure/llm/*` 的 provider / 凭据能力。
+3. 新用户主流程仍是“概念实验室 -> 批量标注 -> 审核队列 -> 导出与可视化”。
+4. 如果生成语料需要进入标注实验，必须先转换为 `AnnotationTask` 或 Prodigy-compatible JSONL。
 
 ## 3. 当前实现范围（Initial MVP）
 
@@ -103,6 +107,8 @@
 
 ## 6. 推荐工作流
 
+脚本式语料生成仍可用于构造实验输入。
+
 1. 准备 spec 与 seed 文档
 
 ```bash
@@ -150,6 +156,7 @@ python scripts/corpusgen/generate_corpus.py \
 2. 增加多语言 seed mixing 与跨语言 parallel corpus 生成。
 3. 增加更稳健的重复检测与 topic coverage 统计。
 4. 将压缩包升级为可缓存的“主题 memory bank”。
+5. 与主标注流程打通：生成结果可以一键进入批量标注任务，但不能绕过概念校准。
 
 ## 9. Streamlit 向导页
 
@@ -162,3 +169,5 @@ python scripts/corpusgen/generate_corpus.py \
 5. 第 5 步：调用独立 judge，对每篇文章给出评分与修改建议。
 
 这个页面更适合“先探索，再定稿”的工作方式；脚本入口更适合固定配置下的批处理实验。
+
+在默认 UI 中，Corpus Builder 应保持为高级工具，不进入 5 个核心页面，以免新用户误以为 Rosetta 的主线是生成语料而不是构建可审计标注。
