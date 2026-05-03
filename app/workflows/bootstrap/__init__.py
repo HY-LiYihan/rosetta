@@ -20,6 +20,11 @@ from app.workflows.bootstrap.prompt_optimizer import (
     length_penalized_loss,
     segment_prompt,
 )
+from app.workflows.bootstrap.memorization import (
+    CorpusFingerprint,
+    LeakageCheckResult,
+    MemorizationGuard,
+)
 from app.workflows.bootstrap.prompt_training import (
     LLM_OPTIMIZE_ONLY,
     LLM_REFLECTION,
@@ -28,6 +33,7 @@ from app.workflows.bootstrap.prompt_training import (
     PromptTrainingConfig,
     PromptTrainingResult,
     build_llm_optimize_only_prompt,
+    build_training_feedback_prompt,
     run_prompt_training_experiment,
 )
 
@@ -42,6 +48,9 @@ __all__ = [
     "length_penalized_loss",
     "LLM_OPTIMIZE_ONLY",
     "LLM_REFLECTION",
+    "CorpusFingerprint",
+    "LeakageCheckResult",
+    "MemorizationGuard",
     "PromptOptimizationTrace",
     "PromptTrainingConfig",
     "PromptTrainingResult",
@@ -54,6 +63,7 @@ __all__ = [
     "sanitize_concept_description",
     "save_guideline_package",
     "segment_prompt",
+    "build_training_feedback_prompt",
     "TEXT_GRADIENT_ADAMW",
     "TextGradient",
     "validate_gold_examples",

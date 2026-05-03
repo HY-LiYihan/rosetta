@@ -11,6 +11,7 @@ from app.workflows.bootstrap import (
     TEXT_GRADIENT_ADAMW,
     PromptTrainingConfig,
     build_llm_optimize_only_prompt,
+    build_training_feedback_prompt,
     gold_task_from_markup,
     run_prompt_training_experiment,
     save_guideline_package,
@@ -72,9 +73,9 @@ class TestPromptTraining(unittest.TestCase):
             if system_prompt == "你是概念阐释改写助手。只返回最终可用的概念阐释正文。":
                 return "\n".join(
                     [
-                        "概念描述：标出科学术语，必须包含 Quantum term 这类明确术语。",
+                        "概念描述：标出科学文本中带编号或专名结构的明确领域术语。",
                         "标签集合：Term",
-                        "边界规则：Quantum term 加数字编号时整体标注。",
+                        "边界规则：由大写专名词和类型词组成、后接编号时，应整体标注最小完整术语。",
                         "排除规则：不标普通泛化词。",
                         "输出格式：[原文]{标签}",
                     ]
@@ -92,7 +93,7 @@ class TestPromptTraining(unittest.TestCase):
                         "输出格式：[原文]{标签}",
                     ]
                 )
-            if "Quantum term 这类" in prompt:
+            if "带编号或专名结构" in prompt:
                 return _correct_annotation(prompt)
             return _wrong_annotation(prompt)
 
@@ -106,11 +107,18 @@ class TestPromptTraining(unittest.TestCase):
         self.assertEqual(result["status"], "stable")
         self.assertEqual(result["best_method"], TEXT_GRADIENT_ADAMW)
         self.assertEqual(result["best_pass_count"], 15)
-        self.assertIn("Quantum term 这类", result["best_description"])
+        self.assertIn("带编号或专名结构", result["best_description"])
+        self.assertTrue(result["leakage_report"]["final_prompt_clean"])
+        winning_method = next(row for row in result["method_results"] if row["method"] == TEXT_GRADIENT_ADAMW)
+        self.assertGreater(winning_method["llm_call_count"], 0)
+        self.assertGreater(winning_method["estimated_tokens"], 0)
+        self.assertGreaterEqual(winning_method["elapsed_seconds"], 0.0)
+        self.assertIn("estimated_tokens", result["rounds"][0])
         versions = store.list_concept_versions(guideline_id=guideline_id, limit=10)
         training_versions = [row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training")]
         self.assertEqual(training_versions[0]["metadata"]["best_method"], TEXT_GRADIENT_ADAMW)
         self.assertTrue(training_versions[0]["metadata"]["reached_target"])
+        self.assertTrue(training_versions[0]["metadata"]["leakage_summary"]["final_prompt_clean"])
 
     def test_all_methods_fail_without_marking_stable(self):
         tmp, store, guideline_id = _store_with_guideline()
@@ -155,15 +163,15 @@ class TestPromptTraining(unittest.TestCase):
                 return "\n".join(
                     [
                         "以下是优化后的概念阐释：",
-                        "概念描述：标出科学术语，必须包含 Quantum term 这类明确术语。",
+                        "概念描述：标出科学文本中带编号或专名结构的明确领域术语。",
                         "标签集合：Term",
-                        "边界规则：Quantum term 加数字编号时整体标注。",
+                        "边界规则：由大写专名词和类型词组成、后接编号时，应整体标注最小完整术语。",
                         "失败摘要：gold-00001 漏标 Quantum term 1",
                         "排除规则：不标普通泛化词。",
                         "输出格式：[原文]{标签}",
                     ]
                 )
-            if "Quantum term 这类" in prompt:
+            if "带编号或专名结构" in prompt:
                 return _correct_annotation(prompt)
             return _wrong_annotation(prompt)
 
@@ -177,12 +185,65 @@ class TestPromptTraining(unittest.TestCase):
         self.assertEqual(result["status"], "stable")
         self.assertEqual(result["best_method"], LLM_REFLECTION)
         self.assertNotIn("gold-00001", result["best_description"])
+        self.assertNotIn("Quantum term", result["best_description"])
         self.assertNotIn("失败摘要", result["best_description"])
         self.assertNotIn("漏标", result["best_description"])
         versions = store.list_concept_versions(guideline_id=guideline_id, limit=10)
         training_version = next(row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training"))
         self.assertEqual(training_version["metadata"]["best_method"], LLM_REFLECTION)
         self.assertTrue(training_version["metadata"]["method_comparison"])
+
+    def test_reflection_feedback_prompt_is_marked_training_feedback_only(self):
+        result = {
+            "details": [
+                {
+                    "task_id": "gold-00001",
+                    "route": "failed",
+                    "text": "Quantum term 1 appears here.",
+                    "gold_spans": [{"text": "Quantum term 1", "label": "Term"}],
+                    "predicted_spans": [{"text": "Wrong", "label": "Term"}],
+                    "missing_spans": [{"text": "Quantum term 1", "label": "Term"}],
+                    "extra_spans": [{"text": "Wrong", "label": "Term"}],
+                }
+            ]
+        }
+
+        prompt = build_training_feedback_prompt("概念描述：标出科学术语。", result, "gold-00001 漏标 Quantum term 1")
+
+        self.assertIn("training_feedback_only=true", prompt)
+        self.assertIn("Quantum term 1", prompt)
+
+    def test_candidate_copying_gold_answer_is_blocked(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+
+        def predictor(system_prompt, messages, temperature):
+            if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
+                return "\n".join(
+                    [
+                        "概念描述：标出 Quantum term 这类明确术语。",
+                        "标签集合：Term",
+                        "边界规则：Quantum term 加数字编号时整体标注。",
+                        "排除规则：不标普通泛化词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            if "Quantum term 这类" in messages[-1]["content"]:
+                return _correct_annotation(messages[-1]["content"])
+            return _wrong_annotation(messages[-1]["content"])
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=1, candidate_count=1),
+        )
+
+        self.assertEqual(result["status"], "needs_revision")
+        self.assertGreater(result["leakage_report"]["candidate_blocked_count"], 0)
+        blocked = result["rounds"][0]["candidate_evaluations"][0]
+        self.assertEqual(blocked["status"], "memorization_guard_blocked")
+        self.assertFalse(blocked["memorization_passed"])
 
     def test_requires_target_gold_count(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=3)

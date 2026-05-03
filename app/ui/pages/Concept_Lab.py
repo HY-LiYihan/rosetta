@@ -569,11 +569,17 @@ else:
 
     training_result = st.session_state.get("concept_lab_prompt_training_result")
     if training_result:
-        result_cols = st.columns(4)
+        leakage_report = training_result.get("leakage_report", {})
+        result_cols = st.columns(6)
         result_cols[0].metric(t("concept_lab.training_best_method"), _training_method_label(training_result["best_method"]))
         result_cols[1].metric(t("concept_lab.training_best_pass"), f"{training_result['best_pass_count']}/{target_count}")
         result_cols[2].metric(t("concept_lab.training_best_loss"), training_result["best_loss"])
         result_cols[3].metric(t("common.status"), _training_status_label(training_result["status"]))
+        result_cols[4].metric(
+            t("concept_lab.training_final_clean"),
+            t("common.yes") if leakage_report.get("final_prompt_clean", True) else t("common.no"),
+        )
+        result_cols[5].metric(t("concept_lab.training_blocked_candidates"), leakage_report.get("candidate_blocked_count", 0))
         method_rows = [
             {
                 t("concept_lab.training_table_method"): _training_method_label(row["method"]),
@@ -585,6 +591,11 @@ else:
                 t("concept_lab.training_table_failed"): row["failed_count"],
                 t("concept_lab.training_table_unstable"): row["unstable_count"],
                 t("concept_lab.training_table_length"): row["description_length"],
+                t("concept_lab.training_table_clean"): t("common.yes") if row.get("memorization_passed", True) else t("common.no"),
+                t("concept_lab.training_table_blocked"): row.get("memorization_blocked_count", 0),
+                t("concept_lab.training_table_calls"): row.get("llm_call_count", 0),
+                t("concept_lab.training_table_tokens"): row.get("estimated_tokens", 0),
+                t("concept_lab.training_table_seconds"): row.get("elapsed_seconds", 0.0),
             }
             for row in training_result.get("method_results", [])
         ]
@@ -596,6 +607,8 @@ else:
         )
         with st.expander(t("concept_lab.training_logs"), expanded=False):
             st.markdown(t("concept_lab.training_artifact", path=training_result.get("artifact_path", "")))
+            st.markdown(f"**{t('concept_lab.training_leakage_report')}**")
+            st.json(leakage_report)
             for round_result in training_result.get("rounds", []):
                 st.markdown(
                     t(
@@ -610,6 +623,9 @@ else:
                         "pass_count": round_result.get("pass_count"),
                         "loss": round_result.get("loss"),
                         "loss_delta": round_result.get("loss_delta"),
+                        "llm_call_count": round_result.get("llm_call_count"),
+                        "estimated_tokens": round_result.get("estimated_tokens"),
+                        "elapsed_seconds": round_result.get("elapsed_seconds"),
                         "accepted_candidate_id": round_result.get("accepted_candidate_id"),
                         "failure_summary": round_result.get("failure_summary"),
                         "candidate_evaluations": round_result.get("candidate_evaluations", []),

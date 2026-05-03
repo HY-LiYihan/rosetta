@@ -145,36 +145,72 @@ PromptTrainingConfig(
     target_pass_count=15,
     min_loss_delta=0.01,
     length_penalty=True,
+    no_corpus_memorization=True,
+    memorization_policy="block_candidate",
+    raw_feedback_allowed=True,
 )
 ```
 
 三种方法必须使用同一套 gold loss、同一批金样例和同一套候选接受规则：
 
-| 方法 | 候选生成信息 | 用途 |
-| --- | --- | --- |
-| `llm_optimize_only` | 只告诉大模型“请优化当前提示词”，不提供失败摘要、gold 编号、漏标/多标、loss 或文本梯度 | 最简单 baseline |
-| `llm_reflection` | 提供失败摘要和应补/应排除片段类型，但要求最终只返回干净提示词 | 普通 LLM 反思 baseline |
-| `text_gradient_adamw` | 提供 prompt 分段、Text Gradient 方向、长度惩罚和当前 loss trace | Rosetta 默认方法 |
+| 方法 | 训练反馈材料 | 候选生成信息 | 防背答案约束 | 用途 |
+| --- | --- | --- | --- | --- |
+| `llm_optimize_only` | 不提供原文、标准答案、模型答案或失败详情 | 只告诉大模型“请优化当前提示词” | 候选提示词过 `MemorizationGuard` | 最简单 baseline |
+| `llm_reflection` | 提供原文、gold answer、model answer、错误类型和失败摘要，标记 `training_feedback_only=true` | 要求 LLM 把具体错误抽象成整体概念阐释 | 候选不能复制原文、gold span、model span 或可识别答案片段 | 普通 LLM 反思 baseline |
+| `text_gradient_adamw` | 提供原始批改对照、系统计算的文本梯度方向、loss 和长度变化 | 使用 Text Gradient / `LLM-AdamW` 方向生成候选 | 梯度可来自具体错误，但最终候选只能保留抽象规则 | Rosetta 默认方法 |
 
 每种方法独立运行，不共享中间 prompt，避免方法之间互相污染。每轮固定执行：
 
 ```text
 evaluate current prompt
   -> compute gold loss
+  -> build training feedback prompt
   -> generate candidate prompts
   -> sanitize candidate prompts
+  -> run MemorizationGuard on candidate prompts
   -> evaluate each candidate on the same 15 gold examples
   -> accept only loss-decreasing clean candidate
   -> stop if 15/15 pass
 ```
 
+`training feedback prompt` 和 `learned operational prompt` 是不同对象：
+
+1. `training feedback prompt` 是优化模型看的批改材料，可以包含原文、标准答案和模型回答，但必须标记 `training_feedback_only=true`。
+2. `learned operational prompt` 是后续批量标注使用的概念阐释，不能复制语料词、gold span、model span、原句或可识别答案片段。
+3. `ConceptVersion.description` 只保存通过防背答案检查的 operational prompt。
+4. raw feedback、raw response、失败样例和完整候选日志只进入 artifact 或折叠日志。
+
+`MemorizationGuard` 的输入来自同一批 15 条 gold：
+
+1. gold task 原文。
+2. gold spans 和 runtime annotation。
+3. 当前轮模型答案中的 predicted spans。
+4. 从这些文本抽取出的词、短语和 n-gram hash。
+5. 允许项仅包含标签名、输出格式等任务公共词。
+
+候选被拒绝时记录：
+
+1. `status=memorization_guard_blocked`。
+2. `memorization_passed=false`。
+3. `blocked_terms_count`。
+4. `memorization_check.matched_hashes`。
+5. `raw_feedback_allowed=true` 或 `false`。
+
+每种方法和每一轮还会记录轻量 usage：
+
+1. `llm_call_count`: predictor 调用次数。
+2. `estimated_tokens`: 基于 system prompt、messages 和 raw response 字符数的粗略估算。
+3. `elapsed_seconds`: 该方法或该轮墙钟耗时。
+4. `usage.estimated=true`: 当前不是 provider 真实账单，接入 LLM service runtime 后应替换为 provider usage。
+
 最终选择规则：
 
 1. 优先选择达到 `15/15` 的方法。
-2. 如果多个方法都达到目标，选择 loss 更低者。
-3. 如果 loss 相同，选择 prompt 更短者。
-4. 如果仍相同，选择轮数更少者。
-5. 如果没有方法达到 `15/15`，选择最终 loss 最低者，但状态标记为 `needs_revision`。
+2. 达到目标的方法还必须通过最终提示词防背答案检查。
+3. 如果多个方法都达到目标，选择 loss 更低者。
+4. 如果 loss 相同，选择 prompt 更短者。
+5. 如果仍相同，选择轮数更少者。
+6. 如果没有方法达到 `15/15`，或最佳方法最终提示词不干净，选择最终 loss 最低者，但状态标记为 `needs_revision`。
 
 落盘契约：
 
@@ -182,12 +218,13 @@ evaluate current prompt
 2. `ConceptVersion.metadata.prompt_training=true`。
 3. `ConceptVersion.metadata.best_method` 保存胜出方法。
 4. `ConceptVersion.metadata.method_comparison` 保存每种方法的状态、通过数、loss、轮数和提示词长度。
-5. 完整 round trace、候选 raw response、净化警告、loss detail 和 `PromptOptimizationTrace` 写入 `.runtime/artifacts/prompt_training/*.json`。
+5. `ConceptVersion.metadata.leakage_summary` 保存 `candidate_blocked_count`、`final_prompt_clean`、fingerprint 摘要和最终检查结果。
+6. 完整 round trace、training feedback、候选 raw response、净化警告、loss detail、轻量 usage、`MemorizationGuard` 检查和 `PromptOptimizationTrace` 写入 `.runtime/artifacts/prompt_training/*.json`。
 
 实现边界：
 
 1. 第一版不新增数据库表，训练轨迹先通过 `ConceptVersion.metadata` 和 artifact 保存。
-2. 第一版成功标准只看 15 条金样例，不加入 held-out validation。
+2. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
 3. 第一版仍使用 Streamlit 同步触发；后续应接入 LLM service runtime，显示阶段进度、ETA、token 和成本。
 
 ## 4. 分层边界

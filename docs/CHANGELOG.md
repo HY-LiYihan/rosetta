@@ -2,6 +2,18 @@
 
 ## 2026-05-03
 
+### Fix / Prompt training anti-memorization guard v4.4.1
+
+1. 新增 `app/workflows/bootstrap/memorization.py`，提供 `MemorizationGuard`、`CorpusFingerprint` 和 `LeakageCheckResult`，从 15 条 gold 的原文、标准答案、runtime annotation 以及每轮模型答案中抽取 hash 指纹。
+2. `run_prompt_training_experiment` 区分 `training feedback prompt` 和 `learned operational prompt`：优化模型可以看到原文、标准答案和自己的错误回答作为批改参考，但候选提示词和最终提示词必须通过防背答案检查。
+3. `llm_optimize_only` 继续不接收失败详情；`llm_reflection` 接收批改反馈；`text_gradient_adamw` 接收批改反馈、文本梯度方向、loss 和长度惩罚，但三者生成的候选都统一经过 `MemorizationGuard`。
+4. 候选评估新增 `memorization_passed`、`blocked_terms_count`、`memorization_check`、`raw_feedback_allowed`、`prompt_length`、`llm_call_count`、`estimated_tokens` 和 `elapsed_seconds`；被发现复制语料或答案片段的候选会以 `memorization_guard_blocked` 拒绝，不进入 gold loss 回测。
+5. `ConceptVersion.metadata` 和 prompt training artifact 新增 `no_corpus_memorization`、`memorization_policy`、`raw_feedback_allowed` 和 `leakage_summary`，主报告只展示 hash / count，不直接暴露被复制片段。
+6. 概念实验室的提示词优化训练结果新增“最终提示词干净”“拦截候选数”“大模型调用”“估算 token”和“耗时秒”指标，并在折叠日志中展示防背答案检查摘要。
+7. 新增 [test_memorization_guard.py](../tests/unit/test_memorization_guard.py)，覆盖 gold 原文、gold span、模型 span 和多词 n-gram 的拦截；更新 [test_prompt_training.py](../tests/unit/test_prompt_training.py)，覆盖训练反馈可看批改对照但最终提示词不可背答案。
+8. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md) 和 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，明确本轮只证明 15 条 gold 内“未直接背答案且能通过”，不声明跨样本泛化。
+9. 首页页脚版本更新为 `v4.4.1`。
+
 ### Feature / Prompt training experiment v4.4.0
 
 1. 新增 `app/workflows/bootstrap/prompt_training.py`，提供 `PromptTrainingConfig`、`PromptTrainingResult` 和 `run_prompt_training_experiment`，把“简单任务描述 + 15 条金样例”升级为训练式 prompt 优化流程。
