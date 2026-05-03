@@ -2,6 +2,17 @@
 
 ## 2026-05-03
 
+### Feature / Prompt training comparison experiment v4.5.1
+
+1. `PromptTrainingConfig` 新增 `patience_rounds=5`、`stop_policy="patience_no_loss_improvement"`、`candidate_temperature=0.3` 和 `evaluation_temperature=0.0`，默认 `max_rounds` 调整为 `30`。
+2. `run_prompt_training_experiment` 的停止逻辑从“第一轮无改进即停止”改为“每个方法连续 5 轮 loss 无下降才停止”；达到 `15/15` 仍会提前以 `stop_reason=reached_target` 成功结束。
+3. 每个 method result 新增 `stop_reason`、`initial_loss`、`initial_pass_count`、`best_round_index`、`total_loss_delta`、`no_improvement_streak`、`accepted_round_count` 和 `evaluated_candidate_count`；每轮 trace 新增 `round_improved`、`round_loss_delta`、`round_best_candidate_id`、`no_improvement_streak_after_round` 和 `stop_reason_if_stopped`。
+4. 新增 `write_prompt_training_comparison_outputs()` 和 `build_prompt_training_comparison_report()`，输出 `comparison_report.md`、`comparison_result.json` 和 `prompt_evolution.jsonl`，报告包含方法总表、每轮进化速度、候选状态和提示词演化；最佳方法、最佳 loss 和最佳提示词按历史最优接受版本计算，不被最后一轮波动覆盖。
+5. 新增 CLI：`scripts/tool/rosetta_tool.py prompt-training-experiment`，默认使用内置“硬科学科普术语标注”15 gold，在隔离 runtime 中运行 DeepSeek `deepseek-v4-pro` 三方法对比实验，避免污染当前 UI 数据库。
+6. 概念实验室 UI 新增“连续无下降轮数”，结果表新增停止原因、初始损失、损失下降、接受轮数和无下降连续轮数。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)、[用户教程](./user/TUTORIAL.md)、[Developer README](./developer/README.md) 和 [Roadmap](./developer/ROADMAP.md)，明确 v4.5.1 的实验停止口径与结果产物。
+8. 首页页脚版本更新为 `v4.5.1`。
+
 ### Feature / Concurrent LLM runtime and prompt repair v4.5.0
 
 1. 新增 `app/infrastructure/llm/runtime.py`，提供 `LLMProviderProfile`、`LLMServiceRuntime` 和 provider 级共享 semaphore，将真实 API 默认并发上限提升到 `20`，并记录调用进度、token 估算、耗时、重试和最大实际并发。

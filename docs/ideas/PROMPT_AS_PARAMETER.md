@@ -21,7 +21,7 @@ Prompt-as-Parameter 是 Rosetta 最核心的方法假设之一：把概念阐释
 3. `Text Gradient`：通过扰动、替换、消融或 LLM 诊断估算出的文本改写方向。
 4. `Prompt Optimizer`：根据文本梯度生成候选 prompt，并用 gold loss 验证是否接受。
 
-当前代码已经从 `loss-guided candidate search` 推进到可运行的 Prompt-as-Parameter 最小训练电路。`v4.3.0` 实现了 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚；`v4.4.0` 加入提示词优化训练实验，可以在同一批 15 条金样例上比较 `llm_optimize_only`、`llm_reflection` 和 `text_gradient_adamw`；`v4.4.1` 增加防背答案检查，允许优化模型看批改对照，但禁止候选 prompt 和最终 prompt 复制语料词、gold span、model span 或可识别答案片段；`v4.5.0` 接入 LLM service runtime，默认真实模型为 DeepSeek `deepseek-v4-pro`，provider 并发上限为 20，并把泄露候选从“一票否决”改为“先去语料化修复，再回测 gold loss”。完整优化器仍不是终局：对比替换、真实消融链路和跨轮 optimizer state 是下一阶段工作。
+当前代码已经从 `loss-guided candidate search` 推进到可运行的 Prompt-as-Parameter 最小训练电路。`v4.3.0` 实现了 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚；`v4.4.0` 加入提示词优化训练实验，可以在同一批 15 条金样例上比较 `llm_optimize_only`、`llm_reflection` 和 `text_gradient_adamw`；`v4.4.1` 增加防背答案检查，允许优化模型看批改对照，但禁止候选 prompt 和最终 prompt 复制语料词、gold span、model span 或可识别答案片段；`v4.5.0` 接入 LLM service runtime，默认真实模型为 DeepSeek `deepseek-v4-pro`，provider 并发上限为 20，并把泄露候选从“一票否决”改为“先去语料化修复，再回测 gold loss”；`v4.5.1` 将完整三方法实验改为连续 5 轮 loss 无下降才停止，并输出 Markdown/JSON/JSONL 对比产物。完整优化器仍不是终局：对比替换、真实消融链路和跨轮 optimizer state 是下一阶段工作。
 
 ## 2. 参数空间
 

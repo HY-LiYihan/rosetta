@@ -140,10 +140,14 @@ Trace 至少记录：
 ```python
 PromptTrainingConfig(
     methods=("llm_optimize_only", "llm_reflection", "text_gradient_adamw"),
-    max_rounds=5,
+    max_rounds=30,
     candidate_count=3,
     target_pass_count=15,
     min_loss_delta=0.01,
+    patience_rounds=5,
+    stop_policy="patience_no_loss_improvement",
+    candidate_temperature=0.3,
+    evaluation_temperature=0.0,
     length_penalty=True,
     no_corpus_memorization=True,
     memorization_policy="repair_then_reject",
@@ -177,8 +181,18 @@ evaluate current prompt
   -> run MemorizationGuard again
   -> evaluate each candidate on the same 15 gold examples
   -> accept only loss-decreasing clean candidate
-  -> stop if 15/15 pass
+  -> stop if 15/15 pass or 5 consecutive rounds have no loss improvement
 ```
+
+`v4.5.1` 后，`max_rounds` 不再等于成功标准。每个方法独立维护 `no_improvement_streak`：
+
+1. 任一候选让本轮 loss 下降超过 `min_loss_delta`，接受该候选并把 streak 重置为 0。
+2. 本轮所有候选都没有让 loss 下降，streak 加 1。
+3. 达到 `15/15` 时立即停止，`stop_reason=reached_target`。
+4. 连续 5 轮无下降时停止，`stop_reason=no_loss_improvement_patience`。
+5. 达到 `max_rounds` 仍未满足上述条件时停止，`stop_reason=max_rounds`。
+
+结果汇总使用历史最优接受版本，而不是最后一轮快照。真实 LLM 即使 `evaluation_temperature=0.0` 也可能有轻微波动，因此 method result 中的 `best_loss / best_pass_count / best_round_index / best_description` 必须指向训练过程中观察到的最优已接受 prompt；`stop_reason / round_count / no_improvement_streak` 则描述该方法实际如何停止。
 
 `training feedback prompt` 和 `learned operational prompt` 是不同对象：
 
@@ -225,15 +239,16 @@ evaluate current prompt
 1. `ConceptVersion.description` 只保存胜出的干净提示词。
 2. `ConceptVersion.metadata.prompt_training=true`。
 3. `ConceptVersion.metadata.best_method` 保存胜出方法。
-4. `ConceptVersion.metadata.method_comparison` 保存每种方法的状态、通过数、loss、轮数和提示词长度。
+4. `ConceptVersion.metadata.method_comparison` 保存每种方法的状态、停止原因、初始 loss、最佳 loss、loss delta、通过数、轮数和提示词长度。
 5. `ConceptVersion.metadata.leakage_summary` 保存 `candidate_blocked_count`、`final_prompt_clean`、fingerprint 摘要和最终检查结果。
 6. 完整 round trace、training feedback、候选 raw response、净化警告、loss detail、轻量 usage、`MemorizationGuard` 检查和 `PromptOptimizationTrace` 写入 `.runtime/artifacts/prompt_training/*.json`。
+7. CLI 对比实验额外输出 `comparison_report.md`、`comparison_result.json` 和 `prompt_evolution.jsonl`，用于人工阅读、后续统计和提示词演化复核。
 
 实现边界：
 
 1. 第一版不新增数据库表，训练轨迹先通过 `ConceptVersion.metadata` 和 artifact 保存。
 2. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-3. `v4.5.0` 已接入 `LLMServiceRuntime` 最小实现，默认并发上限为 20；Streamlit 仍同步触发长任务，后续需要把 progress event 持久化并支持取消/恢复。
+3. `v4.5.1` 已接入 CLI 对比实验和连续 5 轮无下降停止；Streamlit 仍同步触发长任务，后续需要把 progress event 持久化并支持取消/恢复。
 
 ## 4. 分层边界
 

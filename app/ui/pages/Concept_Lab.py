@@ -486,13 +486,13 @@ else:
         format_func=_training_method_label,
         key="concept_lab_training_methods",
     )
-    train_col1, train_col2, train_col3, train_col4 = st.columns([1, 1, 1, 1])
+    train_col1, train_col2, train_col3, train_col4, train_col5 = st.columns([1, 1, 1, 1, 1])
     training_max_rounds = int(
         train_col1.number_input(
             t("concept_lab.training_max_rounds"),
             min_value=1,
-            max_value=10,
-            value=5,
+            max_value=30,
+            value=30,
             step=1,
             key="concept_lab_training_max_rounds",
         )
@@ -527,6 +527,16 @@ else:
             key="concept_lab_training_concurrency",
         )
     )
+    training_patience_rounds = int(
+        train_col5.number_input(
+            t("concept_lab.training_patience_rounds"),
+            min_value=1,
+            max_value=10,
+            value=5,
+            step=1,
+            key="concept_lab_training_patience_rounds",
+        )
+    )
     training_auto_apply = st.checkbox(
         t("concept_lab.training_auto_apply"),
         value=False,
@@ -554,6 +564,7 @@ else:
                         candidate_count=training_candidate_count,
                         target_pass_count=target_count,
                         min_loss_delta=training_min_delta,
+                        patience_rounds=training_patience_rounds,
                         concurrency=training_concurrency,
                         provider_id=platform_id,
                         model=model_name,
@@ -603,10 +614,16 @@ else:
             {
                 t("concept_lab.training_table_method"): _training_method_label(row["method"]),
                 t("common.status"): _training_status_label(row["status"]),
+                t("concept_lab.training_table_stop_reason"): row.get("stop_reason", ""),
                 t("concept_lab.training_table_reached"): t("common.yes") if row["reached_target"] else t("common.no"),
+                t("concept_lab.training_table_initial_loss"): row.get("initial_loss", 0.0),
                 t("concept_lab.training_best_pass"): row["best_pass_count"],
                 t("concept_lab.training_best_loss"): row["best_loss"],
+                t("concept_lab.training_table_loss_delta"): row.get("total_loss_delta", 0.0),
+                t("concept_lab.training_table_best_round"): row.get("best_round_index", 0),
                 t("concept_lab.training_table_rounds"): row["round_count"],
+                t("concept_lab.training_table_accepted_rounds"): row.get("accepted_round_count", 0),
+                t("concept_lab.training_table_streak"): row.get("no_improvement_streak", 0),
                 t("concept_lab.training_table_failed"): row["failed_count"],
                 t("concept_lab.training_table_unstable"): row["unstable_count"],
                 t("concept_lab.training_table_length"): row["description_length"],
@@ -647,6 +664,9 @@ else:
                         "pass_count": round_result.get("pass_count"),
                         "loss": round_result.get("loss"),
                         "loss_delta": round_result.get("loss_delta"),
+                        "round_improved": round_result.get("round_improved"),
+                        "no_improvement_streak": round_result.get("no_improvement_streak_after_round"),
+                        "stop_reason": round_result.get("stop_reason_if_stopped"),
                         "llm_call_count": round_result.get("llm_call_count"),
                         "estimated_tokens": round_result.get("estimated_tokens"),
                         "elapsed_seconds": round_result.get("elapsed_seconds"),

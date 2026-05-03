@@ -16,6 +16,7 @@ from app.workflows.bootstrap import (
     repair_leaked_prompt,
     run_prompt_training_experiment,
     save_guideline_package,
+    write_prompt_training_comparison_outputs,
 )
 
 
@@ -108,6 +109,7 @@ class TestPromptTraining(unittest.TestCase):
         self.assertEqual(result["status"], "stable")
         self.assertEqual(result["best_method"], TEXT_GRADIENT_ADAMW)
         self.assertEqual(result["best_pass_count"], 15)
+        self.assertEqual(result["method_results"][2]["stop_reason"], "reached_target")
         self.assertIn("带编号或专名结构", result["best_description"])
         self.assertTrue(result["leakage_report"]["final_prompt_clean"])
         winning_method = next(row for row in result["method_results"] if row["method"] == TEXT_GRADIENT_ADAMW)
@@ -119,7 +121,121 @@ class TestPromptTraining(unittest.TestCase):
         training_versions = [row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training")]
         self.assertEqual(training_versions[0]["metadata"]["best_method"], TEXT_GRADIENT_ADAMW)
         self.assertTrue(training_versions[0]["metadata"]["reached_target"])
+        self.assertEqual(training_versions[0]["metadata"]["stop_policy"], "patience_no_loss_improvement")
+        self.assertEqual(training_versions[0]["metadata"]["stop_reason"], "reached_target")
         self.assertTrue(training_versions[0]["metadata"]["leakage_summary"]["final_prompt_clean"])
+
+    def test_no_improvement_requires_patience_rounds_before_stop(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+
+        def predictor(system_prompt, messages, temperature):
+            if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
+                return "\n".join(
+                    [
+                        "概念描述：只保留一个模糊定义。",
+                        "标签集合：Term",
+                        "边界规则：不确定时不标。",
+                        "排除规则：不标普通词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            return _wrong_annotation(messages[-1]["content"])
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=10, patience_rounds=5, candidate_count=1),
+        )
+
+        method = result["method_results"][0]
+        self.assertEqual(result["status"], "needs_revision")
+        self.assertEqual(method["stop_reason"], "no_loss_improvement_patience")
+        self.assertEqual(method["round_count"], 5)
+        self.assertEqual(method["no_improvement_streak"], 5)
+        self.assertTrue(all(not row["round_improved"] for row in result["rounds"]))
+
+    def test_loss_improvement_resets_patience_streak(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+        candidate_calls = {"count": 0}
+
+        def predictor(system_prompt, messages, temperature):
+            prompt = messages[-1]["content"]
+            if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
+                candidate_calls["count"] += 1
+                return "\n".join(
+                    [
+                        "概念描述：partial-rule 标出一部分带编号术语。",
+                        "标签集合：Term",
+                        "边界规则：只标最确定的一部分术语。",
+                        "排除规则：不标普通词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            if "partial-rule" in prompt:
+                text = prompt.split("文本：", 1)[-1].strip()
+                number = int(text.split("Quantum term ", 1)[-1].split(" ", 1)[0])
+                if number <= 5:
+                    return _correct_annotation(prompt)
+            return _wrong_annotation(prompt)
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=2, patience_rounds=5, candidate_count=1),
+        )
+
+        self.assertEqual(result["rounds"][0]["round_improved"], True)
+        self.assertEqual(result["rounds"][0]["no_improvement_streak_after_round"], 0)
+        self.assertEqual(result["rounds"][1]["round_improved"], False)
+        self.assertEqual(result["rounds"][1]["no_improvement_streak_after_round"], 1)
+        self.assertEqual(result["method_results"][0]["accepted_round_count"], 1)
+
+    def test_method_summary_keeps_historical_best_prompt(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+        state = {"candidate_calls": 0, "good_eval_calls": 0}
+
+        def predictor(system_prompt, messages, temperature):
+            prompt = messages[-1]["content"]
+            if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
+                state["candidate_calls"] += 1
+                marker = "good-rule" if state["candidate_calls"] == 1 else "poor-rule"
+                return "\n".join(
+                    [
+                        f"概念描述：{marker} 标出稳定领域术语。",
+                        "标签集合：Term",
+                        "边界规则：只标明确术语。",
+                        "排除规则：不标普通词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            text = prompt.split("文本：", 1)[-1].strip()
+            number = int(text.split("Quantum term ", 1)[-1].split(" ", 1)[0])
+            if "good-rule" in prompt:
+                state["good_eval_calls"] += 1
+                if state["good_eval_calls"] <= 15 and number <= 5:
+                    return _correct_annotation(prompt)
+            if "poor-rule" in prompt and number <= 3:
+                return _correct_annotation(prompt)
+            return _wrong_annotation(prompt)
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=2, patience_rounds=5, candidate_count=1),
+        )
+
+        method = result["method_results"][0]
+        self.assertEqual(result["rounds"][0]["pass_count"], 5)
+        self.assertEqual(result["rounds"][1]["pass_count"], 3)
+        self.assertEqual(method["best_pass_count"], 5)
+        self.assertEqual(method["best_round_index"], 1)
+        self.assertEqual(result["best_pass_count"], 5)
 
     def test_all_methods_fail_without_marking_stable(self):
         tmp, store, guideline_id = _store_with_guideline()
@@ -153,6 +269,41 @@ class TestPromptTraining(unittest.TestCase):
         self.assertFalse(training_version["metadata"]["reached_target"])
         self.assertFalse(training_version["metadata"]["auto_applied"])
         self.assertNotEqual(training_version["metadata"].get("status"), "stable")
+
+    def test_comparison_outputs_include_tables_without_raw_leak_terms(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+
+        def predictor(system_prompt, messages, temperature):
+            if system_prompt == "你是概念阐释改写助手。只返回最终可用的概念阐释正文。":
+                return "\n".join(
+                    [
+                        "概念描述：标出科学文本中带编号或专名结构的明确领域术语。",
+                        "标签集合：Term",
+                        "边界规则：由大写专名词和类型词组成、后接编号时，应整体标注最小完整术语。",
+                        "排除规则：不标普通泛化词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            if "带编号或专名结构" in messages[-1]["content"]:
+                return _correct_annotation(messages[-1]["content"])
+            return _wrong_annotation(messages[-1]["content"])
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(TEXT_GRADIENT_ADAMW,), max_rounds=3, candidate_count=1),
+        )
+        written = write_prompt_training_comparison_outputs(result, Path(tmp.name) / "outputs")
+        report = Path(written["report_path"]).read_text(encoding="utf-8")
+
+        self.assertTrue(Path(written["comparison_result_path"]).exists())
+        self.assertTrue(Path(written["prompt_evolution_path"]).exists())
+        self.assertIn("## Method Comparison", report)
+        self.assertIn("## Round Speed", report)
+        self.assertIn("## Prompt Evolution", report)
+        self.assertNotIn("Quantum term 1", report)
 
     def test_reflection_sanitizes_diagnostics_from_final_description(self):
         tmp, store, guideline_id = _store_with_guideline()

@@ -32,16 +32,19 @@ from app.workflows.bootstrap.prompt_training import (
     TEXT_GRADIENT_ADAMW,
     PromptTrainingConfig,
     PromptTrainingResult,
+    build_prompt_training_comparison_report,
     build_llm_optimize_only_prompt,
     build_training_feedback_prompt,
     repair_leaked_prompt,
     run_prompt_training_experiment,
+    write_prompt_training_comparison_outputs,
 )
 
 __all__ = [
     "analyze_bootstrap",
     "build_guideline",
     "build_llm_adamw_trace",
+    "build_prompt_training_comparison_report",
     "estimate_text_gradients",
     "finalize_candidate_trace",
     "generate_revision_candidates",
@@ -69,4 +72,5 @@ __all__ = [
     "TEXT_GRADIENT_ADAMW",
     "TextGradient",
     "validate_gold_examples",
+    "write_prompt_training_comparison_outputs",
 ]

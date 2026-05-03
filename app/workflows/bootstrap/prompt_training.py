@@ -98,10 +98,14 @@ class _TrainingUsageMeter:
 @dataclass(frozen=True)
 class PromptTrainingConfig:
     methods: tuple[str, ...] = PROMPT_TRAINING_METHODS
-    max_rounds: int = 5
+    max_rounds: int = 30
     candidate_count: int = 3
     target_pass_count: int = 15
     min_loss_delta: float = 0.01
+    patience_rounds: int = 5
+    stop_policy: str = "patience_no_loss_improvement"
+    candidate_temperature: float = 0.3
+    evaluation_temperature: float = 0.0
     length_penalty: bool = True
     no_corpus_memorization: bool = True
     memorization_policy: str = "repair_then_reject"
@@ -118,10 +122,14 @@ class PromptTrainingConfig:
             raise ValueError("PromptTrainingConfig.methods must contain at least one supported method")
         return PromptTrainingConfig(
             methods=methods,
-            max_rounds=max(1, min(int(self.max_rounds), 10)),
+            max_rounds=max(1, min(int(self.max_rounds), 100)),
             candidate_count=max(1, min(int(self.candidate_count), 5)),
             target_pass_count=max(1, int(self.target_pass_count)),
             min_loss_delta=max(0.0, float(self.min_loss_delta)),
+            patience_rounds=max(1, min(int(self.patience_rounds), 20)),
+            stop_policy="patience_no_loss_improvement",
+            candidate_temperature=max(0.0, min(float(self.candidate_temperature), 2.0)),
+            evaluation_temperature=max(0.0, min(float(self.evaluation_temperature), 2.0)),
             length_penalty=bool(self.length_penalty),
             no_corpus_memorization=bool(self.no_corpus_memorization),
             memorization_policy="repair_then_reject",
@@ -152,6 +160,11 @@ class PromptTrainingResult:
     usage_summary: dict[str, Any]
     repair_summary: dict[str, Any]
     real_provider_run: bool
+    stop_policy: str
+    experiment_case: str
+    initial_description: str
+    report_path: str
+    prompt_evolution_path: str
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -228,7 +241,6 @@ def run_prompt_training_experiment(
                 usage_meter.wrap(predictor),
                 cfg,
                 target_pass_count,
-                temperature,
                 memorization_guard,
                 usage_meter,
                 cfg.concurrency,
@@ -256,6 +268,7 @@ def run_prompt_training_experiment(
                 "config": cfg.to_dict(),
                 "best_method": best["method"],
                 "reached_target": best["reached_target"],
+                "stop_policy": cfg.stop_policy,
                 "leakage_report": leakage_report,
             },
         )
@@ -299,6 +312,11 @@ def run_prompt_training_experiment(
         usage_summary=_usage_summary(method_results, cfg, predictor),
         repair_summary=_repair_summary(method_results),
         real_provider_run=real_provider_run,
+        stop_policy=cfg.stop_policy,
+        experiment_case=str(guideline.get("metadata", {}).get("experiment_case", "")),
+        initial_description=initial_description,
+        report_path="",
+        prompt_evolution_path="",
     )
     return result.to_dict()
 
@@ -313,7 +331,6 @@ def _run_training_method(
     predictor: Predictor | None,
     config: PromptTrainingConfig,
     target_pass_count: int,
-    temperature: float,
     memorization_guard: MemorizationGuard,
     usage_meter: _TrainingUsageMeter,
     concurrency: int,
@@ -324,6 +341,13 @@ def _run_training_method(
     best_description = current_description
     best_result: dict[str, Any] | None = None
     best_loss: dict[str, Any] | None = None
+    best_round_index = 0
+    initial_loss: dict[str, Any] | None = None
+    initial_pass_count = 0
+    no_improvement_streak = 0
+    accepted_round_count = 0
+    evaluated_candidate_count = 0
+    stop_reason = "max_rounds"
     final_status = "needs_revision"
 
     for round_index in range(1, config.max_rounds + 1):
@@ -336,7 +360,7 @@ def _run_training_method(
             current_guideline,
             task_ids,
             predictor,
-            temperature,
+            config.evaluation_temperature,
             round_index,
             source=f"prompt_training_{method}",
             candidate_id=f"{method}-current-{round_index}",
@@ -344,10 +368,25 @@ def _run_training_method(
         )
         current_loss = _concept_loss(current_result)
         current_pass_count = len(current_result["passed"])
-        best_result = current_result
-        best_loss = current_loss
+        if initial_loss is None:
+            initial_loss = current_loss
+            initial_pass_count = current_pass_count
+        if _is_better_training_result(
+            current_result,
+            current_loss,
+            best_result,
+            best_loss,
+            target_pass_count,
+            current_description,
+            best_description,
+        ):
+            best_description = current_description
+            best_result = current_result
+            best_loss = current_loss
+            best_round_index = round_index
         if current_pass_count >= target_pass_count and not current_result["failed"] and not current_result["unstable"]:
             final_status = "stable"
+            stop_reason = "reached_target"
             rounds.append(
                 _round_record(
                     method,
@@ -359,6 +398,9 @@ def _run_training_method(
                     current_loss,
                     "current",
                     [],
+                    round_improved=False,
+                    no_improvement_streak_after_round=no_improvement_streak,
+                    stop_reason_if_stopped=stop_reason,
                     elapsed_seconds=time.perf_counter() - round_started,
                     usage=usage_meter.delta(usage_start),
                 )
@@ -376,7 +418,7 @@ def _run_training_method(
             current_loss,
             predictor,
             config.candidate_count,
-            temperature,
+            config.candidate_temperature,
         )
         selected_result = current_result
         selected_loss = current_loss
@@ -404,7 +446,7 @@ def _run_training_method(
                         check=memorization_check,
                         guard=round_guard,
                         predictor=predictor,
-                        temperature=temperature,
+                        temperature=config.candidate_temperature,
                         max_attempts=config.max_repair_attempts,
                     )
                     candidate_description = repair_result["description"]
@@ -478,12 +520,13 @@ def _run_training_method(
                 candidate_guideline,
                 task_ids,
                 predictor,
-                temperature,
+                config.evaluation_temperature,
                 round_index,
                 source=f"prompt_training_{method}_candidate",
                 candidate_id=candidate["candidate_id"],
                 concurrency=concurrency,
             )
+            evaluated_candidate_count += 1
             raw_loss = _concept_loss(candidate_result)
             candidate_loss = (
                 length_penalized_loss(raw_loss, current_description, candidate_description)
@@ -544,8 +587,23 @@ def _run_training_method(
                 selected_candidate_id = candidate["candidate_id"]
 
         round_status = "stable" if len(selected_result["passed"]) >= target_pass_count and not selected_result["failed"] and not selected_result["unstable"] else "needs_revision"
-        if selected_candidate_id == "current":
+        round_improved = selected_candidate_id != "current"
+        if round_improved:
+            no_improvement_streak = 0
+            accepted_round_count += 1
+        else:
+            no_improvement_streak += 1
             round_status = "no_improvement"
+        round_stop_reason = ""
+        if round_status == "stable":
+            stop_reason = "reached_target"
+            round_stop_reason = stop_reason
+        elif no_improvement_streak >= config.patience_rounds:
+            stop_reason = "no_loss_improvement_patience"
+            round_stop_reason = stop_reason
+        elif round_index >= config.max_rounds:
+            stop_reason = "max_rounds"
+            round_stop_reason = stop_reason
         rounds.append(
             _round_record(
                 method,
@@ -557,19 +615,33 @@ def _run_training_method(
                 current_loss,
                 selected_candidate_id,
                 candidate_evaluations,
+                round_improved=round_improved,
+                no_improvement_streak_after_round=no_improvement_streak,
+                stop_reason_if_stopped=round_stop_reason,
                 elapsed_seconds=time.perf_counter() - round_started,
                 usage=usage_meter.delta(usage_start),
             )
         )
-        best_description = selected_description
-        best_result = selected_result
-        best_loss = selected_loss
+        if _is_better_training_result(
+            selected_result,
+            selected_loss,
+            best_result,
+            best_loss,
+            target_pass_count,
+            selected_description,
+            best_description,
+        ):
+            best_description = selected_description
+            best_result = selected_result
+            best_loss = selected_loss
+            best_round_index = round_index
         final_status = "stable" if round_status == "stable" else "needs_revision"
-        if round_status in {"stable", "no_improvement"}:
+        if round_status == "stable" or no_improvement_streak >= config.patience_rounds:
             break
         current_description = selected_description
 
     assert best_result is not None and best_loss is not None
+    assert initial_loss is not None
     final_pass_count = len(best_result["passed"])
     reached_target = final_pass_count >= target_pass_count and not best_result["failed"] and not best_result["unstable"]
     final_memorization_check = (
@@ -584,9 +656,17 @@ def _run_training_method(
         else "needs_revision",
         "reached_target": reached_target,
         "best_description": best_description,
+        "initial_loss": initial_loss["loss"],
+        "initial_pass_count": initial_pass_count,
         "best_pass_count": final_pass_count,
         "best_loss": best_loss["loss"],
         "best_loss_detail": best_loss,
+        "best_round_index": best_round_index,
+        "total_loss_delta": round(initial_loss["loss"] - best_loss["loss"], 4),
+        "stop_reason": stop_reason,
+        "no_improvement_streak": no_improvement_streak,
+        "accepted_round_count": accepted_round_count,
+        "evaluated_candidate_count": evaluated_candidate_count,
         "failed": best_result["failed"],
         "unstable": best_result["unstable"],
         "rounds": rounds,
@@ -596,6 +676,40 @@ def _run_training_method(
         "usage": usage_meter.summary(),
         "progress_events": _progress_events(method, rounds),
     }
+
+
+def _is_better_training_result(
+    candidate_result: dict,
+    candidate_loss: dict,
+    current_best_result: dict | None,
+    current_best_loss: dict | None,
+    target_pass_count: int,
+    candidate_description: str,
+    current_best_description: str,
+) -> bool:
+    if current_best_result is None or current_best_loss is None:
+        return True
+    candidate_reached = (
+        len(candidate_result.get("passed", [])) >= target_pass_count
+        and not candidate_result.get("failed")
+        and not candidate_result.get("unstable")
+    )
+    current_best_reached = (
+        len(current_best_result.get("passed", [])) >= target_pass_count
+        and not current_best_result.get("failed")
+        and not current_best_result.get("unstable")
+    )
+    return (
+        0 if candidate_reached else 1,
+        float(candidate_loss.get("loss", 0.0)),
+        -len(candidate_result.get("passed", [])),
+        len(candidate_description),
+    ) < (
+        0 if current_best_reached else 1,
+        float(current_best_loss.get("loss", 0.0)),
+        -len(current_best_result.get("passed", [])),
+        len(current_best_description),
+    )
 
 
 def _generate_training_candidates(
@@ -952,6 +1066,9 @@ def _round_record(
     current_loss: dict,
     accepted_candidate_id: str,
     candidate_evaluations: list[dict[str, Any]],
+    round_improved: bool = False,
+    no_improvement_streak_after_round: int = 0,
+    stop_reason_if_stopped: str = "",
     elapsed_seconds: float = 0.0,
     usage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -971,6 +1088,12 @@ def _round_record(
         "llm_call_count": int((usage or {}).get("llm_call_count", 0)),
         "estimated_tokens": int((usage or {}).get("estimated_tokens", 0)),
         "accepted_candidate_id": accepted_candidate_id,
+        "round_best_candidate_id": accepted_candidate_id,
+        "round_best_loss": selected_loss["loss"],
+        "round_loss_delta": round(current_loss["loss"] - selected_loss["loss"], 4),
+        "round_improved": round_improved,
+        "no_improvement_streak_after_round": no_improvement_streak_after_round,
+        "stop_reason_if_stopped": stop_reason_if_stopped,
         "reached_target": not selected_result["failed"] and not selected_result["unstable"],
         "failure_summary": failure_summary,
         "failure_cases": _failure_cases(selected_result["details"]),
@@ -1005,8 +1128,16 @@ def _method_summary(row: dict[str, Any]) -> dict[str, Any]:
         "method": row["method"],
         "status": row["status"],
         "reached_target": row["reached_target"],
+        "stop_reason": row.get("stop_reason", ""),
+        "initial_loss": row.get("initial_loss", 0.0),
+        "initial_pass_count": row.get("initial_pass_count", 0),
         "best_pass_count": row["best_pass_count"],
         "best_loss": row["best_loss"],
+        "best_round_index": row.get("best_round_index", 0),
+        "total_loss_delta": row.get("total_loss_delta", 0.0),
+        "no_improvement_streak": row.get("no_improvement_streak", 0),
+        "accepted_round_count": row.get("accepted_round_count", 0),
+        "evaluated_candidate_count": row.get("evaluated_candidate_count", 0),
         "round_count": len(row["rounds"]),
         "failed_count": len(row["failed"]),
         "unstable_count": len(row["unstable"]),
@@ -1083,6 +1214,9 @@ def _progress_events(method: str, rounds: list[dict[str, Any]]) -> list[dict[str
                 "status": round_row.get("status"),
                 "pass_count": round_row.get("pass_count"),
                 "loss": round_row.get("loss"),
+                "round_improved": round_row.get("round_improved", False),
+                "no_improvement_streak": round_row.get("no_improvement_streak_after_round", 0),
+                "stop_reason": round_row.get("stop_reason_if_stopped", ""),
                 "llm_call_count": round_row.get("llm_call_count", 0),
                 "estimated_tokens": round_row.get("estimated_tokens", 0),
                 "elapsed_seconds": round_row.get("elapsed_seconds", 0.0),
@@ -1189,9 +1323,16 @@ def _store_training_version(
                 "method_comparison": [_method_summary(row) for row in method_results],
                 "target_pass_count": target_pass_count,
                 "reached_target": best["reached_target"],
+                "stop_policy": config.stop_policy,
+                "stop_reason": best.get("stop_reason", ""),
                 "training_trace_summary": {
                     "best_loss": best["best_loss"],
                     "best_pass_count": best["best_pass_count"],
+                    "best_round_index": best.get("best_round_index", 0),
+                    "initial_loss": best.get("initial_loss", 0.0),
+                    "total_loss_delta": best.get("total_loss_delta", 0.0),
+                    "accepted_round_count": best.get("accepted_round_count", 0),
+                    "no_improvement_streak": best.get("no_improvement_streak", 0),
                     "round_count": len(best["rounds"]),
                     "artifact_path": artifact_path,
                 },
@@ -1212,3 +1353,218 @@ def _store_training_version(
             },
         )
     )
+
+
+def write_prompt_training_comparison_outputs(result: dict[str, Any], output_dir: str | Path) -> dict[str, Any]:
+    """Write human-readable and machine-readable prompt training experiment outputs."""
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    report_path = out_dir / "comparison_report.md"
+    result_path = out_dir / "comparison_result.json"
+    evolution_path = out_dir / "prompt_evolution.jsonl"
+    result_with_paths = {
+        **result,
+        "report_path": str(report_path),
+        "prompt_evolution_path": str(evolution_path),
+    }
+    evolution_rows = _prompt_evolution_rows(result_with_paths)
+    evolution_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False) for row in evolution_rows) + ("\n" if evolution_rows else ""),
+        encoding="utf-8",
+    )
+    report_path.write_text(build_prompt_training_comparison_report(result_with_paths), encoding="utf-8")
+    result_path.write_text(json.dumps(result_with_paths, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {**result_with_paths, "comparison_result_path": str(result_path)}
+
+
+def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
+    method_rows = result.get("method_results", [])
+    rounds = result.get("rounds", [])
+    lines = [
+        "# Prompt Training Comparison Report",
+        "",
+        "## Summary",
+        "",
+        f"- Experiment case: `{result.get('experiment_case') or 'custom'}`",
+        f"- Best method: `{result.get('best_method', '')}`",
+        f"- Best pass count: `{result.get('best_pass_count', 0)}/15`",
+        f"- Best loss: `{result.get('best_loss', 0.0)}`",
+        "- Best fields use the historical best accepted prompt, not the last round snapshot.",
+        f"- Stop policy: `{result.get('stop_policy', '')}`",
+        f"- Real provider run: `{result.get('real_provider_run', False)}`",
+        f"- Report path: `{result.get('report_path', '')}`",
+        "",
+        "## Method Comparison",
+        "",
+        _markdown_table(
+            [
+                "method",
+                "status",
+                "stop_reason",
+                "initial_pass",
+                "best_pass",
+                "initial_loss",
+                "best_loss",
+                "loss_delta",
+                "best_round",
+                "rounds",
+                "accepted_rounds",
+                "evaluated_candidates",
+                "llm_calls",
+                "tokens",
+                "seconds",
+                "repairs",
+            ],
+            [
+                [
+                    row.get("method", ""),
+                    row.get("status", ""),
+                    row.get("stop_reason", ""),
+                    row.get("initial_pass_count", 0),
+                    row.get("best_pass_count", 0),
+                    row.get("initial_loss", 0.0),
+                    row.get("best_loss", 0.0),
+                    row.get("total_loss_delta", 0.0),
+                    row.get("best_round_index", 0),
+                    row.get("round_count", 0),
+                    row.get("accepted_round_count", 0),
+                    row.get("evaluated_candidate_count", 0),
+                    row.get("llm_call_count", 0),
+                    row.get("estimated_tokens", 0),
+                    row.get("elapsed_seconds", 0.0),
+                    row.get("repair_attempt_count", 0),
+                ]
+                for row in method_rows
+            ],
+        ),
+        "",
+        "## Round Speed",
+        "",
+        _markdown_table(
+            [
+                "method",
+                "round",
+                "status",
+                "pass_count",
+                "loss",
+                "loss_delta",
+                "improved",
+                "streak",
+                "accepted_candidate",
+                "llm_calls",
+                "tokens",
+                "seconds",
+                "stop_reason",
+            ],
+            [
+                [
+                    row.get("method", ""),
+                    row.get("round_index", ""),
+                    row.get("status", ""),
+                    row.get("pass_count", 0),
+                    row.get("loss", 0.0),
+                    row.get("round_loss_delta", row.get("loss_delta", 0.0)),
+                    row.get("round_improved", False),
+                    row.get("no_improvement_streak_after_round", 0),
+                    row.get("accepted_candidate_id", ""),
+                    row.get("llm_call_count", 0),
+                    row.get("estimated_tokens", 0),
+                    row.get("elapsed_seconds", 0.0),
+                    row.get("stop_reason_if_stopped", ""),
+                ]
+                for row in rounds
+            ],
+        ),
+        "",
+        "## Candidate Status",
+        "",
+        _markdown_table(
+            ["method", "round", "candidate", "status", "pass_count", "loss", "memorization", "repairs"],
+            [
+                [
+                    round_row.get("method", ""),
+                    round_row.get("round_index", ""),
+                    candidate.get("candidate_id", ""),
+                    candidate.get("status", ""),
+                    candidate.get("pass_count", ""),
+                    candidate.get("loss", ""),
+                    candidate.get("memorization_status", "clean"),
+                    len(candidate.get("repair_attempts", [])),
+                ]
+                for round_row in rounds
+                for candidate in round_row.get("candidate_evaluations", [])
+            ],
+        ),
+        "",
+        "## Prompt Evolution",
+        "",
+    ]
+    for row in _prompt_evolution_rows(result):
+        lines.extend(
+            [
+                f"### {row['method']} - {row['event']} round {row['round_index']}",
+                "",
+                f"- loss: `{row.get('loss', '')}`",
+                f"- pass_count: `{row.get('pass_count', '')}`",
+                "",
+                "```text",
+                str(row.get("description", "")),
+                "```",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Safety Notes",
+            "",
+            "- Training feedback may contain source text and answers, but public report tables do not expose raw matched leakage terms.",
+            "- The result only describes training performance on the 15 gold examples; it does not prove held-out generalization.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _prompt_evolution_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    initial_description = result.get("initial_description", "")
+    methods = [row.get("method", "") for row in result.get("method_results", [])]
+    for method in methods:
+        rows.append(
+            {
+                "method": method,
+                "round_index": 0,
+                "event": "initial",
+                "loss": "",
+                "pass_count": "",
+                "description": initial_description,
+            }
+        )
+        for round_row in result.get("rounds", []):
+            if round_row.get("method") != method:
+                continue
+            if round_row.get("round_improved") or round_row.get("status") == "stable":
+                rows.append(
+                    {
+                        "method": method,
+                        "round_index": round_row.get("round_index", 0),
+                        "event": "accepted" if round_row.get("round_improved") else "final",
+                        "loss": round_row.get("loss", ""),
+                        "pass_count": round_row.get("pass_count", ""),
+                        "description": round_row.get("description", ""),
+                    }
+                )
+    return rows
+
+
+def _markdown_table(headers: list[str], rows: list[list[Any]]) -> str:
+    if not rows:
+        return "_No rows._"
+    header_line = "| " + " | ".join(headers) + " |"
+    separator = "| " + " | ".join("---" for _ in headers) + " |"
+    body = ["| " + " | ".join(_markdown_cell(value) for value in row) + " |" for row in rows]
+    return "\n".join([header_line, separator, *body])
+
+
+def _markdown_cell(value: Any) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ")

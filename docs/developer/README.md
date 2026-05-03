@@ -50,9 +50,10 @@
 
 ## 当前状态
 
-1. v4.5.0 已实现 LLM service runtime 最小闭环：DeepSeek 默认 `deepseek-v4-pro`，provider 并发上限默认 20，提示词训练记录调用、token、耗时、progress event 和去语料化修复统计。
-2. v4.4.0 已实现提示词优化训练 workflow：`app/workflows/bootstrap/prompt_training.py` 统一比较 `llm_optimize_only / llm_reflection / text_gradient_adamw`，并把胜出结果写入 `ConceptVersion.metadata` 与 runtime artifact。
-3. v4.3.1 文档化 LLM service runtime 愿景：每次大模型调用都作为服务调用处理，provider profile 管理平台参数，并要求 UI 展示进度、ETA、token 和成本。
+1. v4.5.1 已实现三方法真实对比实验：每个方法连续 5 轮 loss 无下降才停止，CLI 输出 Markdown 报告、完整 JSON trace 和提示词演化 JSONL。
+2. v4.5.0 已实现 LLM service runtime 最小闭环：DeepSeek 默认 `deepseek-v4-pro`，provider 并发上限默认 20，提示词训练记录调用、token、耗时、progress event 和去语料化修复统计。
+3. v4.4.0 已实现提示词优化训练 workflow：`app/workflows/bootstrap/prompt_training.py` 统一比较 `llm_optimize_only / llm_reflection / text_gradient_adamw`，并把胜出结果写入 `ConceptVersion.metadata` 与 runtime artifact。
+4. v4.3.1 文档化 LLM service runtime 愿景：每次大模型调用都作为服务调用处理，provider profile 管理平台参数，并要求 UI 展示进度、ETA、token 和成本。
 4. v4.3.0 已实现 Prompt-as-Parameter 最小内核：prompt 分段、Mask 文本梯度、LLM-AdamW trace、长度惩罚和 loss 验证。
 5. v4.2.4 将 Prompt-as-Parameter、Text Gradient 和 `LLM-AdamW` 写成核心方法框架。
 6. v4.2.3 文档主线已整理为 user / developer / research claims 三条入口，并加入三角色评审记录。
