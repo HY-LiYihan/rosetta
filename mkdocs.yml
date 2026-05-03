@@ -77,6 +77,7 @@ nav:
   - 开发维护:
       - 开发者概览: developer/README.md
       - 架构总览: developer/ARCHITECTURE.md
+      - LLM 服务运行时: developer/LLM_SERVICE_RUNTIME.md
       - 工作流: developer/WORKFLOW.md
       - 脚本说明: developer/SCRIPTS.md
       - 路线图: developer/ROADMAP.md

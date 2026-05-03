@@ -1,6 +1,6 @@
 # Developer Docs
 
-更新时间: 2026-05-02
+更新时间: 2026-05-03
 
 本页是 Rosetta 开发与维护入口。当前主线是 Agentic Annotation Tool 架构：用 Streamlit 提供本地优先 UI，用 `core / workflows / agents / data / runtime` 组织程序，用 concept bootstrap loop 连接概念校准、批量标注、主动审核和实验报告。
 
@@ -9,9 +9,10 @@
 1. [Research Claims](../ideas/RESEARCH_CLAIMS.md)：先确认 Rosetta 要证明什么，尤其是 LLM agent 与 PLM 的比较边界。
 2. [Prompt-as-Parameter](../ideas/PROMPT_AS_PARAMETER.md)：确认文本梯度估算和 prompt 优化器的核心方法边界。
 3. [Architecture](./ARCHITECTURE.md)：确认运行结构、目录分层和数据流。
-4. [Workflow](./WORKFLOW.md)：确认开发、验证、提交和文档评审规则。
-5. [Scripts](./SCRIPTS.md)：确认 CLI、部署和 legacy 入口。
-6. [Deployment](./DEPLOYMENT.md)：确认 Docker、runtime 目录和运维方式。
+4. [LLM Service Runtime](./LLM_SERVICE_RUNTIME.md)：确认大模型服务化、并发上限、进度 ETA、token/cost 和 provider profile 愿景。
+5. [Workflow](./WORKFLOW.md)：确认开发、验证、提交和文档评审规则。
+6. [Scripts](./SCRIPTS.md)：确认 CLI、部署和 legacy 入口。
+7. [Deployment](./DEPLOYMENT.md)：确认 Docker、runtime 目录和运维方式。
 
 如果只改 UI，请至少读 [用户教程](../user/TUTORIAL.md) 和 [Architecture](./ARCHITECTURE.md)。如果只改算法，请至少读 [Research Claims](../ideas/RESEARCH_CLAIMS.md)、[Core Annotation Bootstrap](../ideas/CORE_ANNOTATION_BOOTSTRAP.md) 和 [Concept Bootstrap Pipeline](./BOOTSTRAP_PIPELINE.md)。
 
@@ -24,6 +25,7 @@
 | [Research Claims](../ideas/RESEARCH_CLAIMS.md) | LLM agent vs PLM 的研究主张、创新点和实验边界 |
 | [Prompt-as-Parameter](../ideas/PROMPT_AS_PARAMETER.md) | Text Gradient、Prompt Optimizer 和 `LLM-AdamW` 方法框架 |
 | [Architecture](./ARCHITECTURE.md) | `core/workflows/agents/data/runtime` 分层边界 |
+| [LLM Service Runtime](./LLM_SERVICE_RUNTIME.md) | 大模型服务化、平台参数、默认并发上限 10、进度 ETA 和 token/cost |
 | [Workflow](./WORKFLOW.md) | 开发、验证、提交规则 |
 | [Scripts](./SCRIPTS.md) | 统一 CLI 与 legacy scripts |
 | [Deployment](./DEPLOYMENT.md) | Docker / runtime 目录 / 健康检查 |
@@ -48,18 +50,20 @@
 
 ## 当前状态
 
-1. v4.2.4 将 Prompt-as-Parameter、Text Gradient 和 `LLM-AdamW` 写成核心方法框架；当前只是文档升级，不宣称优化器已完整实现。
-2. v4.2.3 文档主线已整理为 user / developer / research claims 三条入口，并加入三角色评审记录。
-3. v4.2.2 概念自举使用 loss-guided candidate search，只接受 gold loss 下降的干净概念版本。
-4. v4.2.1 修正概念修订边界：`ConceptVersion.description` 只保存干净提示词，失败摘要和原始响应进入 `metadata`。
-5. v4.2.0 默认主线是 concept bootstrap loop：15 条金样例校准、概念版本、失败摘要、增强上下文标注和主动审核反馈。
-6. 工作台收敛为轻量状态入口，概念实验室内置“硬科学科普术语标注”填表示例。
-7. 本地批量任务队列使用 SQLite 存储 `jobs / job_items / job_events`。
-8. 概念阐释与金样例模型使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
-9. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。
-10. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
-11. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
-12. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
+1. v4.3.1 文档化 LLM service runtime 愿景：每次大模型调用都作为服务调用处理，provider profile 管理平台参数，默认并发上限为 10，并要求 UI 展示进度、ETA、token 和成本。
+2. v4.3.0 已实现 Prompt-as-Parameter 最小内核：prompt 分段、Mask 文本梯度、LLM-AdamW trace、长度惩罚和 loss 验证。
+3. v4.2.4 将 Prompt-as-Parameter、Text Gradient 和 `LLM-AdamW` 写成核心方法框架。
+4. v4.2.3 文档主线已整理为 user / developer / research claims 三条入口，并加入三角色评审记录。
+5. v4.2.2 概念自举使用 loss-guided candidate search，只接受 gold loss 下降的干净概念版本。
+6. v4.2.1 修正概念修订边界：`ConceptVersion.description` 只保存干净提示词，失败摘要和原始响应进入 `metadata`。
+7. v4.2.0 默认主线是 concept bootstrap loop：15 条金样例校准、概念版本、失败摘要、增强上下文标注和主动审核反馈。
+8. 工作台收敛为轻量状态入口，概念实验室内置“硬科学科普术语标注”填表示例。
+9. 本地批量任务队列使用 SQLite 存储 `jobs / job_items / job_events`。
+10. 概念阐释与金样例模型使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
+11. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。
+12. Bootstrap 和 Corpus 通过 `app.workflows.*` 包装 legacy 实现。
+13. 统一 CLI 为 [scripts/tool/rosetta_tool.py](../../scripts/tool/rosetta_tool.py)。
+14. `app/research` 与 `app/corpusgen` 不再作为新功能边界，只做兼容层。
 
 ## 研究主张到代码的映射
 
@@ -67,6 +71,7 @@
 | --- | --- | --- |
 | 15 条金样例能否校准概念 | `app/workflows/bootstrap` | `concept_versions`、failure summary、loss |
 | prompt 哪些片段应被优化 | `app/workflows/bootstrap` | PromptOptimizationTrace、Text Gradient、loss delta |
+| 大模型调用是否可控可视 | `app/infrastructure/llm`、`app/runtime` | provider profile、RunProgressEvent、TokenUsage、ETA |
 | LLM agent 是否比普通 few-shot 更稳 | `app/workflows/annotation` | k 次候选、span-F1、自洽性分数 |
 | 人类专家是否更省力 | `app/workflows/review` | selected candidate、edit type、hard example |
 | PLM / LLM 对比是否可复现 | `app/workflows/evaluation`、`scripts/tool` | `report.md`、manifest、JSONL exports |

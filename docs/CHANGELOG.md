@@ -2,6 +2,14 @@
 
 ## 2026-05-03
 
+### Docs / LLM service runtime and progress vision v4.3.1
+
+1. 新增 [LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md)，把每次大模型调用定义为服务调用，要求统一进入 provider profile、限流、重试、进度事件、token/cost 和 artifact 记录。
+2. 明确全局默认并发上限为 `10`；概念验证、概念自举、批量标注、LLM-as-a-judge 和语料生成都应受 provider profile 与共享 semaphore 控制。
+3. 细化概念验证和概念自举的目标 UI：显示当前阶段、已完成/总数、运行中数量、预计剩余时间、token、成本、失败与重试。
+4. 细化 ETA 计算、ETA 可信度、RunProgressEvent、TokenUsage、错误重试、限流、取消和预算耗尽等运行时契约。
+5. 更新 [docs/README.md](./README.md)、[Developer README](./developer/README.md)、[Architecture](./developer/ARCHITECTURE.md)、[Roadmap](./developer/ROADMAP.md) 和 [mkdocs.yml](../mkdocs.yml)，为后续 v4.4-v4.6 实现提供入口。
+
 ### Feature / Prompt-as-Parameter optimizer core v4.3.0
 
 1. 新增 `app/workflows/bootstrap/prompt_optimizer.py`，提供 `PromptSegment`、`TextGradient`、`PromptOptimizationTrace`、prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚。

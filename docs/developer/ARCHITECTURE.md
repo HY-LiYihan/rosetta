@@ -14,9 +14,10 @@ Rosetta 是一个基于 Streamlit 的本地优先 Agentic Annotation Tool。
 
 1. Streamlit 是唯一正式 UI 基石。
 2. 标注任务、预测、复核、运行记录有统一领域模型。
-3. LLM 标注、检索、judge、JSON repair、批量任务和导出通过 workflow / agent tools 编排。
-4. 长期标注格式保持 Prodigy-compatible JSONL。
-5. Docker 部署稳定，运行数据统一挂载到 `/opt/rosetta/runtime`。
+3. LLM 调用应被视为服务调用，由 provider profile、并发预算、进度事件、token/cost 和重试策略统一管理。
+4. LLM 标注、检索、judge、JSON repair、批量任务和导出通过 workflow / agent tools 编排。
+5. 长期标注格式保持 Prodigy-compatible JSONL。
+6. Docker 部署稳定，运行数据统一挂载到 `/opt/rosetta/runtime`。
 
 ## 2. 代码结构
 
@@ -58,7 +59,7 @@ rosetta/
 | `app/agents` | agent kernel、tool registry、context engine | 不直接读写 UI state |
 | `app/data` | 标注格式与外部格式桥接 | Prodigy JSONL 是主格式 |
 | `app/runtime` | 本地路径、SQLite store、artifact/run/trace | 运行数据进入 `.runtime` 或 `/opt/rosetta/runtime` |
-| `app/infrastructure` | LLM、embedding、config、debug | provider 可插拔 |
+| `app/infrastructure` | LLM、embedding、config、debug | provider 可插拔，平台参数必须显式 |
 | `app/services` | 旧页面 flow 兼容入口 | 逐步收敛为 UI controller |
 | `app/research`, `app/corpusgen` | 旧实现 | 不再作为新架构边界 |
 
@@ -118,6 +119,30 @@ core models -> workflows -> agents/tools -> data formats -> runtime store
 2. `Prediction.meta` 必须能复现每次采样、上下文样例、解析风险和自洽性。
 3. `ReviewTask.meta` 必须能复现人类选择、错误类型、疑难样例和 gold-like 晋升。
 4. `WorkflowRun / AgentStep` 必须能复现模型调用、工具调用、失败修复和成本信息。
+
+## 4.1 LLM 服务运行时愿景
+
+后续 LLM 调用不应继续散落在 workflow 或页面中。每一次大模型调用都应进入统一 LLM service runtime：
+
+```text
+workflow
+  -> LLMCall
+  -> provider profile
+  -> bounded scheduler
+  -> progress events
+  -> token/cost accounting
+  -> response artifact
+```
+
+核心约束：
+
+1. 每个平台都有 `LLMProviderProfile`，记录默认模型、最大并发、超时、重试、token 统计和价格表。
+2. 全局默认并发上限为 `10`，真实 API 的 workflow 不应绕过 provider profile 擅自提高并发。
+3. 概念验证、概念自举、批量标注、LLM-as-a-judge 和语料生成应共享 provider 级 semaphore。
+4. 长任务必须写入 `RunProgressEvent`，UI 至少展示总数、已完成、运行中、失败、当前阶段、预计剩余时间、token 和成本。
+5. provider 不返回 usage 时，允许本地估算 token，但必须标记 `estimated=true`。
+
+详细设计见 [LLM Service Runtime](./LLM_SERVICE_RUNTIME.md)。
 
 ## 5. Agent 执行模型
 
