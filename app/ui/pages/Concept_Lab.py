@@ -16,9 +16,12 @@ from app.ui.components.busy import busy_button, clear_busy
 from app.ui.examples import HARD_SCIENCE_TERM_EXAMPLE, hard_science_gold_jsonl
 from app.ui.i18n import t
 from app.workflows.bootstrap import (
+    PROMPT_TRAINING_METHODS,
+    PromptTrainingConfig,
     gold_task_from_markup,
     revise_guideline,
     run_concept_refinement_loop,
+    run_prompt_training_experiment,
     sanitize_concept_description,
     save_guideline_package,
     validate_gold_examples,
@@ -105,6 +108,14 @@ def _make_predictor(platform_id: str, model: str):
         return provider.chat(api_key=api_key, model=model, messages=full_messages, temperature=temperature)
 
     return predictor
+
+
+def _training_method_label(method: str) -> str:
+    return t(f"concept_lab.training_method_{method}")
+
+
+def _training_status_label(status: str) -> str:
+    return t(f"concept_lab.training_result_status_{status}")
 
 
 def _fill_example() -> None:
@@ -464,6 +475,143 @@ else:
                         "loss": round_result.get("loss"),
                         "loss_delta": round_result.get("loss_delta"),
                         "accepted_candidate_id": round_result.get("accepted_candidate_id"),
+                        "candidate_evaluations": round_result.get("candidate_evaluations", []),
+                    }
+                )
+
+    st.divider()
+    st.subheader(t("concept_lab.training_section"))
+    st.caption(t("concept_lab.training_help", target=target_count))
+    training_methods = st.multiselect(
+        t("concept_lab.training_methods"),
+        list(PROMPT_TRAINING_METHODS),
+        default=list(PROMPT_TRAINING_METHODS),
+        format_func=_training_method_label,
+        key="concept_lab_training_methods",
+    )
+    train_col1, train_col2, train_col3 = st.columns([1, 1, 1])
+    training_max_rounds = int(
+        train_col1.number_input(
+            t("concept_lab.training_max_rounds"),
+            min_value=1,
+            max_value=10,
+            value=5,
+            step=1,
+            key="concept_lab_training_max_rounds",
+        )
+    )
+    training_candidate_count = int(
+        train_col2.number_input(
+            t("concept_lab.training_candidate_count"),
+            min_value=1,
+            max_value=5,
+            value=3,
+            step=1,
+            key="concept_lab_training_candidate_count",
+        )
+    )
+    training_min_delta = float(
+        train_col3.number_input(
+            t("concept_lab.training_min_delta"),
+            min_value=0.0,
+            max_value=1.0,
+            value=0.01,
+            step=0.01,
+            key="concept_lab_training_min_delta",
+        )
+    )
+    training_auto_apply = st.checkbox(
+        t("concept_lab.training_auto_apply"),
+        value=False,
+        key="concept_lab_training_auto_apply",
+    )
+    training_button_key = "concept_lab_prompt_training_button"
+    if busy_button(
+        t("concept_lab.start_training"),
+        key=training_button_key,
+        pending_label=t("common.processing"),
+        type="primary",
+        use_container_width=True,
+        disabled=gold_count < target_count or not training_methods,
+    ):
+        try:
+            with st.spinner(t("concept_lab.training_status")):
+                predictor = _make_predictor(platform_id, model_name) if validation_mode == "llm" else None
+                training_result = run_prompt_training_experiment(
+                    store,
+                    selected_guideline,
+                    predictor=predictor,
+                    config=PromptTrainingConfig(
+                        methods=tuple(training_methods),
+                        max_rounds=training_max_rounds,
+                        candidate_count=training_candidate_count,
+                        target_pass_count=target_count,
+                        min_loss_delta=training_min_delta,
+                    ),
+                    auto_apply=training_auto_apply,
+                )
+            st.session_state["concept_lab_prompt_training_result"] = training_result
+            _set_flash(
+                "success",
+                t(
+                    "concept_lab.training_summary",
+                    method=_training_method_label(training_result["best_method"]),
+                    passed=training_result["best_pass_count"],
+                    target=target_count,
+                    status=_training_status_label(training_result["status"]),
+                ),
+            )
+        except Exception as exc:
+            _set_flash("error", t("common.action_failed", error=exc))
+        finally:
+            clear_busy(training_button_key)
+            st.rerun()
+
+    training_result = st.session_state.get("concept_lab_prompt_training_result")
+    if training_result:
+        result_cols = st.columns(4)
+        result_cols[0].metric(t("concept_lab.training_best_method"), _training_method_label(training_result["best_method"]))
+        result_cols[1].metric(t("concept_lab.training_best_pass"), f"{training_result['best_pass_count']}/{target_count}")
+        result_cols[2].metric(t("concept_lab.training_best_loss"), training_result["best_loss"])
+        result_cols[3].metric(t("common.status"), _training_status_label(training_result["status"]))
+        method_rows = [
+            {
+                t("concept_lab.training_table_method"): _training_method_label(row["method"]),
+                t("common.status"): _training_status_label(row["status"]),
+                t("concept_lab.training_table_reached"): t("common.yes") if row["reached_target"] else t("common.no"),
+                t("concept_lab.training_best_pass"): row["best_pass_count"],
+                t("concept_lab.training_best_loss"): row["best_loss"],
+                t("concept_lab.training_table_rounds"): row["round_count"],
+                t("concept_lab.training_table_failed"): row["failed_count"],
+                t("concept_lab.training_table_unstable"): row["unstable_count"],
+                t("concept_lab.training_table_length"): row["description_length"],
+            }
+            for row in training_result.get("method_results", [])
+        ]
+        st.dataframe(method_rows, use_container_width=True, hide_index=True)
+        st.text_area(
+            t("concept_lab.training_best_prompt"),
+            value=training_result.get("best_description", ""),
+            height=200,
+        )
+        with st.expander(t("concept_lab.training_logs"), expanded=False):
+            st.markdown(t("concept_lab.training_artifact", path=training_result.get("artifact_path", "")))
+            for round_result in training_result.get("rounds", []):
+                st.markdown(
+                    t(
+                        "concept_lab.training_log_round",
+                        method=_training_method_label(round_result.get("method", "")),
+                        round=round_result.get("round_index"),
+                    )
+                )
+                st.json(
+                    {
+                        "status": round_result.get("status"),
+                        "pass_count": round_result.get("pass_count"),
+                        "loss": round_result.get("loss"),
+                        "loss_delta": round_result.get("loss_delta"),
+                        "accepted_candidate_id": round_result.get("accepted_candidate_id"),
+                        "failure_summary": round_result.get("failure_summary"),
                         "candidate_evaluations": round_result.get("candidate_evaluations", []),
                     }
                 )

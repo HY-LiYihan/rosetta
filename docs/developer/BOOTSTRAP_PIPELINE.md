@@ -121,7 +121,74 @@ Trace 至少记录：
 8. `accepted`
 9. `diagnostics`
 
-当前状态边界：`v4.3.0` 已实现最小 Prompt-as-Parameter 内核，包括 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace、长度惩罚和 gold loss validation。对比替换、消融链路、优化器历史状态、artifact 级完整 trace 和多策略 ablation 仍是后续 `v4.4+` 工作。
+当前状态边界：`v4.3.0` 已实现最小 Prompt-as-Parameter 内核，包括 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace、长度惩罚和 gold loss validation。`v4.4.0` 在此基础上新增提示词优化训练实验，能在同一批 15 条金样例上比较三种候选生成策略，并把完整训练轨迹写入 artifact。对比替换、消融链路和跨轮 optimizer state 仍是后续工作。
+
+## 3.3 Prompt Training Experiment
+
+`run_prompt_training_experiment` 是 `v4.4.0` 新增的高层训练入口。它不替代 `run_concept_refinement_loop`，而是用于把“一个简单任务描述能否训练到 15 条金样例全通过”变成可比较、可复现的实验。
+
+输入：
+
+1. `guideline_id`
+2. 当前 guideline 的 15 条 gold tasks
+3. `PromptTrainingConfig`
+4. 可选 `predictor`
+5. 可选 `auto_apply`
+
+默认配置：
+
+```python
+PromptTrainingConfig(
+    methods=("llm_optimize_only", "llm_reflection", "text_gradient_adamw"),
+    max_rounds=5,
+    candidate_count=3,
+    target_pass_count=15,
+    min_loss_delta=0.01,
+    length_penalty=True,
+)
+```
+
+三种方法必须使用同一套 gold loss、同一批金样例和同一套候选接受规则：
+
+| 方法 | 候选生成信息 | 用途 |
+| --- | --- | --- |
+| `llm_optimize_only` | 只告诉大模型“请优化当前提示词”，不提供失败摘要、gold 编号、漏标/多标、loss 或文本梯度 | 最简单 baseline |
+| `llm_reflection` | 提供失败摘要和应补/应排除片段类型，但要求最终只返回干净提示词 | 普通 LLM 反思 baseline |
+| `text_gradient_adamw` | 提供 prompt 分段、Text Gradient 方向、长度惩罚和当前 loss trace | Rosetta 默认方法 |
+
+每种方法独立运行，不共享中间 prompt，避免方法之间互相污染。每轮固定执行：
+
+```text
+evaluate current prompt
+  -> compute gold loss
+  -> generate candidate prompts
+  -> sanitize candidate prompts
+  -> evaluate each candidate on the same 15 gold examples
+  -> accept only loss-decreasing clean candidate
+  -> stop if 15/15 pass
+```
+
+最终选择规则：
+
+1. 优先选择达到 `15/15` 的方法。
+2. 如果多个方法都达到目标，选择 loss 更低者。
+3. 如果 loss 相同，选择 prompt 更短者。
+4. 如果仍相同，选择轮数更少者。
+5. 如果没有方法达到 `15/15`，选择最终 loss 最低者，但状态标记为 `needs_revision`。
+
+落盘契约：
+
+1. `ConceptVersion.description` 只保存胜出的干净提示词。
+2. `ConceptVersion.metadata.prompt_training=true`。
+3. `ConceptVersion.metadata.best_method` 保存胜出方法。
+4. `ConceptVersion.metadata.method_comparison` 保存每种方法的状态、通过数、loss、轮数和提示词长度。
+5. 完整 round trace、候选 raw response、净化警告、loss detail 和 `PromptOptimizationTrace` 写入 `.runtime/artifacts/prompt_training/*.json`。
+
+实现边界：
+
+1. 第一版不新增数据库表，训练轨迹先通过 `ConceptVersion.metadata` 和 artifact 保存。
+2. 第一版成功标准只看 15 条金样例，不加入 held-out validation。
+3. 第一版仍使用 Streamlit 同步触发；后续应接入 LLM service runtime，显示阶段进度、ETA、token 和成本。
 
 ## 4. 分层边界
 

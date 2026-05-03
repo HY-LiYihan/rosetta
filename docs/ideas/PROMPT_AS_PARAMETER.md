@@ -21,7 +21,7 @@ Prompt-as-Parameter 是 Rosetta 最核心的方法假设之一：把概念阐释
 3. `Text Gradient`：通过扰动、替换、消融或 LLM 诊断估算出的文本改写方向。
 4. `Prompt Optimizer`：根据文本梯度生成候选 prompt，并用 gold loss 验证是否接受。
 
-当前代码已经从 `loss-guided candidate search` 推进到 `v4.3.0` 最小 Prompt-as-Parameter 内核：候选概念必须回到 15 条金样例上验证，只接受惩罚后 loss 下降的版本；系统会切分 prompt 片段、估算启发式 Mask 文本梯度、记录 `LLM-AdamW` trace 和 prompt 长度变化。完整优化器仍不是终局：对比替换、真实消融链路、优化器历史状态和多策略 ablation 是下一阶段工作。
+当前代码已经从 `loss-guided candidate search` 推进到可运行的 Prompt-as-Parameter 最小训练电路。`v4.3.0` 实现了 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚；`v4.4.0` 进一步加入提示词优化训练实验，可以在同一批 15 条金样例上比较 `llm_optimize_only`、`llm_reflection` 和 `text_gradient_adamw`。完整优化器仍不是终局：对比替换、真实消融链路和跨轮 optimizer state 是下一阶段工作。
 
 ## 2. 参数空间
 
@@ -183,11 +183,11 @@ Prompt-as-Parameter 必须通过实验被证明，而不能只作为漂亮类比
 
 需要比较：
 
-1. `random_rewrite`: 随机选择片段让 LLM 改写。
-2. `llm_reflection_only`: 只让 LLM 看失败案例后直接改 prompt。
-3. `mask_gradient_only`: 只用 Mask 遮挡估算重要性。
-4. `ablation_gradient_only`: 只用消融链路估算模块贡献。
-5. `llm_adamw`: 文本梯度 + 动量 + 自适应步长 + 长度惩罚。
+1. `llm_optimize_only`: 只告诉大模型优化当前提示词，不给失败细节、loss 或文本梯度，是最简单 baseline。
+2. `llm_reflection`: 告诉大模型哪里出了问题，让它自己改写整体概念阐释。
+3. `text_gradient_adamw`: 使用文本梯度、长度惩罚和 gold loss 验证，是 Rosetta 当前默认方法。
+4. `mask_gradient_only`: 只用 Mask 遮挡估算重要性。
+5. `ablation_gradient_only`: 只用消融链路估算模块贡献。
 6. `cma_es_prompt_search`: 多片段随机变异搜索。
 
 核心指标：
@@ -204,7 +204,7 @@ Prompt-as-Parameter 必须通过实验被证明，而不能只作为漂亮类比
 
 ## 7. 未来代码接口草案
 
-以下是概念接口。`v4.3.0` 已实现其中的最小版本：`PromptSegment`、`TextGradient`、`PromptOptimizationTrace`、`segment_prompt()`、`estimate_text_gradients()`、`build_llm_adamw_trace()`、`length_penalized_loss()` 和 `finalize_candidate_trace()`。尚未实现的是跨轮 optimizer state、真实 Mask 重跑、对比替换、消融链路和完整 artifact 化 trace。
+以下是概念接口。`v4.3.0` 已实现其中的最小版本：`PromptSegment`、`TextGradient`、`PromptOptimizationTrace`、`segment_prompt()`、`estimate_text_gradients()`、`build_llm_adamw_trace()`、`length_penalized_loss()` 和 `finalize_candidate_trace()`。`v4.4.0` 新增 `PromptTrainingConfig`、`PromptTrainingResult` 和 `run_prompt_training_experiment()`，用于在同一批 15 条金样例上比较多个优化方法，并把完整训练轨迹写入 artifact。尚未实现的是跨轮 optimizer state、真实 Mask 重跑、对比替换和消融链路。
 
 ```text
 PromptSegmenter

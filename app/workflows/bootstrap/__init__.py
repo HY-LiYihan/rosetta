@@ -20,6 +20,16 @@ from app.workflows.bootstrap.prompt_optimizer import (
     length_penalized_loss,
     segment_prompt,
 )
+from app.workflows.bootstrap.prompt_training import (
+    LLM_OPTIMIZE_ONLY,
+    LLM_REFLECTION,
+    PROMPT_TRAINING_METHODS,
+    TEXT_GRADIENT_ADAMW,
+    PromptTrainingConfig,
+    PromptTrainingResult,
+    build_llm_optimize_only_prompt,
+    run_prompt_training_experiment,
+)
 
 __all__ = [
     "analyze_bootstrap",
@@ -30,14 +40,21 @@ __all__ = [
     "generate_revision_candidates",
     "gold_task_from_markup",
     "length_penalized_loss",
+    "LLM_OPTIMIZE_ONLY",
+    "LLM_REFLECTION",
     "PromptOptimizationTrace",
+    "PromptTrainingConfig",
+    "PromptTrainingResult",
+    "PROMPT_TRAINING_METHODS",
     "PromptSegment",
     "revise_guideline",
     "revise_concept_description",
     "run_concept_refinement_loop",
+    "run_prompt_training_experiment",
     "sanitize_concept_description",
     "save_guideline_package",
     "segment_prompt",
+    "TEXT_GRADIENT_ADAMW",
     "TextGradient",
     "validate_gold_examples",
 ]

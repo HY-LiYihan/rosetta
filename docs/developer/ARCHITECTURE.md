@@ -183,7 +183,7 @@ workflow
 页面职责：
 
 1. `工作台`: 展示核心指标、最近任务、最近审核状态和一个继续下一步入口。
-2. `概念实验室`: 创建项目，维护 15 条金样例，运行 concept bootstrap loop，用 gold loss 比较当前概念与候选概念，只接受变好的干净版本，并将失败摘要与原始修订响应保存为日志。
+2. `概念实验室`: 创建项目，维护 15 条金样例，运行 concept bootstrap loop 或 prompt training experiment，用同一批 gold loss 比较当前概念与候选概念，只接受变好的干净版本，并将失败摘要、方法对比和原始修订响应保存为日志。
 3. `批量标注`: 导入 TXT/JSONL/CSV，分句、tokenize，并用概念版本、相似样例、边界远例和失败记忆构建标注上下文。
 4. `审核队列`: 按阈值、抽检和路由原因逐条展示候选，让专家选择或修正，并记录错误类型、hard example 和 gold-like 反馈。
 5. `导出与可视化`: 导出 Prodigy-compatible JSONL、实验报告和运行清单，展示统计图。

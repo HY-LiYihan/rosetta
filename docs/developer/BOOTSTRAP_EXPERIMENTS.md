@@ -1,6 +1,6 @@
 # Bootstrap Experiments (Developer)
 
-更新时间: 2026-05-02
+更新时间: 2026-05-03
 
 ## 1. 目标
 
@@ -66,11 +66,11 @@ python scripts/research/run_bootstrap.py analyze \
 8. `plm_50_gold_finetune`
 9. `plm_100_gold_finetune`
 10. `plm_full_data_finetune`
-11. `random_rewrite`
-12. `llm_reflection_only`
-13. `mask_gradient_only`
-14. `ablation_gradient_only`
-15. `llm_adamw`
+11. `llm_optimize_only`
+12. `llm_reflection`
+13. `text_gradient_adamw`
+14. `mask_gradient_only`
+15. `ablation_gradient_only`
 16. `cma_es_prompt_search`
 
 解释口径：
@@ -78,7 +78,7 @@ python scripts/research/run_bootstrap.py analyze \
 1. `plm_full_data_finetune` 是强上界和部署成本对照，不是 Rosetta 必须全面超过的唯一目标。
 2. `plm_15/50/100_gold_finetune` 才是低预算主比较对象。
 3. Rosetta 的 ablation 必须显示概念自举、对比式检索、自洽性路由和主动审核各自带来的收益。
-4. Prompt-as-Parameter 的贡献必须通过 ablation 证明：文本梯度估算应优于随机改写、普通 LLM 反思和简单候选搜索。
+4. Prompt-as-Parameter 的贡献必须通过 ablation 证明：文本梯度估算应优于“只告诉大模型优化提示词”、普通 LLM 反思和简单候选搜索。
 
 ## 5. 指标
 

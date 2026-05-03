@@ -2,6 +2,17 @@
 
 ## 2026-05-03
 
+### Feature / Prompt training experiment v4.4.0
+
+1. 新增 `app/workflows/bootstrap/prompt_training.py`，提供 `PromptTrainingConfig`、`PromptTrainingResult` 和 `run_prompt_training_experiment`，把“简单任务描述 + 15 条金样例”升级为训练式 prompt 优化流程。
+2. 第一版公平比较三种方法：`llm_optimize_only` 只要求大模型优化提示词；`llm_reflection` 告诉大模型失败点；`text_gradient_adamw` 使用当前 Text Gradient / `LLM-AdamW` trace、长度惩罚和 gold loss 验证。
+3. 训练循环固定为评估当前 prompt、计算 gold loss、生成候选、净化候选、重新评估 15 条金样例、只接受 loss 下降候选，并以最多 5 轮达到 `15/15` 作为成功标准。
+4. `ConceptVersion.metadata` 新增 `prompt_training`、`training_methods`、`best_method`、`method_comparison`、`target_pass_count`、`reached_target` 和 `training_trace_summary`；完整候选与 raw response 写入 runtime artifact。
+5. 概念实验室新增“提示词优化训练”区域，支持选择方法组合、最大轮数、候选数、最小 loss 下降阈值和成功后自动应用，页面展示最佳方法、通过数、loss、最佳干净提示词和折叠训练日志。
+6. 新增 [test_prompt_training.py](../tests/unit/test_prompt_training.py)，覆盖 baseline prompt 不泄露失败信息、三方法比较、失败不误标 stable、反思输出净化和 15 条金样例门槛。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md) 和 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，明确提示词优化训练已进入 v4.4.0 最小可用实现。
+8. 首页页脚版本更新为 `v4.4.0`。
+
 ### Docs / LLM service runtime and progress vision v4.3.1
 
 1. 新增 [LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md)，把每次大模型调用定义为服务调用，要求统一进入 provider profile、限流、重试、进度事件、token/cost 和 artifact 记录。
@@ -31,7 +42,7 @@
 3. 文档化 prompt 优化器类比：SGD、Momentum、Adam、AdamW、CMA-ES 和模拟退火，并将 `LLM-AdamW` 作为 Rosetta v1 概念优化器默认叙事。
 4. 更新 [Research Claims](./ideas/RESEARCH_CLAIMS.md) 与 [Core Annotation Bootstrap](./ideas/CORE_ANNOTATION_BOOTSTRAP.md)，把 `Prompt-as-Parameter Optimization` 和文本梯度估算写为核心创新。
 5. 更新 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，新增 Prompt Optimization Subsystem，规定未来 `PromptSegmenter / TextGradientEstimator / PromptOptimizer / CandidateGenerator / PromptOptimizationTrace` 边界。
-6. 更新 [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md)，新增 `random_rewrite / llm_reflection_only / mask_gradient_only / ablation_gradient_only / llm_adamw / cma_es_prompt_search` ablation 和 prompt 长度增长、无效改写率等指标。
+6. 更新 [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md)，新增 prompt optimization ablation 和 prompt 长度增长、无效改写率等指标；v4.4.0 后 baseline 名称收敛为 `llm_optimize_only / llm_reflection / text_gradient_adamw`。
 7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[mkdocs.yml](../mkdocs.yml)、开发者入口和路线图，新增 Prompt-as-Parameter 文档入口。
 8. 首页页脚版本更新为 `v4.2.4`。
 

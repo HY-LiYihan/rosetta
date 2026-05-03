@@ -13,17 +13,16 @@
 7. `v4.2.4`：Prompt-as-Parameter 文档升级，明确 Text Gradient 和 `LLM-AdamW` 是下一阶段核心方法。
 8. `v4.3.0`：Prompt-as-Parameter 最小实现，接入 prompt 分段、Mask 启发式文本梯度、LLM-AdamW trace、长度惩罚和 gold loss validation。
 9. `v4.3.1`：LLM service runtime 愿景文档，明确每次大模型调用都是服务调用，provider profile 管理平台参数，默认并发上限为 10，并要求 UI 展示进度、ETA、token 和成本。
+10. `v4.4.0`：提示词优化训练实验，比较 `llm_optimize_only / llm_reflection / text_gradient_adamw`，目标是在最多 5 轮内让 15 条金样例全部通过。
 
 ## 下一阶段路线
 
-1. `v4.3`：Prompt-as-Parameter 核心算法。当前已完成最小内核；后续补真实 Mask 重跑、对比替换、消融链路和跨轮 optimizer state。
-2. `v4.4`：架构边界和 runtime store 优化。统一运行事实来源，补齐 provider profile、prompt optimization trace、artifact、run manifest、token usage 和 progress event 的持久化边界。
-3. `v4.5`：LLM service scheduler、批量任务并发、队列和断点恢复。默认并发上限改为 10，稳定 SQLite checkpoint、本地线程池、pause/resume/cancel、单条重试和整批重试。
-4. `v4.6`：过程进度可视化与 token/cost 统计。概念实验室、工作台和批量页展示实时进度、吞吐、预计剩余、当前并发、token 和成本聚合。
-5. `v4.7`：UI 简化、审核体验和教程优化。继续压缩页面噪声，强化“一条一条蹦出”的审核卡片，并重写 30 分钟最小闭环教程。
-6. `v4.8`：完整项目测试。补齐 mock LLM 全电路、真实 API 小样本 smoke、UI smoke、Docker healthcheck 和文档教程验收。
-7. `v4.9`：实验报告、PLM/LLM 对比和论文级导出。输出 loss 曲线、人工审核收益、token/cost、15/50/100 gold budget、PLM baseline 对比和 ablation 表。
-8. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表、数据集转换和 ablation runner。
+1. `v4.5`：架构边界和 runtime store 优化。统一运行事实来源，补齐 provider profile、prompt optimization trace、artifact、run manifest、token usage 和 progress event 的持久化边界。
+2. `v4.6`：LLM service scheduler、批量任务并发、队列和断点恢复。默认并发上限改为 10，稳定 SQLite checkpoint、本地线程池、pause/resume/cancel、单条重试和整批重试。
+3. `v4.7`：过程进度可视化与 token/cost 统计。概念实验室、工作台和批量页展示实时进度、吞吐、预计剩余、当前并发、token 和成本聚合。
+4. `v4.8`：UI 简化、审核体验和教程优化。继续压缩页面噪声，强化“一条一条蹦出”的审核卡片，并重写 30 分钟最小闭环教程。
+5. `v4.9`：完整项目测试与实验报告。补齐 mock LLM 全电路、真实 API 小样本 smoke、Docker healthcheck、PLM/LLM 对比、loss 曲线、人工审核收益和 ablation 表。
+6. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表、数据集转换和 ablation runner。
 
 ## 优先级判断
 
