@@ -21,7 +21,7 @@ Prompt-as-Parameter 是 Rosetta 最核心的方法假设之一：把概念阐释
 3. `Text Gradient`：通过扰动、替换、消融或 LLM 诊断估算出的文本改写方向。
 4. `Prompt Optimizer`：根据文本梯度生成候选 prompt，并用 gold loss 验证是否接受。
 
-当前代码已经从 `loss-guided candidate search` 推进到可运行的 Prompt-as-Parameter 最小训练电路。`v4.3.0` 实现了 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚；`v4.4.0` 加入提示词优化训练实验，可以在同一批 15 条金样例上比较 `llm_optimize_only`、`llm_reflection` 和 `text_gradient_adamw`；`v4.4.1` 增加防背答案检查，允许优化模型看批改对照，但禁止候选 prompt 和最终 prompt 复制语料词、gold span、model span 或可识别答案片段。完整优化器仍不是终局：对比替换、真实消融链路和跨轮 optimizer state 是下一阶段工作。
+当前代码已经从 `loss-guided candidate search` 推进到可运行的 Prompt-as-Parameter 最小训练电路。`v4.3.0` 实现了 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚；`v4.4.0` 加入提示词优化训练实验，可以在同一批 15 条金样例上比较 `llm_optimize_only`、`llm_reflection` 和 `text_gradient_adamw`；`v4.4.1` 增加防背答案检查，允许优化模型看批改对照，但禁止候选 prompt 和最终 prompt 复制语料词、gold span、model span 或可识别答案片段；`v4.5.0` 接入 LLM service runtime，默认真实模型为 DeepSeek `deepseek-v4-pro`，provider 并发上限为 20，并把泄露候选从“一票否决”改为“先去语料化修复，再回测 gold loss”。完整优化器仍不是终局：对比替换、真实消融链路和跨轮 optimizer state 是下一阶段工作。
 
 ## 2. 参数空间
 
@@ -177,7 +177,7 @@ for step in range(max_steps):
 2. 优化器可以探索多个方向，但最终版本必须是干净可用的概念阐释。
 3. Prompt 修改必须有 loss delta 和长度变化记录。
 4. 训练反馈可以包含原文、标准答案和模型答案，但这些内容必须标记为 `training_feedback_only=true`，只供优化模型学习错误类型。
-5. learned operational prompt 不能复制语料中的具体词、答案片段或模型错答片段；Rosetta 用 `MemorizationGuard` 对候选和最终版本做 hash 指纹检查。
+5. learned operational prompt 不能复制语料中的具体词、答案片段或模型错答片段；Rosetta 用 `MemorizationGuard` 对候选和最终版本做 hash 指纹检查，泄露候选先进入 `repair_leaked_prompt()` 去语料化修复，修复失败才拒绝。
 
 ## 6. 实验可证伪点
 
@@ -206,11 +206,11 @@ Prompt-as-Parameter 必须通过实验被证明，而不能只作为漂亮类比
 
 如果文本梯度估算不能稳定优于随机改写和普通 LLM 反思，这个方法就不能作为核心论文贡献。
 
-当前 `v4.4.1` 的测试结论边界必须写清楚：只在 15 条 gold 上验证“最终提示词未直接背答案且训练集通过”，不能据此证明跨语料泛化。论文级实验需要增加 held-out 集、跨领域任务和人工审核收益分析。
+当前 `v4.5.0` 的测试结论边界必须写清楚：只在 15 条 gold 上验证“最终提示词未直接背答案且训练集通过”，不能据此证明跨语料泛化。论文级实验需要增加 held-out 集、跨领域任务和人工审核收益分析。
 
 ## 7. 未来代码接口草案
 
-以下是概念接口。`v4.3.0` 已实现其中的最小版本：`PromptSegment`、`TextGradient`、`PromptOptimizationTrace`、`segment_prompt()`、`estimate_text_gradients()`、`build_llm_adamw_trace()`、`length_penalized_loss()` 和 `finalize_candidate_trace()`。`v4.4.0` 新增 `PromptTrainingConfig`、`PromptTrainingResult` 和 `run_prompt_training_experiment()`，用于在同一批 15 条金样例上比较多个优化方法，并把完整训练轨迹写入 artifact。`v4.4.1` 新增 `MemorizationGuard`、`CorpusFingerprint` 和 `LeakageCheckResult`，用于保证训练反馈可见但最终 operational prompt 不背答案。尚未实现的是跨轮 optimizer state、真实 Mask 重跑、对比替换和消融链路。
+以下是概念接口。`v4.3.0` 已实现其中的最小版本：`PromptSegment`、`TextGradient`、`PromptOptimizationTrace`、`segment_prompt()`、`estimate_text_gradients()`、`build_llm_adamw_trace()`、`length_penalized_loss()` 和 `finalize_candidate_trace()`。`v4.4.0` 新增 `PromptTrainingConfig`、`PromptTrainingResult` 和 `run_prompt_training_experiment()`，用于在同一批 15 条金样例上比较多个优化方法，并把完整训练轨迹写入 artifact。`v4.4.1` 新增 `MemorizationGuard`、`CorpusFingerprint` 和 `LeakageCheckResult`，用于保证训练反馈可见但最终 operational prompt 不背答案。`v4.5.0` 新增 `LLMServiceRuntime` 和 `repair_leaked_prompt()`，让真实 provider 并发调用、token 统计和去语料化修复成为训练电路的一部分。尚未实现的是跨轮 optimizer state、真实 Mask 重跑、对比替换和消融链路。
 
 ```text
 PromptSegmenter

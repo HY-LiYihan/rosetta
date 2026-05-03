@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.core.models import Project
+from app.core.models import AnnotationTask, Project
 from app.runtime.store import RuntimeStore
 from app.workflows.bootstrap import MemorizationGuard, gold_task_from_markup
 
@@ -24,10 +24,17 @@ class TestMemorizationGuard(unittest.TestCase):
     def test_blocks_gold_text_span_and_ngram_without_raw_terms(self):
         tmp, store = self._store_with_gold()
         self.addCleanup(tmp.cleanup)
+        plain = AnnotationTask(id="plain-00001", text="The telescope observed faint light.")
+        store.upsert_task(plain)
         guard = MemorizationGuard.from_store(store, ["gold-00001"], allowed_terms=["Term"])
+        source_guard = MemorizationGuard.from_store(store, ["plain-00001"], allowed_terms=["Term"])
 
-        self.assertFalse(guard.check("边界规则：Quantum term 加编号时整体标注。").passed)
-        self.assertFalse(guard.check("边界规则：appears here 这类语境应整体处理。").passed)
+        gold_span_check = guard.check("边界规则：Quantum term 加编号时整体标注。")
+        source_ngram_check = source_guard.check("边界规则：observed faint 这类语境应整体处理。")
+        self.assertFalse(gold_span_check.passed)
+        self.assertEqual(gold_span_check.severity, "critical_leak")
+        self.assertFalse(source_ngram_check.passed)
+        self.assertEqual(source_ngram_check.severity, "soft_leak")
         self.assertTrue(guard.check("标签集合：Term").passed)
 
     def test_blocks_model_span_after_validation_feedback(self):
@@ -46,7 +53,10 @@ class TestMemorizationGuard(unittest.TestCase):
 
         round_guard = guard.with_validation_result(validation_result)
 
-        self.assertFalse(round_guard.check("排除规则：不要把 Wrong model span 写入提示词。").passed)
+        check = round_guard.check("排除规则：不要把 Wrong model span 写入提示词。")
+        self.assertFalse(check.passed)
+        self.assertEqual(check.severity, "critical_leak")
+        self.assertTrue(check.private_matches)
         self.assertTrue(guard.check("排除规则：候选答案只能抽象成规则。").passed)
 
 

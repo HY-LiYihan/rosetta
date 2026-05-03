@@ -162,7 +162,7 @@ st.divider()
 st.subheader(t("batch_run.section_submit"))
 col1, col2, col3, col4 = st.columns(4)
 sample_count = col1.selectbox(t("batch_run.sample_count"), [1, 3, 5], index=2)
-concurrency = col2.number_input(t("batch_run.concurrency"), min_value=1, max_value=32, value=4, step=1)
+concurrency = col2.number_input(t("batch_run.concurrency"), min_value=1, max_value=20, value=20, step=1)
 review_threshold = col3.slider(t("batch_run.review_threshold"), 0.0, 1.0, 0.75, 0.01)
 auto_sample_rate = col4.slider(t("batch_run.audit_rate"), 0.0, 0.5, 0.05, 0.01)
 

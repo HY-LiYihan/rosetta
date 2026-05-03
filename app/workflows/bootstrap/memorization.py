@@ -67,15 +67,18 @@ class LeakageCheckResult:
     passed: bool
     match_count: int
     matched_hashes: tuple[str, ...] = ()
+    severity: str = "clean"
     field: str = ""
     reason: str = ""
     blocked: bool = False
+    private_matches: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "passed": self.passed,
             "match_count": self.match_count,
             "matched_hashes": self.matched_hashes,
+            "severity": self.severity,
             "field": self.field,
             "reason": self.reason,
             "blocked": self.blocked,
@@ -83,11 +86,19 @@ class LeakageCheckResult:
 
 
 class MemorizationGuard:
-    def __init__(self, fingerprint: CorpusFingerprint, allowed_terms: Iterable[str] = ()):
+    def __init__(
+        self,
+        fingerprint: CorpusFingerprint,
+        allowed_terms: Iterable[str] = (),
+        private_units_by_hash: dict[str, set[str]] | None = None,
+        source_types_by_hash: dict[str, set[str]] | None = None,
+    ):
         self.fingerprint = fingerprint
         self.allowed_terms = tuple(allowed_terms)
         self.allowed_hashes = frozenset(_hash_token(token) for token in _candidate_units(" ".join(self.allowed_terms)))
         self.blocked_hashes = frozenset(fingerprint.token_hashes) - self.allowed_hashes
+        self.private_units_by_hash = private_units_by_hash or {}
+        self.source_types_by_hash = source_types_by_hash or {}
 
     @classmethod
     def from_store(
@@ -96,7 +107,7 @@ class MemorizationGuard:
         task_ids: list[str],
         allowed_terms: Iterable[str] = (),
     ) -> "MemorizationGuard":
-        source_texts: list[str] = []
+        source_texts: list[tuple[str, str]] = []
         source_ids: list[str] = []
         for task_id in task_ids:
             row = store.get_task(task_id)
@@ -104,19 +115,27 @@ class MemorizationGuard:
                 continue
             payload = row["payload"]
             source_ids.append(task_id)
-            source_texts.append(str(payload.get("text", "")))
-            source_texts.append(str(payload.get("meta", {}).get("runtime_annotation", "")))
-            source_texts.extend(str(span.get("text", "")) for span in payload.get("spans", []))
-        return cls(_fingerprint(source_ids, source_texts), allowed_terms=allowed_terms)
+            source_texts.append((str(payload.get("text", "")), "source_text"))
+            source_texts.append((str(payload.get("meta", {}).get("runtime_annotation", "")), "runtime_annotation"))
+            source_texts.extend((str(span.get("text", "")), "gold_span") for span in payload.get("spans", []))
+        fingerprint, private_units, source_types = _fingerprint(source_ids, source_texts)
+        return cls(fingerprint, allowed_terms=allowed_terms, private_units_by_hash=private_units, source_types_by_hash=source_types)
 
     def with_validation_result(self, validation_result: dict) -> "MemorizationGuard":
-        source_texts: list[str] = []
+        source_texts: list[tuple[str, str]] = []
         for detail in validation_result.get("details", []):
-            source_texts.extend(str(span.get("text", "")) for span in detail.get("predicted_spans", []))
+            source_texts.extend((str(span.get("text", "")), "model_span") for span in detail.get("predicted_spans", []))
         if not source_texts:
             return self
+        _fingerprint_extra, private_units, source_types = _fingerprint(list(self.fingerprint.source_ids), source_texts)
         merged_hashes = set(self.fingerprint.token_hashes)
-        merged_hashes.update(_hash_token(unit) for unit in _candidate_units(" ".join(source_texts)))
+        merged_hashes.update(private_units)
+        merged_private_units = {key: set(value) for key, value in self.private_units_by_hash.items()}
+        for key, value in private_units.items():
+            merged_private_units.setdefault(key, set()).update(value)
+        merged_source_types = {key: set(value) for key, value in self.source_types_by_hash.items()}
+        for key, value in source_types.items():
+            merged_source_types.setdefault(key, set()).update(value)
         fingerprint = CorpusFingerprint(
             source_ids=self.fingerprint.source_ids,
             token_hashes=tuple(sorted(merged_hashes)),
@@ -124,19 +143,34 @@ class MemorizationGuard:
             normalization=self.fingerprint.normalization,
             created_at=self.fingerprint.created_at,
         )
-        return MemorizationGuard(fingerprint, allowed_terms=self.allowed_terms)
+        return MemorizationGuard(
+            fingerprint,
+            allowed_terms=self.allowed_terms,
+            private_units_by_hash=merged_private_units,
+            source_types_by_hash=merged_source_types,
+        )
 
     def check(self, text: str, field: str = "") -> LeakageCheckResult:
         candidate_hashes = {_hash_token(unit) for unit in _candidate_units(text)}
         matched = tuple(sorted(candidate_hashes & self.blocked_hashes))
         passed = not matched
+        source_types = {source_type for token_hash in matched for source_type in self.source_types_by_hash.get(token_hash, set())}
+        severity = (
+            "clean"
+            if passed
+            else "critical_leak"
+            if source_types & {"gold_span", "runtime_annotation", "model_span"}
+            else "soft_leak"
+        )
         return LeakageCheckResult(
             passed=passed,
             match_count=len(matched),
             matched_hashes=matched[:20],
+            severity=severity,
             field=field,
             reason="" if passed else "candidate_copies_corpus_or_answer_fragment",
             blocked=not passed,
+            private_matches=tuple(sorted({unit for token_hash in matched for unit in self.private_units_by_hash.get(token_hash, set())}))[:20],
         )
 
     def summary(self) -> dict[str, Any]:
@@ -148,10 +182,20 @@ class MemorizationGuard:
         }
 
 
-def _fingerprint(source_ids: list[str], source_texts: list[str]) -> CorpusFingerprint:
-    units = _candidate_units(" ".join(source_texts))
-    hashes = tuple(sorted({_hash_token(unit) for unit in units}))
-    return CorpusFingerprint(source_ids=tuple(source_ids), token_hashes=hashes, token_count=len(hashes))
+def _fingerprint(source_ids: list[str], source_texts: list[tuple[str, str]]) -> tuple[CorpusFingerprint, dict[str, set[str]], dict[str, set[str]]]:
+    private_units_by_hash: dict[str, set[str]] = {}
+    source_types_by_hash: dict[str, set[str]] = {}
+    for text, source_type in source_texts:
+        for unit in _candidate_units(text):
+            token_hash = _hash_token(unit)
+            private_units_by_hash.setdefault(token_hash, set()).add(unit)
+            source_types_by_hash.setdefault(token_hash, set()).add(source_type)
+    hashes = tuple(sorted(private_units_by_hash))
+    return (
+        CorpusFingerprint(source_ids=tuple(source_ids), token_hashes=hashes, token_count=len(hashes)),
+        private_units_by_hash,
+        source_types_by_hash,
+    )
 
 
 def _candidate_units(text: str) -> list[str]:

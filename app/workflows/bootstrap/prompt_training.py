@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from app.core.models import ConceptVersion, WorkflowRun
@@ -45,6 +47,7 @@ class _TrainingUsageMeter:
         self.call_count = 0
         self.estimated_tokens = 0
         self.elapsed_seconds = 0.0
+        self._lock = Lock()
 
     def wrap(self, predictor: Predictor | None) -> Predictor | None:
         if predictor is None:
@@ -53,30 +56,42 @@ class _TrainingUsageMeter:
         def counted(system_prompt: str, messages: list[dict], temperature: float) -> str:
             started = time.perf_counter()
             raw = predictor(system_prompt, messages, temperature)
-            self.elapsed_seconds += time.perf_counter() - started
-            self.call_count += 1
-            self.estimated_tokens += _estimate_tokens(system_prompt, messages, raw)
+            elapsed = time.perf_counter() - started
+            tokens = _estimate_tokens(system_prompt, messages, raw)
+            with self._lock:
+                self.elapsed_seconds += elapsed
+                self.call_count += 1
+                self.estimated_tokens += tokens
             return raw
 
         return counted
 
     def snapshot(self) -> _UsageSnapshot:
-        return _UsageSnapshot(self.call_count, self.estimated_tokens, self.elapsed_seconds)
+        with self._lock:
+            return _UsageSnapshot(self.call_count, self.estimated_tokens, self.elapsed_seconds)
 
     def delta(self, snapshot: _UsageSnapshot) -> dict[str, Any]:
+        with self._lock:
+            call_count = self.call_count
+            estimated_tokens = self.estimated_tokens
+            elapsed_seconds = self.elapsed_seconds
         return {
-            "llm_call_count": self.call_count - snapshot.call_count,
-            "estimated_tokens": self.estimated_tokens - snapshot.estimated_tokens,
+            "llm_call_count": call_count - snapshot.call_count,
+            "estimated_tokens": estimated_tokens - snapshot.estimated_tokens,
             "estimated": True,
-            "provider_elapsed_seconds": round(self.elapsed_seconds - snapshot.elapsed_seconds, 4),
+            "provider_elapsed_seconds": round(elapsed_seconds - snapshot.elapsed_seconds, 4),
         }
 
     def summary(self) -> dict[str, Any]:
+        with self._lock:
+            call_count = self.call_count
+            estimated_tokens = self.estimated_tokens
+            elapsed_seconds = self.elapsed_seconds
         return {
-            "llm_call_count": self.call_count,
-            "estimated_tokens": self.estimated_tokens,
+            "llm_call_count": call_count,
+            "estimated_tokens": estimated_tokens,
             "estimated": True,
-            "provider_elapsed_seconds": round(self.elapsed_seconds, 4),
+            "provider_elapsed_seconds": round(elapsed_seconds, 4),
         }
 
 
@@ -89,8 +104,13 @@ class PromptTrainingConfig:
     min_loss_delta: float = 0.01
     length_penalty: bool = True
     no_corpus_memorization: bool = True
-    memorization_policy: str = "block_candidate"
+    memorization_policy: str = "repair_then_reject"
     raw_feedback_allowed: bool = True
+    concurrency: int = 20
+    repair_leaked_candidates: bool = True
+    max_repair_attempts: int = 2
+    provider_id: str = "deepseek"
+    model: str = "deepseek-v4-pro"
 
     def normalized(self) -> "PromptTrainingConfig":
         methods = tuple(method for method in self.methods if method in PROMPT_TRAINING_METHODS)
@@ -104,8 +124,13 @@ class PromptTrainingConfig:
             min_loss_delta=max(0.0, float(self.min_loss_delta)),
             length_penalty=bool(self.length_penalty),
             no_corpus_memorization=bool(self.no_corpus_memorization),
-            memorization_policy="block_candidate",
+            memorization_policy="repair_then_reject",
             raw_feedback_allowed=bool(self.raw_feedback_allowed),
+            concurrency=max(1, min(int(self.concurrency), 20)),
+            repair_leaked_candidates=bool(self.repair_leaked_candidates),
+            max_repair_attempts=max(0, min(int(self.max_repair_attempts), 5)),
+            provider_id=str(self.provider_id or "deepseek"),
+            model=str(self.model or "deepseek-v4-pro"),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -123,6 +148,10 @@ class PromptTrainingResult:
     rounds: list[dict[str, Any]]
     artifact_path: str
     leakage_report: dict[str, Any]
+    progress_events: list[dict[str, Any]]
+    usage_summary: dict[str, Any]
+    repair_summary: dict[str, Any]
+    real_provider_run: bool
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -180,25 +209,34 @@ def run_prompt_training_experiment(
         allowed_terms=[*guideline.get("labels", []), guideline.get("output_format", "")],
     )
     run_id = f"run-prompt-training-{uuid.uuid4().hex[:10]}"
-    method_results = []
-    for method in cfg.methods:
-        usage_meter = _TrainingUsageMeter()
-        method_results.append(
-            _run_training_method(
-                store=store,
-                guideline_id=guideline_id,
-                guideline=guideline,
-                task_ids=task_ids,
-                method=method,
-                initial_description=initial_description,
-                predictor=usage_meter.wrap(predictor),
-                config=cfg,
-                target_pass_count=target_pass_count,
-                temperature=temperature,
-                memorization_guard=memorization_guard,
-                usage_meter=usage_meter,
+    method_results: list[dict[str, Any]] = []
+    real_provider_run = bool(getattr(predictor, "is_real_provider", False))
+    ordered_results: list[dict[str, Any] | None] = [None] * len(cfg.methods)
+    max_method_workers = max(1, min(len(cfg.methods), cfg.concurrency))
+    with ThreadPoolExecutor(max_workers=max_method_workers) as pool:
+        future_map = {}
+        for index, method in enumerate(cfg.methods):
+            usage_meter = _TrainingUsageMeter()
+            future = pool.submit(
+                _run_training_method,
+                store,
+                guideline_id,
+                guideline,
+                task_ids,
+                method,
+                initial_description,
+                usage_meter.wrap(predictor),
+                cfg,
+                target_pass_count,
+                temperature,
+                memorization_guard,
+                usage_meter,
+                cfg.concurrency,
             )
-        )
+            future_map[future] = index
+        for future in as_completed(future_map):
+            ordered_results[future_map[future]] = future.result()
+    method_results = [row for row in ordered_results if row is not None]
     best = _select_best_method(method_results)
     status = "stable" if best["reached_target"] and best.get("memorization_passed", True) else "needs_revision"
     applied = bool(auto_apply and status == "stable")
@@ -254,6 +292,13 @@ def run_prompt_training_experiment(
         rounds=[round_row for row in method_results for round_row in row["rounds"]],
         artifact_path=artifact_path,
         leakage_report=leakage_report,
+        progress_events=[
+            *[event for row in method_results for event in row.get("progress_events", [])],
+            *_runtime_progress_events(predictor),
+        ],
+        usage_summary=_usage_summary(method_results, cfg, predictor),
+        repair_summary=_repair_summary(method_results),
+        real_provider_run=real_provider_run,
     )
     return result.to_dict()
 
@@ -271,6 +316,7 @@ def _run_training_method(
     temperature: float,
     memorization_guard: MemorizationGuard,
     usage_meter: _TrainingUsageMeter,
+    concurrency: int,
 ) -> dict[str, Any]:
     method_started = time.perf_counter()
     current_description = initial_description
@@ -294,6 +340,7 @@ def _run_training_method(
             round_index,
             source=f"prompt_training_{method}",
             candidate_id=f"{method}-current-{round_index}",
+            concurrency=concurrency,
         )
         current_loss = _concept_loss(current_result)
         current_pass_count = len(current_result["passed"])
@@ -339,39 +386,65 @@ def _run_training_method(
         seen = {current_description}
         for candidate_index, candidate in enumerate(candidates, start=1):
             candidate_description = candidate["description"]
+            repair_attempts: list[dict[str, Any]] = []
+            guard_before_repair = None
+            guard_after_repair = None
+            repair_accepted = False
             memorization_check = (
                 round_guard.check(candidate_description, field="candidate_description")
                 if config.no_corpus_memorization
                 else None
             )
             if memorization_check is not None and not memorization_check.passed:
-                candidate_evaluations.append(
-                    {
-                        "method": method,
-                        "round_index": round_index,
-                        "candidate_id": candidate["candidate_id"],
-                        "status": "memorization_guard_blocked",
-                        "source": candidate["source"],
-                        "pass_count": len(current_result["passed"]),
-                        "failed_count": len(current_result["failed"]),
-                        "unstable_count": len(current_result["unstable"]),
-                        "loss": current_loss["loss"],
-                        "raw_loss": current_loss["loss"],
-                        "length_delta": len(candidate_description) - len(current_description),
-                        "prompt_length": len(candidate_description),
-                        "accepted": False,
-                        "reached_target": False,
-                        "memorization_passed": False,
-                        "blocked_terms_count": memorization_check.match_count,
-                        "memorization_check": memorization_check.to_dict(),
-                        "raw_feedback_allowed": method != LLM_OPTIMIZE_ONLY,
-                        "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
-                        "raw_revision_response": candidate.get("raw_response", ""),
-                        "description_preview": candidate_description[:240],
-                        "evaluation_index": candidate_index,
-                    }
-                )
-                continue
+                guard_before_repair = memorization_check
+                if config.repair_leaked_candidates and predictor is not None and config.max_repair_attempts > 0:
+                    repair_result = _repair_leaked_candidate(
+                        candidate_description=candidate_description,
+                        current_description=current_description,
+                        check=memorization_check,
+                        guard=round_guard,
+                        predictor=predictor,
+                        temperature=temperature,
+                        max_attempts=config.max_repair_attempts,
+                    )
+                    candidate_description = repair_result["description"]
+                    repair_attempts = repair_result["repair_attempts"]
+                    guard_after_repair = repair_result["final_check"]
+                    repair_accepted = bool(guard_after_repair and guard_after_repair.passed)
+                    memorization_check = guard_after_repair
+                if memorization_check is not None and not memorization_check.passed:
+                    candidate_evaluations.append(
+                        {
+                            "method": method,
+                            "round_index": round_index,
+                            "candidate_id": candidate["candidate_id"],
+                            "status": "memorization_repair_failed" if repair_attempts else "memorization_guard_blocked",
+                            "source": candidate["source"],
+                            "pass_count": len(current_result["passed"]),
+                            "failed_count": len(current_result["failed"]),
+                            "unstable_count": len(current_result["unstable"]),
+                            "loss": current_loss["loss"],
+                            "raw_loss": current_loss["loss"],
+                            "length_delta": len(candidate_description) - len(current_description),
+                            "prompt_length": len(candidate_description),
+                            "accepted": False,
+                            "reached_target": False,
+                            "memorization_passed": False,
+                            "memorization_status": memorization_check.severity,
+                            "blocked_terms_count": memorization_check.match_count,
+                            "repair_attempts": repair_attempts,
+                            "repair_accepted": False,
+                            "guard_before_repair": guard_before_repair.to_dict() if guard_before_repair else {},
+                            "guard_after_repair": memorization_check.to_dict(),
+                            "memorization_check": memorization_check.to_dict(),
+                            "raw_feedback_allowed": method != LLM_OPTIMIZE_ONLY,
+                            "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
+                            "raw_revision_response": "[redacted: candidate failed memorization repair]",
+                            "description_preview": "[redacted: candidate failed memorization repair]",
+                            "evaluation_index": candidate_index,
+                        }
+                    )
+                    continue
             if candidate_description in seen:
                 candidate_evaluations.append(
                     {
@@ -386,7 +459,12 @@ def _run_training_method(
                         "accepted": False,
                         "reached_target": False,
                         "memorization_passed": True,
+                        "memorization_status": "clean",
                         "blocked_terms_count": 0,
+                        "repair_attempts": repair_attempts,
+                        "repair_accepted": repair_accepted,
+                        "guard_before_repair": guard_before_repair.to_dict() if guard_before_repair else {},
+                        "guard_after_repair": guard_after_repair.to_dict() if guard_after_repair else {},
                         "raw_feedback_allowed": method != LLM_OPTIMIZE_ONLY,
                         "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
                     }
@@ -404,6 +482,7 @@ def _run_training_method(
                 round_index,
                 source=f"prompt_training_{method}_candidate",
                 candidate_id=candidate["candidate_id"],
+                concurrency=concurrency,
             )
             raw_loss = _concept_loss(candidate_result)
             candidate_loss = (
@@ -427,7 +506,7 @@ def _run_training_method(
                     "method": method,
                     "round_index": round_index,
                     "candidate_id": candidate["candidate_id"],
-                    "status": "accepted" if accepted else "rejected",
+                    "status": "accepted" if accepted else "rejected_no_loss_improvement",
                     "source": candidate["source"],
                     "pass_count": len(candidate_result["passed"]),
                     "failed_count": len(candidate_result["failed"]),
@@ -441,11 +520,18 @@ def _run_training_method(
                     "accepted": accepted,
                     "reached_target": reached_target,
                     "memorization_passed": True,
+                    "memorization_status": "clean",
                     "blocked_terms_count": 0,
+                    "repair_attempts": repair_attempts,
+                    "repair_accepted": repair_accepted,
+                    "guard_before_repair": guard_before_repair.to_dict() if guard_before_repair else {},
+                    "guard_after_repair": guard_after_repair.to_dict() if guard_after_repair else {},
                     "memorization_check": memorization_check.to_dict() if memorization_check else {},
                     "raw_feedback_allowed": method != LLM_OPTIMIZE_ONLY,
                     "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
-                    "raw_revision_response": candidate.get("raw_response", ""),
+                    "raw_revision_response": "[redacted: candidate required memorization repair]"
+                    if repair_attempts
+                    else candidate.get("raw_response", ""),
                     "prompt_optimization_trace": optimization_trace,
                     "description_preview": candidate_description[:240],
                     "evaluation_index": candidate_index,
@@ -508,6 +594,7 @@ def _run_training_method(
         "final_memorization_check": final_memorization_check.to_dict() if final_memorization_check else {},
         "elapsed_seconds": round(time.perf_counter() - method_started, 4),
         "usage": usage_meter.summary(),
+        "progress_events": _progress_events(method, rounds),
     }
 
 
@@ -686,6 +773,74 @@ def build_training_feedback_prompt(current_description: str, validation_result: 
     return _build_reflection_prompt(current_description, validation_result, failure_summary)
 
 
+def repair_leaked_prompt(
+    candidate_description: str,
+    leaked_terms: list[str],
+    predictor: Predictor,
+    temperature: float = 0.0,
+    fallback: str = "",
+) -> tuple[str, list[str]]:
+    prompt = _build_leak_repair_prompt(candidate_description, leaked_terms)
+    raw = predictor("你是提示词去语料化修复助手。只返回修复后的最终提示词。", [{"role": "user", "content": prompt}], temperature)
+    return sanitize_concept_description(raw, fallback=fallback or candidate_description)
+
+
+def _repair_leaked_candidate(
+    candidate_description: str,
+    current_description: str,
+    check,
+    guard: MemorizationGuard,
+    predictor: Predictor,
+    temperature: float,
+    max_attempts: int,
+) -> dict[str, Any]:
+    description = candidate_description
+    current_check = check
+    attempts: list[dict[str, Any]] = []
+    for attempt_index in range(1, max_attempts + 1):
+        repaired, warnings = repair_leaked_prompt(
+            description,
+            list(current_check.private_matches),
+            predictor=predictor,
+            temperature=temperature,
+            fallback=current_description,
+        )
+        repaired_check = guard.check(repaired, field="candidate_description")
+        attempts.append(
+            {
+                "attempt_index": attempt_index,
+                "input_severity": current_check.severity,
+                "blocked_terms_count": current_check.match_count,
+                "repaired_passed": repaired_check.passed,
+                "repaired_severity": repaired_check.severity,
+                "repaired_blocked_terms_count": repaired_check.match_count,
+                "sanitizer_warnings": warnings,
+            }
+        )
+        description = repaired
+        current_check = repaired_check
+        if repaired_check.passed:
+            break
+    return {"description": description, "repair_attempts": attempts, "final_check": current_check}
+
+
+def _build_leak_repair_prompt(candidate_description: str, leaked_terms: list[str]) -> str:
+    forbidden = "\n".join(f"- {term}" for term in leaked_terms[:30]) or "- 无可见片段，仅根据 hash 检查结果修复"
+    return f"""下面的候选概念阐释复制了训练语料、标准答案或模型答案中的具体片段。请删除这些具体片段，只保留抽象、可泛化的标注规则。
+
+候选概念阐释：
+{candidate_description}
+
+禁止原样保留的具体片段：
+{forbidden}
+
+修复要求：
+1. 只输出修复后的最终概念阐释正文。
+2. 不要出现上面列出的具体词、短语、原句、答案片段或样例编号。
+3. 把具体例子抽象成边界规则、排除规则或输出格式要求。
+4. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”结构。"""
+
+
 def _build_text_gradient_prompt(
     current_description: str,
     validation_result: dict,
@@ -821,8 +976,11 @@ def _round_record(
         "failure_cases": _failure_cases(selected_result["details"]),
         "candidate_evaluations": candidate_evaluations,
         "memorization_blocked_count": sum(
-            1 for evaluation in candidate_evaluations if evaluation.get("status") == "memorization_guard_blocked"
+            1
+            for evaluation in candidate_evaluations
+            if evaluation.get("status") in {"memorization_guard_blocked", "memorization_repair_failed"}
         ),
+        "repair_attempt_count": sum(len(evaluation.get("repair_attempts", [])) for evaluation in candidate_evaluations),
         "description": description,
     }
 
@@ -860,7 +1018,91 @@ def _method_summary(row: dict[str, Any]) -> dict[str, Any]:
         "llm_call_count": int(row.get("usage", {}).get("llm_call_count", 0)),
         "estimated_tokens": int(row.get("usage", {}).get("estimated_tokens", 0)),
         "elapsed_seconds": float(row.get("elapsed_seconds", 0.0)),
+        "repair_attempt_count": sum(
+            len(candidate.get("repair_attempts", []))
+            for round_row in row.get("rounds", [])
+            for candidate in round_row.get("candidate_evaluations", [])
+        ),
     }
+
+
+def _usage_summary(method_results: list[dict[str, Any]], config: PromptTrainingConfig, predictor: Predictor | None = None) -> dict[str, Any]:
+    runtime = getattr(predictor, "runtime", None)
+    if runtime is not None and hasattr(runtime, "usage_summary"):
+        summary = dict(runtime.usage_summary())
+        summary.setdefault("provider", config.provider_id)
+        summary.setdefault("model", config.model)
+        summary.setdefault("concurrency", config.concurrency)
+        return summary
+    usages = [row.get("usage", {}) for row in method_results]
+    return {
+        "provider": config.provider_id,
+        "model": config.model,
+        "concurrency": config.concurrency,
+        "llm_call_count": sum(int(usage.get("llm_call_count", 0)) for usage in usages),
+        "estimated_tokens": sum(int(usage.get("estimated_tokens", 0)) for usage in usages),
+        "estimated": True,
+        "provider_elapsed_seconds": round(sum(float(usage.get("provider_elapsed_seconds", 0.0)) for usage in usages), 4),
+    }
+
+
+def _runtime_progress_events(predictor: Predictor | None) -> list[dict[str, Any]]:
+    runtime = getattr(predictor, "runtime", None)
+    if runtime is None:
+        return []
+    return [
+        dict(event, event_type=f"provider_{event.get('event_type', 'event')}")
+        for event in getattr(runtime, "progress_events", [])
+    ]
+
+
+def _repair_summary(method_results: list[dict[str, Any]]) -> dict[str, Any]:
+    attempts = 0
+    successes = 0
+    failures = 0
+    for row in method_results:
+        for round_row in row.get("rounds", []):
+            for candidate in round_row.get("candidate_evaluations", []):
+                candidate_attempts = candidate.get("repair_attempts", [])
+                attempts += len(candidate_attempts)
+                if candidate_attempts and candidate.get("memorization_passed"):
+                    successes += 1
+                if candidate.get("status") == "memorization_repair_failed":
+                    failures += 1
+    return {"repair_attempt_count": attempts, "repair_success_count": successes, "repair_failed_count": failures}
+
+
+def _progress_events(method: str, rounds: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for round_row in rounds:
+        events.append(
+            {
+                "event_type": "round_completed",
+                "method": method,
+                "round_index": round_row.get("round_index"),
+                "status": round_row.get("status"),
+                "pass_count": round_row.get("pass_count"),
+                "loss": round_row.get("loss"),
+                "llm_call_count": round_row.get("llm_call_count", 0),
+                "estimated_tokens": round_row.get("estimated_tokens", 0),
+                "elapsed_seconds": round_row.get("elapsed_seconds", 0.0),
+            }
+        )
+        for candidate in round_row.get("candidate_evaluations", []):
+            events.append(
+                {
+                    "event_type": "candidate_evaluated",
+                    "method": method,
+                    "round_index": round_row.get("round_index"),
+                    "candidate_id": candidate.get("candidate_id"),
+                    "status": candidate.get("status"),
+                    "pass_count": candidate.get("pass_count"),
+                    "loss": candidate.get("loss"),
+                    "memorization_status": candidate.get("memorization_status", "clean"),
+                    "repair_attempts": len(candidate.get("repair_attempts", [])),
+                }
+            )
+    return events
 
 
 def _leakage_report(
@@ -874,7 +1116,7 @@ def _leakage_report(
         for method_result in method_results
         for round_row in method_result.get("rounds", [])
         for candidate in round_row.get("candidate_evaluations", [])
-        if candidate.get("status") == "memorization_guard_blocked"
+        if candidate.get("status") in {"memorization_guard_blocked", "memorization_repair_failed"}
     )
     final_check = best.get("final_memorization_check") if config.no_corpus_memorization else None
     if final_check is None and config.no_corpus_memorization:
@@ -884,6 +1126,7 @@ def _leakage_report(
         "raw_feedback_allowed": config.raw_feedback_allowed,
         "memorization_policy": config.memorization_policy,
         "candidate_blocked_count": blocked_count,
+        "repair_summary": _repair_summary(method_results),
         "final_prompt_clean": True if final_check is None else bool(final_check.get("passed", False)),
         "final_check": final_check or {},
         "fingerprint": guard.summary(),
@@ -908,6 +1151,8 @@ def _write_training_artifact(
         "config": config.to_dict(),
         "best_method": best["method"],
         "method_results": method_results,
+        "usage_summary": _usage_summary(method_results, config),
+        "repair_summary": _repair_summary(method_results),
         "leakage_report": leakage_report,
     }
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -953,6 +1198,11 @@ def _store_training_version(
                 "no_corpus_memorization": config.no_corpus_memorization,
                 "memorization_policy": config.memorization_policy,
                 "raw_feedback_allowed": config.raw_feedback_allowed,
+                "concurrency": config.concurrency,
+                "provider_id": config.provider_id,
+                "model": config.model,
+                "repair_summary": _repair_summary(method_results),
+                "usage_summary": _usage_summary(method_results, config),
                 "leakage_summary": leakage_report,
                 "artifact_path": artifact_path,
                 "sanitizer_warnings": initial_warnings,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable
 
 from app.core.models import (
@@ -554,19 +555,46 @@ def _evaluate_gold_tasks(
     round_index: int,
     source: str = "concept_refinement",
     candidate_id: str | None = None,
+    concurrency: int = 1,
 ) -> dict:
     passed: list[str] = []
     failed: list[str] = []
     unstable: list[str] = []
     details: list[dict] = []
+    prediction_inputs: list[tuple[str, dict]] = []
     for task_id in task_ids:
         task_row = store.get_task(task_id)
         if task_row is None:
             failed.append(task_id)
             details.append({"task_id": task_id, "route": "failed", "reason": "任务不存在"})
             continue
-        task_payload = task_row["payload"]
-        prediction_payload = _predict_guideline(guideline, task_payload, predictor, temperature)
+        prediction_inputs.append((task_id, task_row["payload"]))
+
+    prediction_rows: list[tuple[str, dict, dict]] = []
+    if concurrency <= 1 or predictor is None or len(prediction_inputs) <= 1:
+        prediction_rows = [
+            (task_id, task_payload, _safe_predict_guideline(guideline, task_payload, predictor, temperature))
+            for task_id, task_payload in prediction_inputs
+        ]
+    else:
+        max_workers = max(1, min(int(concurrency), len(prediction_inputs)))
+        indexed_rows: list[tuple[int, str, dict, dict] | None] = [None] * len(prediction_inputs)
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            future_map = {
+                pool.submit(_safe_predict_guideline, guideline, task_payload, predictor, temperature): (index, task_id, task_payload)
+                for index, (task_id, task_payload) in enumerate(prediction_inputs)
+            }
+            for future in as_completed(future_map):
+                index, task_id, task_payload = future_map[future]
+                indexed_rows[index] = (index, task_id, task_payload, future.result())
+        prediction_rows = [
+            (task_id, task_payload, prediction_payload)
+            for row in indexed_rows
+            if row is not None
+            for _index, task_id, task_payload, prediction_payload in (row,)
+        ]
+
+    for task_id, task_payload, prediction_payload in prediction_rows:
         detail = _gold_comparison_detail(task_payload, prediction_payload, prediction_payload["route"])
         prediction = Prediction(
             id=f"pred-{uuid.uuid4().hex[:10]}",
@@ -593,6 +621,13 @@ def _evaluate_gold_tasks(
         else:
             failed.append(task_id)
     return {"passed": passed, "failed": failed, "unstable": unstable, "details": details}
+
+
+def _safe_predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor | None, temperature: float) -> dict:
+    try:
+        return _predict_guideline(guideline, task_payload, predictor, temperature)
+    except Exception as exc:
+        return {"score": 0.0, "route": "failed", "raw_response": str(exc), "model": "llm", "predicted_spans": ()}
 
 
 def _gold_comparison_detail(task_payload: dict, prediction_payload: dict, route: str) -> dict:

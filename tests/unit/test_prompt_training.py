@@ -13,6 +13,7 @@ from app.workflows.bootstrap import (
     build_llm_optimize_only_prompt,
     build_training_feedback_prompt,
     gold_task_from_markup,
+    repair_leaked_prompt,
     run_prompt_training_experiment,
     save_guideline_package,
 )
@@ -213,7 +214,7 @@ class TestPromptTraining(unittest.TestCase):
         self.assertIn("training_feedback_only=true", prompt)
         self.assertIn("Quantum term 1", prompt)
 
-    def test_candidate_copying_gold_answer_is_blocked(self):
+    def test_candidate_copying_gold_answer_is_repaired_before_evaluation(self):
         tmp, store, guideline_id = _store_with_guideline()
         self.addCleanup(tmp.cleanup)
 
@@ -228,7 +229,17 @@ class TestPromptTraining(unittest.TestCase):
                         "输出格式：[原文]{标签}",
                     ]
                 )
-            if "Quantum term 这类" in messages[-1]["content"]:
+            if system_prompt == "你是提示词去语料化修复助手。只返回修复后的最终提示词。":
+                return "\n".join(
+                    [
+                        "概念描述：标出科学文本中带编号或专名结构的明确领域术语。",
+                        "标签集合：Term",
+                        "边界规则：由大写专名词和类型词组成、后接编号时，应整体标注最小完整术语。",
+                        "排除规则：不标普通泛化词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            if "带编号或专名结构" in messages[-1]["content"]:
                 return _correct_annotation(messages[-1]["content"])
             return _wrong_annotation(messages[-1]["content"])
 
@@ -239,11 +250,61 @@ class TestPromptTraining(unittest.TestCase):
             config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=1, candidate_count=1),
         )
 
+        self.assertEqual(result["status"], "stable")
+        repaired = result["rounds"][0]["candidate_evaluations"][0]
+        self.assertEqual(repaired["status"], "accepted")
+        self.assertTrue(repaired["memorization_passed"])
+        self.assertTrue(repaired["repair_accepted"])
+        self.assertGreater(len(repaired["repair_attempts"]), 0)
+
+    def test_candidate_still_leaking_after_repair_is_rejected(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+
+        def predictor(system_prompt, messages, temperature):
+            if system_prompt in {
+                "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。",
+                "你是提示词去语料化修复助手。只返回修复后的最终提示词。",
+            }:
+                return "\n".join(
+                    [
+                        "概念描述：标出 Quantum term 这类明确术语。",
+                        "标签集合：Term",
+                        "边界规则：Quantum term 加数字编号时整体标注。",
+                        "排除规则：不标普通泛化词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            return _wrong_annotation(messages[-1]["content"])
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=1, candidate_count=1),
+        )
+
         self.assertEqual(result["status"], "needs_revision")
-        self.assertGreater(result["leakage_report"]["candidate_blocked_count"], 0)
-        blocked = result["rounds"][0]["candidate_evaluations"][0]
-        self.assertEqual(blocked["status"], "memorization_guard_blocked")
-        self.assertFalse(blocked["memorization_passed"])
+        failed = result["rounds"][0]["candidate_evaluations"][0]
+        self.assertEqual(failed["status"], "memorization_repair_failed")
+        self.assertFalse(failed["memorization_passed"])
+        self.assertGreater(len(failed["repair_attempts"]), 0)
+
+    def test_repair_leaked_prompt_keeps_abstract_rules(self):
+        def predictor(system_prompt, messages, temperature):
+            self.assertEqual(system_prompt, "你是提示词去语料化修复助手。只返回修复后的最终提示词。")
+            self.assertIn("Quantum term", messages[-1]["content"])
+            return "概念描述：标出带编号或专名结构的明确领域术语。\n标签集合：Term"
+
+        repaired, warnings = repair_leaked_prompt(
+            "概念描述：标出 Quantum term 这类术语。",
+            ["Quantum term"],
+            predictor=predictor,
+            fallback="概念描述：fallback",
+        )
+
+        self.assertIn("带编号或专名结构", repaired)
+        self.assertEqual(warnings, [])
 
     def test_requires_target_gold_count(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=3)

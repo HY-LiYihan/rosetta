@@ -137,7 +137,7 @@ workflow
 核心约束：
 
 1. 每个平台都有 `LLMProviderProfile`，记录默认模型、最大并发、超时、重试、token 统计和价格表。
-2. 全局默认并发上限为 `10`，真实 API 的 workflow 不应绕过 provider profile 擅自提高并发。
+2. 全局默认并发上限为 `20`，真实 API 的 workflow 不应绕过 provider profile 擅自提高并发；如果某个平台限流更低，则由 provider profile 下调。
 3. 概念验证、概念自举、批量标注、LLM-as-a-judge 和语料生成应共享 provider 级 semaphore。
 4. 长任务必须写入 `RunProgressEvent`，UI 至少展示总数、已完成、运行中、失败、当前阶段、预计剩余时间、token 和成本。
 5. provider 不返回 usage 时，允许本地估算 token，但必须标记 `estimated=true`。

@@ -2,6 +2,19 @@
 
 ## 2026-05-03
 
+### Feature / Concurrent LLM runtime and prompt repair v4.5.0
+
+1. 新增 `app/infrastructure/llm/runtime.py`，提供 `LLMProviderProfile`、`LLMServiceRuntime` 和 provider 级共享 semaphore，将真实 API 默认并发上限提升到 `20`，并记录调用进度、token 估算、耗时、重试和最大实际并发。
+2. 概念实验室的大模型 predictor 改为通过 `LLMServiceRuntime` 调用真实 provider；DeepSeek 默认模型保持 `deepseek-v4-pro`，提示词优化训练配置新增 `provider_id / model / concurrency / repair_leaked_candidates / max_repair_attempts`。
+3. `run_prompt_training_experiment` 的三种方法可并发运行；每种方法内部的 15 条金样例验证和候选回测也可并发执行，所有调用共享 provider semaphore，避免多个 workflow 叠加后突破并发上限。
+4. `MemorizationGuard` 从二元拦截升级为分级检查：`clean / soft_leak / critical_leak`，并区分原文 n-gram、gold span、runtime annotation 和模型 span。默认报告只展示 hash / count，raw matches 只在 runtime 内部传给修复模型。
+5. 候选提示词如果泄露语料或答案片段，不再一票否决；系统会先调用 `repair_leaked_prompt()` 进行去语料化修复，要求删除具体词、短语、原句和答案片段，只保留抽象边界规则。修复最多 2 次，仍泄露时才记为 `memorization_repair_failed`。
+6. 概念实验室提示词优化训练 UI 新增并发上限、真实模型、实际并发、总调用、总 token、模型耗时和修复尝试指标，并在折叠日志中展示 usage summary 与 repair summary。
+7. 批量标注默认并发从 `4` 调整为 `20`，并将 UI 最大值收敛到全局默认上限 `20`。SQLite runtime store 增加 busy timeout，降低并发写入时的临时锁冲突。
+8. 新增 [test_llm_runtime.py](../tests/unit/test_llm_runtime.py)，覆盖 provider semaphore 并发约束、usage 聚合和 progress event；更新 prompt training 和 memorization guard 测试，覆盖修复后接受、修复失败拒绝和分级泄露判断。
+9. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Architecture](./developer/ARCHITECTURE.md)、[LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)、[用户教程](./user/TUTORIAL.md)、[Developer README](./developer/README.md)、[Roadmap](./developer/ROADMAP.md) 和 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，明确 v4.5.0 的真实 DeepSeek、默认并发 20 与去语料化修复边界。
+10. 首页页脚版本更新为 `v4.5.0`。
+
 ### Fix / Prompt training anti-memorization guard v4.4.1
 
 1. 新增 `app/workflows/bootstrap/memorization.py`，提供 `MemorizationGuard`、`CorpusFingerprint` 和 `LeakageCheckResult`，从 15 条 gold 的原文、标准答案、runtime annotation 以及每轮模型答案中抽取 hash 指纹。
@@ -28,7 +41,7 @@
 ### Docs / LLM service runtime and progress vision v4.3.1
 
 1. 新增 [LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md)，把每次大模型调用定义为服务调用，要求统一进入 provider profile、限流、重试、进度事件、token/cost 和 artifact 记录。
-2. 明确全局默认并发上限为 `10`；概念验证、概念自举、批量标注、LLM-as-a-judge 和语料生成都应受 provider profile 与共享 semaphore 控制。
+2. 当时明确全局默认并发上限为 `10`；v4.5.0 已按新的真实测试需求提升为 `20`。概念验证、概念自举、批量标注、LLM-as-a-judge 和语料生成都应受 provider profile 与共享 semaphore 控制。
 3. 细化概念验证和概念自举的目标 UI：显示当前阶段、已完成/总数、运行中数量、预计剩余时间、token、成本、失败与重试。
 4. 细化 ETA 计算、ETA 可信度、RunProgressEvent、TokenUsage、错误重试、限流、取消和预算耗尽等运行时契约。
 5. 更新 [docs/README.md](./README.md)、[Developer README](./developer/README.md)、[Architecture](./developer/ARCHITECTURE.md)、[Roadmap](./developer/ROADMAP.md) 和 [mkdocs.yml](../mkdocs.yml)，为后续 v4.4-v4.6 实现提供入口。

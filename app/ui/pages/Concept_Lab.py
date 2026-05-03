@@ -8,9 +8,8 @@ import streamlit as st
 
 from app.core.models import AnnotationTask, ConceptGuideline, ConceptVersion, Project
 from app.data.text_ingestion import tasks_from_csv, tasks_from_jsonl
-from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.providers import PLATFORM_CONFIGS
-from app.infrastructure.llm.registry import get_provider
+from app.infrastructure.llm.runtime import LLMServiceRuntime
 from app.runtime.store import RuntimeStore
 from app.ui.components.busy import busy_button, clear_busy
 from app.ui.examples import HARD_SCIENCE_TERM_EXAMPLE, hard_science_gold_jsonl
@@ -97,16 +96,14 @@ def _parse_gold_jsonl(content: str, source_name: str = "pasted.jsonl") -> list[A
     return tasks
 
 
-def _make_predictor(platform_id: str, model: str):
-    provider = get_provider(platform_id)
-    if provider is None:
-        raise RuntimeError(t("common.platform_unavailable"))
-    api_key = resolve_api_key(platform_id)
+def _make_predictor(platform_id: str, model: str, concurrency: int = 20):
+    runtime = LLMServiceRuntime.from_provider(platform_id, model, concurrency=concurrency)
 
     def predictor(system_prompt: str, messages: list[dict], temperature: float) -> str:
-        full_messages = [{"role": "system", "content": system_prompt}, *messages]
-        return provider.chat(api_key=api_key, model=model, messages=full_messages, temperature=temperature)
+        return runtime.chat(system_prompt, messages, temperature=temperature)
 
+    predictor.is_real_provider = True  # type: ignore[attr-defined]
+    predictor.runtime = runtime  # type: ignore[attr-defined]
     return predictor
 
 
@@ -489,7 +486,7 @@ else:
         format_func=_training_method_label,
         key="concept_lab_training_methods",
     )
-    train_col1, train_col2, train_col3 = st.columns([1, 1, 1])
+    train_col1, train_col2, train_col3, train_col4 = st.columns([1, 1, 1, 1])
     training_max_rounds = int(
         train_col1.number_input(
             t("concept_lab.training_max_rounds"),
@@ -520,6 +517,16 @@ else:
             key="concept_lab_training_min_delta",
         )
     )
+    training_concurrency = int(
+        train_col4.number_input(
+            t("concept_lab.training_concurrency"),
+            min_value=1,
+            max_value=20,
+            value=20,
+            step=1,
+            key="concept_lab_training_concurrency",
+        )
+    )
     training_auto_apply = st.checkbox(
         t("concept_lab.training_auto_apply"),
         value=False,
@@ -536,7 +543,7 @@ else:
     ):
         try:
             with st.spinner(t("concept_lab.training_status")):
-                predictor = _make_predictor(platform_id, model_name) if validation_mode == "llm" else None
+                predictor = _make_predictor(platform_id, model_name, concurrency=training_concurrency) if validation_mode == "llm" else None
                 training_result = run_prompt_training_experiment(
                     store,
                     selected_guideline,
@@ -547,6 +554,9 @@ else:
                         candidate_count=training_candidate_count,
                         target_pass_count=target_count,
                         min_loss_delta=training_min_delta,
+                        concurrency=training_concurrency,
+                        provider_id=platform_id,
+                        model=model_name,
                     ),
                     auto_apply=training_auto_apply,
                 )
@@ -570,6 +580,8 @@ else:
     training_result = st.session_state.get("concept_lab_prompt_training_result")
     if training_result:
         leakage_report = training_result.get("leakage_report", {})
+        usage_summary = training_result.get("usage_summary", {})
+        repair_summary = training_result.get("repair_summary", {})
         result_cols = st.columns(6)
         result_cols[0].metric(t("concept_lab.training_best_method"), _training_method_label(training_result["best_method"]))
         result_cols[1].metric(t("concept_lab.training_best_pass"), f"{training_result['best_pass_count']}/{target_count}")
@@ -580,6 +592,13 @@ else:
             t("common.yes") if leakage_report.get("final_prompt_clean", True) else t("common.no"),
         )
         result_cols[5].metric(t("concept_lab.training_blocked_candidates"), leakage_report.get("candidate_blocked_count", 0))
+        usage_cols = st.columns(6)
+        usage_cols[0].metric(t("concept_lab.training_provider_run"), t("common.yes") if training_result.get("real_provider_run") else t("common.no"))
+        usage_cols[1].metric(t("concept_lab.training_concurrency_used"), usage_summary.get("concurrency", training_concurrency))
+        usage_cols[2].metric(t("concept_lab.training_total_calls"), usage_summary.get("llm_call_count", 0))
+        usage_cols[3].metric(t("concept_lab.training_total_tokens"), usage_summary.get("total_tokens", usage_summary.get("estimated_tokens", 0)))
+        usage_cols[4].metric(t("concept_lab.training_elapsed"), usage_summary.get("provider_elapsed_seconds", 0.0))
+        usage_cols[5].metric(t("concept_lab.training_repair_attempts"), repair_summary.get("repair_attempt_count", 0))
         method_rows = [
             {
                 t("concept_lab.training_table_method"): _training_method_label(row["method"]),
@@ -593,6 +612,7 @@ else:
                 t("concept_lab.training_table_length"): row["description_length"],
                 t("concept_lab.training_table_clean"): t("common.yes") if row.get("memorization_passed", True) else t("common.no"),
                 t("concept_lab.training_table_blocked"): row.get("memorization_blocked_count", 0),
+                t("concept_lab.training_table_repairs"): row.get("repair_attempt_count", 0),
                 t("concept_lab.training_table_calls"): row.get("llm_call_count", 0),
                 t("concept_lab.training_table_tokens"): row.get("estimated_tokens", 0),
                 t("concept_lab.training_table_seconds"): row.get("elapsed_seconds", 0.0),
@@ -607,6 +627,10 @@ else:
         )
         with st.expander(t("concept_lab.training_logs"), expanded=False):
             st.markdown(t("concept_lab.training_artifact", path=training_result.get("artifact_path", "")))
+            st.markdown(f"**{t('concept_lab.training_usage_summary')}**")
+            st.json(usage_summary)
+            st.markdown(f"**{t('concept_lab.training_repair_summary')}**")
+            st.json(repair_summary)
             st.markdown(f"**{t('concept_lab.training_leakage_report')}**")
             st.json(leakage_report)
             for round_result in training_result.get("rounds", []):

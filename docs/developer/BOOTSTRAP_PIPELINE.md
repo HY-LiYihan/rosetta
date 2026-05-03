@@ -146,8 +146,13 @@ PromptTrainingConfig(
     min_loss_delta=0.01,
     length_penalty=True,
     no_corpus_memorization=True,
-    memorization_policy="block_candidate",
+    memorization_policy="repair_then_reject",
     raw_feedback_allowed=True,
+    concurrency=20,
+    repair_leaked_candidates=True,
+    max_repair_attempts=2,
+    provider_id="deepseek",
+    model="deepseek-v4-pro",
 )
 ```
 
@@ -168,6 +173,8 @@ evaluate current prompt
   -> generate candidate prompts
   -> sanitize candidate prompts
   -> run MemorizationGuard on candidate prompts
+  -> repair leaked candidate prompts when possible
+  -> run MemorizationGuard again
   -> evaluate each candidate on the same 15 gold examples
   -> accept only loss-decreasing clean candidate
   -> stop if 15/15 pass
@@ -188,20 +195,21 @@ evaluate current prompt
 4. 从这些文本抽取出的词、短语和 n-gram hash。
 5. 允许项仅包含标签名、输出格式等任务公共词。
 
-候选被拒绝时记录：
+`v4.5.0` 后，候选泄露不再立即拒绝。默认策略是 `repair_then_reject`：
 
-1. `status=memorization_guard_blocked`。
-2. `memorization_passed=false`。
-3. `blocked_terms_count`。
-4. `memorization_check.matched_hashes`。
-5. `raw_feedback_allowed=true` 或 `false`。
+1. `MemorizationGuard` 先标记 `clean / soft_leak / critical_leak`。
+2. 如果候选泄露，系统把候选提示词和 runtime 内部的 transient raw matches 交给 `repair_leaked_prompt()`。
+3. 修复模型只做“去语料化”：删除具体词、短语、原句、答案片段和样例编号，把它们改写成抽象边界规则或排除规则。
+4. 修复最多 2 次。修复后通过 guard 的候选才进入 gold loss 回测。
+5. 修复后仍泄露时，记录 `status=memorization_repair_failed`、`memorization_passed=false`、`blocked_terms_count`、`guard_before_repair`、`guard_after_repair` 和 `repair_attempts`。
+6. 主报告仍只展示 hash / count；raw matches 默认不写入公开 UI 和报告。
 
 每种方法和每一轮还会记录轻量 usage：
 
 1. `llm_call_count`: predictor 调用次数。
 2. `estimated_tokens`: 基于 system prompt、messages 和 raw response 字符数的粗略估算。
 3. `elapsed_seconds`: 该方法或该轮墙钟耗时。
-4. `usage.estimated=true`: 当前不是 provider 真实账单，接入 LLM service runtime 后应替换为 provider usage。
+4. `usage.estimated=true`: 当前优先使用 `LLMServiceRuntime` 的 token 估算；如果 provider 后续返回真实 usage，应替换为 provider usage 并标记 `estimated=false`。
 
 最终选择规则：
 
@@ -225,7 +233,7 @@ evaluate current prompt
 
 1. 第一版不新增数据库表，训练轨迹先通过 `ConceptVersion.metadata` 和 artifact 保存。
 2. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-3. 第一版仍使用 Streamlit 同步触发；后续应接入 LLM service runtime，显示阶段进度、ETA、token 和成本。
+3. `v4.5.0` 已接入 `LLMServiceRuntime` 最小实现，默认并发上限为 20；Streamlit 仍同步触发长任务，后续需要把 progress event 持久化并支持取消/恢复。
 
 ## 4. 分层边界
 
