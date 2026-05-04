@@ -76,6 +76,7 @@ nav:
       - JSONL 存储格式: developer/ANNOTATION_JSONL_FORMAT.md
   - 开发维护:
       - 开发者概览: developer/README.md
+      - Agent 快速接手: developer/AGENT_ONBOARDING.md
       - 架构总览: developer/ARCHITECTURE.md
       - LLM 服务运行时: developer/LLM_SERVICE_RUNTIME.md
       - 工作流: developer/WORKFLOW.md

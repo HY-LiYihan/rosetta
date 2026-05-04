@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-05-04
+
+### Docs / Agent onboarding context
+
+1. 新增 [Agent Onboarding](./developer/AGENT_ONBOARDING.md)，作为给后续大模型、代码 agent 和新维护者的压缩上下文包，概括 Rosetta 的产品定位、当前服务实现、主 workflow、LLM service runtime、SQLite runtime store、CLI 和常见边界。
+2. 更新 [docs/README.md](./README.md)、[Developer README](./developer/README.md) 和 [mkdocs.yml](../mkdocs.yml)，为 agent 快速接手文档增加入口。
+
 ## 2026-05-03
 
 ### Feature / Prompt training comparison experiment v4.5.1

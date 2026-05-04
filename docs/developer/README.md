@@ -1,6 +1,6 @@
 # Developer Docs
 
-更新时间: 2026-05-03
+更新时间: 2026-05-04
 
 本页是 Rosetta 开发与维护入口。当前主线是 Agentic Annotation Tool 架构：用 Streamlit 提供本地优先 UI，用 `core / workflows / agents / data / runtime` 组织程序，用 concept bootstrap loop 连接概念校准、批量标注、主动审核和实验报告。
 
@@ -8,11 +8,12 @@
 
 1. [Research Claims](../ideas/RESEARCH_CLAIMS.md)：先确认 Rosetta 要证明什么，尤其是 LLM agent 与 PLM 的比较边界。
 2. [Prompt-as-Parameter](../ideas/PROMPT_AS_PARAMETER.md)：确认文本梯度估算和 prompt 优化器的核心方法边界。
-3. [Architecture](./ARCHITECTURE.md)：确认运行结构、目录分层和数据流。
-4. [LLM Service Runtime](./LLM_SERVICE_RUNTIME.md)：确认大模型服务化、并发上限、进度 ETA、token/cost 和 provider profile 愿景。
-5. [Workflow](./WORKFLOW.md)：确认开发、验证、提交和文档评审规则。
-6. [Scripts](./SCRIPTS.md)：确认 CLI、部署和 legacy 入口。
-7. [Deployment](./DEPLOYMENT.md)：确认 Docker、runtime 目录和运维方式。
+3. [Agent Onboarding](./AGENT_ONBOARDING.md)：给大模型和新维护者的 5 分钟项目地图，说明整体服务、代码落点和常见坑。
+4. [Architecture](./ARCHITECTURE.md)：确认运行结构、目录分层和数据流。
+5. [LLM Service Runtime](./LLM_SERVICE_RUNTIME.md)：确认大模型服务化、并发上限、进度 ETA、token/cost 和 provider profile 愿景。
+6. [Workflow](./WORKFLOW.md)：确认开发、验证、提交和文档评审规则。
+7. [Scripts](./SCRIPTS.md)：确认 CLI、部署和 legacy 入口。
+8. [Deployment](./DEPLOYMENT.md)：确认 Docker、runtime 目录和运维方式。
 
 如果只改 UI，请至少读 [用户教程](../user/TUTORIAL.md) 和 [Architecture](./ARCHITECTURE.md)。如果只改算法，请至少读 [Research Claims](../ideas/RESEARCH_CLAIMS.md)、[Core Annotation Bootstrap](../ideas/CORE_ANNOTATION_BOOTSTRAP.md) 和 [Concept Bootstrap Pipeline](./BOOTSTRAP_PIPELINE.md)。
 
@@ -24,6 +25,7 @@
 | --- | --- |
 | [Research Claims](../ideas/RESEARCH_CLAIMS.md) | LLM agent vs PLM 的研究主张、创新点和实验边界 |
 | [Prompt-as-Parameter](../ideas/PROMPT_AS_PARAMETER.md) | Text Gradient、Prompt Optimizer 和 `LLM-AdamW` 方法框架 |
+| [Agent Onboarding](./AGENT_ONBOARDING.md) | 给大模型和新维护者的压缩上下文包 |
 | [Architecture](./ARCHITECTURE.md) | `core/workflows/agents/data/runtime` 分层边界 |
 | [LLM Service Runtime](./LLM_SERVICE_RUNTIME.md) | 大模型服务化、平台参数、默认并发上限 20、进度 ETA 和 token/cost |
 | [Workflow](./WORKFLOW.md) | 开发、验证、提交规则 |
