@@ -1,6 +1,6 @@
 # Architecture (Developer)
 
-更新时间: 2026-05-03
+更新时间: 2026-05-04
 
 ## 1. 目标定位
 
@@ -167,7 +167,7 @@ workflow
 
 1. 默认数据库：`.runtime/rosetta.sqlite3`。
 2. Docker 默认数据库：`/opt/rosetta/runtime/rosetta.sqlite3`。
-3. 表：`projects / tasks / predictions / reviews / runs / artifacts / agent_steps / concept_guidelines / gold_example_sets / concept_versions / jobs / job_items / job_events`。
+3. 表：`projects / tasks / predictions / reviews / runs / artifacts / agent_steps / concept_guidelines / gold_example_sets / concept_versions / jobs / job_items / job_events / run_progress_events`。
 
 ## 7. 用户流程
 

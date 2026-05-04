@@ -37,6 +37,7 @@ from app.workflows.bootstrap.prompt_training import (
     build_training_feedback_prompt,
     repair_leaked_prompt,
     run_prompt_training_experiment,
+    start_prompt_training_background_run,
     write_prompt_training_comparison_outputs,
 )
 
@@ -65,6 +66,7 @@ __all__ = [
     "repair_leaked_prompt",
     "run_concept_refinement_loop",
     "run_prompt_training_experiment",
+    "start_prompt_training_background_run",
     "sanitize_concept_description",
     "save_guideline_package",
     "segment_prompt",

@@ -4,7 +4,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.registry import get_provider
@@ -60,11 +60,13 @@ class LLMServiceRuntime:
         api_key: str | None = None,
         provider: Any | None = None,
         concurrency: int | None = None,
+        event_sink: Callable[[dict[str, Any]], None] | None = None,
     ) -> None:
         self.profile = profile
         self.api_key = api_key
         self.provider = provider
         self.concurrency = profile.normalized_concurrency(concurrency)
+        self.event_sink = event_sink
         self.progress_events: list[dict[str, Any]] = []
         self.call_results: list[LLMCallResult] = []
         self._state_lock = threading.Lock()
@@ -77,9 +79,16 @@ class LLMServiceRuntime:
         provider_id: str,
         model: str,
         concurrency: int | None = None,
+        event_sink: Callable[[dict[str, Any]], None] | None = None,
     ) -> "LLMServiceRuntime":
         profile = LLMProviderProfile(provider_id=provider_id, model=model)
-        return cls(profile=profile, api_key=resolve_api_key(provider_id), provider=get_provider(provider_id), concurrency=concurrency)
+        return cls(
+            profile=profile,
+            api_key=resolve_api_key(provider_id),
+            provider=get_provider(provider_id),
+            concurrency=concurrency,
+            event_sink=event_sink,
+        )
 
     def chat(self, system_prompt: str, messages: list[dict], temperature: float = 0.3, metadata: dict[str, Any] | None = None) -> str:
         return self.chat_result(0, system_prompt, messages, temperature, metadata).content
@@ -212,23 +221,28 @@ class LLMServiceRuntime:
         self._event(event_type, index=result.index, metadata={**metadata, **result_metadata})
 
     def _event(self, event_type: str, index: int, metadata: dict[str, Any]) -> None:
+        event: dict[str, Any]
         with self._state_lock:
             event_index = len(self.progress_events) + 1
             completed = len(self.call_results)
             running = self._running
-            self.progress_events.append(
-                {
-                    "event_index": event_index,
-                    "event_type": event_type,
-                    "provider": self.profile.provider_id,
-                    "model": self.profile.model,
-                    "item_index": index,
-                    "completed": completed,
-                    "running": running,
-                    "metadata": metadata,
-                    "created_at": time.time(),
-                }
-            )
+            event = {
+                "event_index": event_index,
+                "event_type": event_type,
+                "provider": self.profile.provider_id,
+                "model": self.profile.model,
+                "item_index": index,
+                "completed": completed,
+                "running": running,
+                "metadata": metadata,
+                "created_at": time.time(),
+            }
+            self.progress_events.append(event)
+        if self.event_sink is not None:
+            try:
+                self.event_sink(dict(event))
+            except Exception:
+                pass
 
 
 def _provider_semaphore(provider_id: str, max_concurrency: int) -> threading.BoundedSemaphore:

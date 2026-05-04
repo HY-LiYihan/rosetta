@@ -1,6 +1,6 @@
 # Concept Bootstrap Pipeline (Developer)
 
-更新时间: 2026-05-03
+更新时间: 2026-05-04
 
 ## 1. 目标
 
@@ -242,13 +242,40 @@ evaluate current prompt
 4. `ConceptVersion.metadata.method_comparison` 保存每种方法的状态、停止原因、初始 loss、最佳 loss、loss delta、通过数、轮数和提示词长度。
 5. `ConceptVersion.metadata.leakage_summary` 保存 `candidate_blocked_count`、`final_prompt_clean`、fingerprint 摘要和最终检查结果。
 6. 完整 round trace、training feedback、候选 raw response、净化警告、loss detail、轻量 usage、`MemorizationGuard` 检查和 `PromptOptimizationTrace` 写入 `.runtime/artifacts/prompt_training/*.json`。
-7. CLI 对比实验额外输出 `comparison_report.md`、`comparison_result.json` 和 `prompt_evolution.jsonl`，用于人工阅读、后续统计和提示词演化复核。
+7. CLI 对比实验额外输出 `comparison_report.md`、`comparison_result.json`、`prompt_evolution.jsonl` 和 `run_events.jsonl`，用于人工阅读、后续统计、提示词演化复核和运行过程复现。
+
+`v4.5.2` 后，提示词优化训练增加后台运行与进度事件层，但不改变三方法优化算法：
+
+```text
+Concept Lab click
+  -> create WorkflowRun(status=running)
+  -> start_prompt_training_background_run()
+  -> background thread creates RuntimeStore + LLMServiceRuntime
+  -> run_prompt_training_experiment(progress_recorder=...)
+  -> write run_progress_events
+  -> write comparison_report.md / comparison_result.json / prompt_evolution.jsonl / run_events.jsonl
+  -> update WorkflowRun(status=succeeded|failed)
+```
+
+阶段事件至少包括：
+
+1. `run_started / run_completed / run_failed`
+2. `method_started / method_completed`
+3. `round_started / round_completed`
+4. `gold_validation_started / gold_validation_completed`
+5. `candidate_generation_started / candidate_generated`
+6. `candidate_repair_started / candidate_repair_completed`
+7. `candidate_evaluation_started / candidate_evaluated`
+8. `candidate_accepted / candidate_rejected`
+9. `call_queued / call_started / call_succeeded / call_failed / call_retried`
+
+事件 payload 必须是安全摘要：不能包含 raw prompt、raw response、gold 原文、gold span、model span 或 private leakage matches。完整可复现实验依赖 artifact 中的受控 trace，而 UI 日志只展示阶段、计数、loss、候选状态、token 和错误摘要。
 
 实现边界：
 
-1. 第一版不新增数据库表，训练轨迹先通过 `ConceptVersion.metadata` 和 artifact 保存。
-2. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-3. `v4.5.1` 已接入 CLI 对比实验和连续 5 轮无下降停止；Streamlit 仍同步触发长任务，后续需要把 progress event 持久化并支持取消/恢复。
+1. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+2. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Concept Lab prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+3. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
 
 ## 4. 分层边界
 

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from app.core.models import (
     AgentStep,
@@ -16,7 +17,9 @@ from app.core.models import (
     Prediction,
     Project,
     ReviewTask,
+    RunProgressEvent,
     WorkflowRun,
+    utc_timestamp,
 )
 from app.core.serialization import to_plain_dict
 from app.data.prodigy_jsonl import prediction_to_dict, task_to_dict
@@ -33,11 +36,19 @@ class RuntimeStore:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         self.initialize()
 
-    def connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.database_path, timeout=30)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout = 30000")
-        return conn
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def initialize(self) -> None:
         with self.connect() as conn:
@@ -129,6 +140,21 @@ class RuntimeStore:
                     event_type TEXT NOT NULL,
                     payload TEXT NOT NULL,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE TABLE IF NOT EXISTS run_progress_events (
+                    id TEXT PRIMARY KEY,
+                    run_id TEXT NOT NULL,
+                    workflow TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    stage TEXT NOT NULL DEFAULT '',
+                    message TEXT NOT NULL DEFAULT '',
+                    progress REAL,
+                    completed INTEGER NOT NULL DEFAULT 0,
+                    total INTEGER NOT NULL DEFAULT 0,
+                    running INTEGER NOT NULL DEFAULT 0,
+                    failed INTEGER NOT NULL DEFAULT 0,
+                    payload TEXT NOT NULL DEFAULT '{}',
+                    created_at TEXT NOT NULL
                 );
                 """
             )
@@ -257,6 +283,35 @@ class RuntimeStore:
                 (run.id, run.workflow, run.status, _json(run), run.started_at),
             )
 
+    def get_run(self, run_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT id, workflow, status, payload, started_at FROM runs WHERE id = ?",
+                (run_id,),
+            ).fetchone()
+        return dict(row) | {"payload": json.loads(row["payload"])} if row else None
+
+    def update_run_status(self, run_id: str, status: str, meta_patch: dict[str, Any] | None = None) -> None:
+        if status not in {"created", "running", "succeeded", "failed", "cancelled"}:
+            raise ValueError(f"unknown workflow status: {status}")
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT payload FROM runs WHERE id = ?",
+                (run_id,),
+            ).fetchone()
+            if row is None:
+                raise ValueError(f"unknown workflow run: {run_id}")
+            payload = json.loads(row["payload"])
+            payload["status"] = status
+            if status in {"succeeded", "failed", "cancelled"}:
+                payload["ended_at"] = utc_timestamp()
+            if meta_patch:
+                payload["meta"] = {**dict(payload.get("meta", {})), **meta_patch}
+            conn.execute(
+                "UPDATE runs SET status = ?, payload = ? WHERE id = ?",
+                (status, json.dumps(payload, ensure_ascii=False), run_id),
+            )
+
     def add_artifact(self, run_id: str, path: str | Path, kind: str, metadata: dict[str, Any] | None = None) -> None:
         with self.connect() as conn:
             conn.execute(
@@ -279,6 +334,75 @@ class RuntimeStore:
                 (limit,),
             ).fetchall()
         return [dict(row) | {"payload": json.loads(row["payload"])} for row in rows]
+
+    def add_run_progress_event(self, event: RunProgressEvent) -> None:
+        event.validate()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO run_progress_events (
+                    id, run_id, workflow, event_type, stage, message, progress,
+                    completed, total, running, failed, payload, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.id,
+                    event.run_id,
+                    event.workflow,
+                    event.event_type,
+                    event.stage,
+                    event.message,
+                    event.progress,
+                    event.completed,
+                    event.total,
+                    event.running,
+                    event.failed,
+                    json.dumps(event.payload, ensure_ascii=False),
+                    event.created_at,
+                ),
+            )
+
+    def list_run_progress_events(
+        self,
+        run_id: str,
+        limit: int = 500,
+        event_type: str | None = None,
+        stage: str | None = None,
+    ) -> list[dict[str, Any]]:
+        query = """
+            SELECT id, run_id, workflow, event_type, stage, message, progress,
+                   completed, total, running, failed, payload, created_at
+            FROM run_progress_events
+            WHERE run_id = ?
+        """
+        params: list[Any] = [run_id]
+        if event_type:
+            query += " AND event_type = ?"
+            params.append(event_type)
+        if stage:
+            query += " AND stage = ?"
+            params.append(stage)
+        query += " ORDER BY created_at DESC, rowid DESC LIMIT ?"
+        params.append(max(1, int(limit)))
+        with self.connect() as conn:
+            rows = conn.execute(query, tuple(params)).fetchall()
+        events = [dict(row) | {"payload": json.loads(row["payload"])} for row in rows]
+        return list(reversed(events))
+
+    def get_latest_run_progress(self, run_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT id, run_id, workflow, event_type, stage, message, progress,
+                       completed, total, running, failed, payload, created_at
+                FROM run_progress_events
+                WHERE run_id = ?
+                ORDER BY created_at DESC, rowid DESC
+                LIMIT 1
+                """,
+                (run_id,),
+            ).fetchone()
+        return dict(row) | {"payload": json.loads(row["payload"])} if row else None
 
     def upsert_guideline(self, guideline: ConceptGuideline) -> None:
         guideline.validate()

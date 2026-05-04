@@ -1,9 +1,11 @@
 import json
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
-from app.core.models import Project
+from app.core.models import Project, WorkflowRun
+from app.runtime.progress import ProgressRecorder
 from app.runtime.store import RuntimeStore
 from app.workflows.bootstrap import (
     LLM_OPTIMIZE_ONLY,
@@ -16,6 +18,7 @@ from app.workflows.bootstrap import (
     repair_leaked_prompt,
     run_prompt_training_experiment,
     save_guideline_package,
+    start_prompt_training_background_run,
     write_prompt_training_comparison_outputs,
 )
 
@@ -300,8 +303,10 @@ class TestPromptTraining(unittest.TestCase):
 
         self.assertTrue(Path(written["comparison_result_path"]).exists())
         self.assertTrue(Path(written["prompt_evolution_path"]).exists())
+        self.assertTrue(Path(written["events_path"]).exists())
         self.assertIn("## Method Comparison", report)
         self.assertIn("## Round Speed", report)
+        self.assertIn("## Progress Summary", report)
         self.assertIn("## Prompt Evolution", report)
         self.assertNotIn("Quantum term 1", report)
 
@@ -456,6 +461,70 @@ class TestPromptTraining(unittest.TestCase):
 
         self.assertIn("带编号或专名结构", repaired)
         self.assertEqual(warnings, [])
+
+    def test_progress_recorder_receives_training_stage_events(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+        run_id = "run-progress-test"
+        store.upsert_run(WorkflowRun(id=run_id, workflow="prompt_training", status="running"))
+        recorder = ProgressRecorder(store, run_id, estimated_total=20)
+
+        def predictor(system_prompt, messages, temperature):
+            if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
+                return "\n".join(
+                    [
+                        "概念描述：只保留一个模糊定义。",
+                        "标签集合：Term",
+                        "边界规则：不确定时不标。",
+                        "排除规则：不标普通词。",
+                        "输出格式：[原文]{标签}",
+                    ]
+                )
+            return _wrong_annotation(messages[-1]["content"])
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=1, candidate_count=1),
+            progress_recorder=recorder,
+            run_id=run_id,
+        )
+        event_types = {event["event_type"] for event in store.list_run_progress_events(run_id, limit=200)}
+
+        self.assertEqual(result["run_id"], run_id)
+        self.assertIn("run_started", event_types)
+        self.assertIn("method_started", event_types)
+        self.assertIn("round_started", event_types)
+        self.assertIn("candidate_evaluated", event_types)
+        self.assertIn("run_completed", event_types)
+        self.assertTrue(all("raw_prompt" not in event.get("payload", {}) for event in result["progress_events"]))
+
+    def test_background_prompt_training_run_writes_outputs_and_events(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+
+        run_id = start_prompt_training_background_run(
+            store.database_path,
+            guideline_id,
+            config=PromptTrainingConfig(methods=(LLM_OPTIMIZE_ONLY,), max_rounds=1, candidate_count=1),
+            use_llm=False,
+        )
+
+        deadline = time.time() + 5
+        run = store.get_run(run_id)
+        while run and run["status"] == "running" and time.time() < deadline:
+            time.sleep(0.05)
+            run = store.get_run(run_id)
+
+        self.assertIsNotNone(run)
+        self.assertEqual(run["status"], "succeeded")
+        events = store.list_run_progress_events(run_id, limit=500)
+        self.assertTrue(any(event["event_type"] == "run_submitted" for event in events))
+        self.assertTrue(any(event["event_type"] == "run_completed" for event in events))
+        output_paths = run["payload"]["meta"].get("output_paths", {})
+        self.assertTrue(Path(output_paths["events_path"]).exists())
+        self.assertTrue(Path(output_paths["report_path"]).exists())
 
     def test_requires_target_gold_count(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=3)

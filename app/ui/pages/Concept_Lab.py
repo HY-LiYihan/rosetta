@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import time
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -20,9 +23,9 @@ from app.workflows.bootstrap import (
     gold_task_from_markup,
     revise_guideline,
     run_concept_refinement_loop,
-    run_prompt_training_experiment,
     sanitize_concept_description,
     save_guideline_package,
+    start_prompt_training_background_run,
     validate_gold_examples,
 )
 
@@ -113,6 +116,202 @@ def _training_method_label(method: str) -> str:
 
 def _training_status_label(status: str) -> str:
     return t(f"concept_lab.training_result_status_{status}")
+
+
+def _run_status_label(status: str) -> str:
+    return t(f"concept_lab.run_status_{status}")
+
+
+def _format_seconds(value: Any) -> str:
+    if value in {None, ""}:
+        return t("concept_lab.training_eta_pending")
+    seconds = max(0, float(value))
+    if seconds < 60:
+        return f"{seconds:.0f}s"
+    return f"{int(seconds // 60)}m {int(seconds % 60)}s"
+
+
+def _load_training_result_from_run(run_row: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not run_row:
+        return None
+    meta = dict(run_row.get("payload", {}).get("meta", {}))
+    result_path = meta.get("output_paths", {}).get("comparison_result_path", "")
+    if not result_path:
+        return None
+    path = Path(result_path)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _is_stale_event(event: dict[str, Any] | None) -> bool:
+    if not event:
+        return False
+    try:
+        created = datetime.fromisoformat(str(event.get("created_at", "")).replace("Z", "+00:00"))
+        return (datetime.now(timezone.utc) - created).total_seconds() > 120
+    except Exception:
+        return False
+
+
+def _render_prompt_training_run(run_id: str, target_count: int) -> tuple[dict[str, Any] | None, bool]:
+    run_row = store.get_run(run_id)
+    latest = store.get_latest_run_progress(run_id)
+    events = store.list_run_progress_events(run_id, limit=500)
+    if not run_row:
+        st.info(t("concept_lab.training_run_missing"))
+        return None, False
+    status = str(run_row.get("status", run_row.get("payload", {}).get("status", "")))
+    payload = dict(latest.get("payload", {})) if latest else {}
+    progress = float(latest.get("progress") or 0.0) if latest else 0.0
+    is_running = status == "running"
+    stale = is_running and _is_stale_event(latest)
+
+    st.markdown(f"**{t('concept_lab.training_active_title')}**")
+    if stale:
+        st.warning(t("concept_lab.training_stale_warning"))
+    progress_cols = st.columns(6)
+    progress_cols[0].metric(t("common.status"), _run_status_label("stale" if stale else status))
+    progress_cols[1].metric(t("concept_lab.training_current_stage"), latest.get("stage", "") if latest else t("common.none"))
+    progress_cols[2].metric(t("concept_lab.training_eta"), _format_seconds(payload.get("eta_seconds")))
+    progress_cols[3].metric(t("concept_lab.training_completed_calls"), latest.get("completed", 0) if latest else 0)
+    progress_cols[4].metric(t("concept_lab.training_running_calls"), latest.get("running", 0) if latest else 0)
+    progress_cols[5].metric(t("concept_lab.training_total_tokens"), payload.get("total_tokens", 0))
+    st.progress(max(0.0, min(progress, 1.0)), text=t("concept_lab.training_progress_text", progress=f"{progress * 100:.1f}%"))
+
+    summary_cols = st.columns(5)
+    summary_cols[0].metric(t("concept_lab.training_best_method"), payload.get("best_method") or t("common.none"))
+    summary_cols[1].metric(t("concept_lab.training_best_pass"), f"{payload.get('best_pass_count', 0)}/{target_count}")
+    summary_cols[2].metric(t("concept_lab.training_best_loss"), payload.get("best_loss", t("common.none")))
+    summary_cols[3].metric(t("concept_lab.training_repair_attempts"), payload.get("repair_attempt_count", 0))
+    summary_cols[4].metric(t("concept_lab.training_retry_count"), payload.get("retry_count", 0))
+
+    method_rows = _method_progress_rows(events)
+    if method_rows:
+        st.dataframe(method_rows, use_container_width=True, hide_index=True)
+
+    with st.expander(t("concept_lab.training_live_logs"), expanded=False):
+        event_types = sorted({str(event.get("event_type", "")) for event in events if event.get("event_type")})
+        stages = sorted({str(event.get("stage", "")) for event in events if event.get("stage")})
+        filter_cols = st.columns(2)
+        selected_event_type = filter_cols[0].selectbox(
+            t("concept_lab.training_log_filter_event"),
+            [""] + event_types,
+            format_func=lambda value: value or t("common.all"),
+            key=f"training_event_filter_{run_id}",
+        )
+        selected_stage = filter_cols[1].selectbox(
+            t("concept_lab.training_log_filter_stage"),
+            [""] + stages,
+            format_func=lambda value: value or t("common.all"),
+            key=f"training_stage_filter_{run_id}",
+        )
+        filtered_events = [
+            event
+            for event in events
+            if (not selected_event_type or event.get("event_type") == selected_event_type)
+            and (not selected_stage or event.get("stage") == selected_stage)
+        ][-50:]
+        st.dataframe(_event_log_rows(filtered_events), use_container_width=True, hide_index=True)
+        candidate_rows = _candidate_event_rows(events)
+        if candidate_rows:
+            st.markdown(f"**{t('concept_lab.training_candidate_events')}**")
+            st.dataframe(candidate_rows, use_container_width=True, hide_index=True)
+        provider_rows = _provider_event_rows(events)
+        if provider_rows:
+            st.markdown(f"**{t('concept_lab.training_provider_events')}**")
+            st.dataframe(provider_rows[-80:], use_container_width=True, hide_index=True)
+        error_rows = [row for row in _event_log_rows(events) if "failed" in str(row.get(t("concept_lab.training_log_event"), ""))]
+        if error_rows:
+            st.markdown(f"**{t('concept_lab.training_error_events')}**")
+            st.dataframe(error_rows[-30:], use_container_width=True, hide_index=True)
+        events_jsonl = "\n".join(json.dumps(event, ensure_ascii=False) for event in events) + ("\n" if events else "")
+        st.download_button(
+            t("concept_lab.training_download_events"),
+            events_jsonl,
+            file_name="run_events.jsonl",
+            use_container_width=True,
+        )
+
+    return _load_training_result_from_run(run_row), is_running
+
+
+def _method_progress_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: dict[str, dict[str, Any]] = {}
+    for event in events:
+        payload = dict(event.get("payload", {}))
+        method = payload.get("method")
+        if not method:
+            continue
+        rows[str(method)] = {
+            t("concept_lab.training_table_method"): _training_method_label(str(method)),
+            t("concept_lab.training_current_stage"): event.get("stage", ""),
+            t("concept_lab.training_table_rounds"): payload.get("round_index", ""),
+            t("concept_lab.training_best_pass"): payload.get("best_pass_count", payload.get("pass_count", "")),
+            t("concept_lab.training_best_loss"): payload.get("best_loss", payload.get("loss", "")),
+            t("concept_lab.training_table_streak"): payload.get("no_improvement_streak", ""),
+            t("concept_lab.training_table_stop_reason"): payload.get("stop_reason", ""),
+            t("common.status"): payload.get("status", event.get("event_type", "")),
+        }
+    return list(rows.values())
+
+
+def _event_log_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            t("concept_lab.training_log_time"): event.get("created_at", ""),
+            t("concept_lab.training_log_event"): event.get("event_type", ""),
+            t("concept_lab.training_current_stage"): event.get("stage", ""),
+            t("concept_lab.training_log_message"): event.get("message", ""),
+            t("concept_lab.training_completed_calls"): event.get("completed", 0),
+            t("concept_lab.training_running_calls"): event.get("running", 0),
+            t("concept_lab.training_log_progress"): event.get("progress", 0.0),
+        }
+        for event in events
+    ]
+
+
+def _candidate_event_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    candidate_events = {"candidate_generated", "candidate_repair_started", "candidate_repair_completed", "candidate_evaluated", "candidate_accepted", "candidate_rejected"}
+    rows: list[dict[str, Any]] = []
+    for event in events:
+        if event.get("event_type") not in candidate_events:
+            continue
+        payload = dict(event.get("payload", {}))
+        rows.append(
+            {
+                t("concept_lab.training_table_method"): _training_method_label(str(payload.get("method", ""))),
+                t("concept_lab.training_table_rounds"): payload.get("round_index", ""),
+                t("concept_lab.training_candidate_id"): payload.get("candidate_id", ""),
+                t("common.status"): payload.get("status", event.get("event_type", "")),
+                t("concept_lab.training_best_pass"): payload.get("pass_count", ""),
+                t("concept_lab.training_best_loss"): payload.get("loss", ""),
+                t("concept_lab.training_table_repairs"): payload.get("repair_attempt_count", ""),
+            }
+        )
+    return rows[-80:]
+
+
+def _provider_event_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for event in events:
+        if not str(event.get("event_type", "")).startswith("call_"):
+            continue
+        payload = dict(event.get("payload", {}))
+        rows.append(
+            {
+                t("concept_lab.training_log_time"): event.get("created_at", ""),
+                t("concept_lab.training_log_event"): event.get("event_type", ""),
+                t("concept_lab.training_provider_run"): payload.get("provider", ""),
+                t("common.model"): payload.get("model", ""),
+                t("concept_lab.training_running_calls"): event.get("running", 0),
+                t("concept_lab.training_completed_calls"): event.get("completed", 0),
+            }
+        )
+    return rows
 
 
 def _fill_example() -> None:
@@ -542,51 +741,55 @@ else:
         value=False,
         key="concept_lab_training_auto_apply",
     )
+    active_training_run_id = st.session_state.get("concept_lab_active_prompt_training_run_id", "")
+    active_training_run = store.get_run(active_training_run_id) if active_training_run_id else None
+    active_training_running = bool(active_training_run and active_training_run.get("status") == "running")
     training_button_key = "concept_lab_prompt_training_button"
     if busy_button(
         t("concept_lab.start_training"),
         key=training_button_key,
-        pending_label=t("common.processing"),
+        pending_label=t("concept_lab.training_submitted_running"),
         type="primary",
         use_container_width=True,
-        disabled=gold_count < target_count or not training_methods,
+        disabled=gold_count < target_count or not training_methods or active_training_running,
     ):
         try:
-            with st.spinner(t("concept_lab.training_status")):
-                predictor = _make_predictor(platform_id, model_name, concurrency=training_concurrency) if validation_mode == "llm" else None
-                training_result = run_prompt_training_experiment(
-                    store,
-                    selected_guideline,
-                    predictor=predictor,
-                    config=PromptTrainingConfig(
-                        methods=tuple(training_methods),
-                        max_rounds=training_max_rounds,
-                        candidate_count=training_candidate_count,
-                        target_pass_count=target_count,
-                        min_loss_delta=training_min_delta,
-                        patience_rounds=training_patience_rounds,
-                        concurrency=training_concurrency,
-                        provider_id=platform_id,
-                        model=model_name,
-                    ),
-                    auto_apply=training_auto_apply,
-                )
-            st.session_state["concept_lab_prompt_training_result"] = training_result
+            run_id = start_prompt_training_background_run(
+                store.database_path,
+                selected_guideline,
+                config=PromptTrainingConfig(
+                    methods=tuple(training_methods),
+                    max_rounds=training_max_rounds,
+                    candidate_count=training_candidate_count,
+                    target_pass_count=target_count,
+                    min_loss_delta=training_min_delta,
+                    patience_rounds=training_patience_rounds,
+                    concurrency=training_concurrency,
+                    provider_id=platform_id,
+                    model=model_name,
+                ),
+                auto_apply=training_auto_apply,
+                use_llm=validation_mode == "llm",
+            )
+            st.session_state["concept_lab_active_prompt_training_run_id"] = run_id
+            st.session_state.pop("concept_lab_prompt_training_result", None)
             _set_flash(
                 "success",
-                t(
-                    "concept_lab.training_summary",
-                    method=_training_method_label(training_result["best_method"]),
-                    passed=training_result["best_pass_count"],
-                    target=target_count,
-                    status=_training_status_label(training_result["status"]),
-                ),
+                t("concept_lab.training_submitted", run_id=run_id),
             )
         except Exception as exc:
             _set_flash("error", t("common.action_failed", error=exc))
         finally:
             clear_busy(training_button_key)
             st.rerun()
+
+    active_training_run_id = st.session_state.get("concept_lab_active_prompt_training_run_id", "")
+    active_result = None
+    should_refresh_training = False
+    if active_training_run_id:
+        active_result, should_refresh_training = _render_prompt_training_run(active_training_run_id, target_count)
+        if active_result:
+            st.session_state["concept_lab_prompt_training_result"] = active_result
 
     training_result = st.session_state.get("concept_lab_prompt_training_result")
     if training_result:
@@ -675,6 +878,10 @@ else:
                         "candidate_evaluations": round_result.get("candidate_evaluations", []),
                     }
                 )
+
+    if should_refresh_training:
+        time.sleep(2)
+        st.rerun()
 
     st.divider()
     st.subheader(t("concept_lab.section_export"))

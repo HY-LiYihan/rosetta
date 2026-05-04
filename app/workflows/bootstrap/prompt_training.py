@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -10,6 +11,8 @@ from threading import Lock
 from typing import Any
 
 from app.core.models import ConceptVersion, WorkflowRun
+from app.infrastructure.llm.runtime import LLMServiceRuntime
+from app.runtime.progress import ProgressRecorder, estimate_prompt_training_total_calls
 from app.runtime.store import RuntimeStore
 from app.workflows.bootstrap.guideline import (
     Predictor,
@@ -115,6 +118,8 @@ class PromptTrainingConfig:
     max_repair_attempts: int = 2
     provider_id: str = "deepseek"
     model: str = "deepseek-v4-pro"
+    progress_update_interval_seconds: int = 2
+    persist_progress_events: bool = True
 
     def normalized(self) -> "PromptTrainingConfig":
         methods = tuple(method for method in self.methods if method in PROMPT_TRAINING_METHODS)
@@ -139,6 +144,8 @@ class PromptTrainingConfig:
             max_repair_attempts=max(0, min(int(self.max_repair_attempts), 5)),
             provider_id=str(self.provider_id or "deepseek"),
             model=str(self.model or "deepseek-v4-pro"),
+            progress_update_interval_seconds=max(1, min(int(self.progress_update_interval_seconds), 30)),
+            persist_progress_events=bool(self.persist_progress_events),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -165,6 +172,9 @@ class PromptTrainingResult:
     initial_description: str
     report_path: str
     prompt_evolution_path: str
+    run_id: str = ""
+    progress_summary: dict[str, Any] | None = None
+    events_path: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -196,6 +206,8 @@ def run_prompt_training_experiment(
     config: PromptTrainingConfig | None = None,
     temperature: float = 0.0,
     auto_apply: bool = False,
+    progress_recorder: ProgressRecorder | None = None,
+    run_id: str | None = None,
 ) -> dict[str, Any]:
     cfg = (config or PromptTrainingConfig()).normalized()
     guideline_row = store.get_guideline(guideline_id)
@@ -211,6 +223,30 @@ def run_prompt_training_experiment(
     if len(task_ids) < target_count:
         raise ValueError(f"提示词优化训练需要 {target_count} 条金样例，当前只有 {len(task_ids)} 条")
     target_pass_count = min(cfg.target_pass_count, len(task_ids))
+    run_id = run_id or getattr(progress_recorder, "run_id", "") or f"run-prompt-training-{uuid.uuid4().hex[:10]}"
+    estimated_total = estimate_prompt_training_total_calls(
+        len(cfg.methods),
+        cfg.max_rounds,
+        len(task_ids),
+        cfg.candidate_count,
+    )
+    if progress_recorder is not None:
+        progress_recorder.emit(
+            "run_started",
+            stage="准备训练",
+            message="提示词优化训练已开始",
+            total=estimated_total,
+            payload={
+                "guideline_id": guideline_id,
+                "method_count": len(cfg.methods),
+                "gold_count": len(task_ids),
+                "candidate_count": cfg.candidate_count,
+                "max_rounds": cfg.max_rounds,
+                "provider": cfg.provider_id,
+                "model": cfg.model,
+                "concurrency": cfg.concurrency,
+            },
+        )
 
     initial_description, initial_warnings = sanitize_concept_description(
         str(guideline.get("stable_description") or guideline.get("brief", "")),
@@ -221,7 +257,6 @@ def run_prompt_training_experiment(
         task_ids,
         allowed_terms=[*guideline.get("labels", []), guideline.get("output_format", "")],
     )
-    run_id = f"run-prompt-training-{uuid.uuid4().hex[:10]}"
     method_results: list[dict[str, Any]] = []
     real_provider_run = bool(getattr(predictor, "is_real_provider", False))
     ordered_results: list[dict[str, Any] | None] = [None] * len(cfg.methods)
@@ -244,6 +279,7 @@ def run_prompt_training_experiment(
                 memorization_guard,
                 usage_meter,
                 cfg.concurrency,
+                progress_recorder,
             )
             future_map[future] = index
         for future in as_completed(future_map):
@@ -254,11 +290,14 @@ def run_prompt_training_experiment(
     applied = bool(auto_apply and status == "stable")
     leakage_report = _leakage_report(memorization_guard, method_results, best, cfg)
     artifact_path = _write_training_artifact(store, run_id, guideline_id, cfg, method_results, best, leakage_report)
+    existing_run = store.get_run(run_id)
+    existing_payload = existing_run["payload"] if existing_run else {}
+    run_status = "running" if existing_run and existing_run.get("status") == "running" else "succeeded"
     store.upsert_run(
         WorkflowRun(
             id=run_id,
             workflow="prompt_training",
-            status="succeeded",
+            status=run_status,
             input_ref=guideline_id,
             output_ref=best["best_description"],
             artifacts=(artifact_path,),
@@ -270,7 +309,9 @@ def run_prompt_training_experiment(
                 "reached_target": best["reached_target"],
                 "stop_policy": cfg.stop_policy,
                 "leakage_report": leakage_report,
+                "progress_summary": progress_recorder.summary() if progress_recorder else {},
             },
+            started_at=existing_payload.get("started_at") or existing_run.get("started_at") if existing_run else WorkflowRun(id=run_id, workflow="prompt_training").started_at,
         )
     )
     store.add_artifact(run_id, artifact_path, "prompt_training_trace", {"guideline_id": guideline_id})
@@ -294,6 +335,21 @@ def run_prompt_training_experiment(
             stable_description=best["best_description"],
         )
         store.upsert_guideline(updated_guideline)
+    if progress_recorder is not None:
+        progress_recorder.emit(
+            "run_completed",
+            stage="训练完成",
+            message="提示词优化训练已完成",
+            progress=1.0,
+            payload={
+                "status": status,
+                "best_method": best["method"],
+                "best_pass_count": int(best["best_pass_count"]),
+                "best_loss": float(best["best_loss"]),
+                "reached_target": bool(best["reached_target"]),
+                "repair_attempt_count": _repair_summary(method_results).get("repair_attempt_count", 0),
+            },
+        )
 
     result = PromptTrainingResult(
         status=status,
@@ -308,7 +364,9 @@ def run_prompt_training_experiment(
         progress_events=[
             *[event for row in method_results for event in row.get("progress_events", [])],
             *_runtime_progress_events(predictor),
-        ],
+        ]
+        if progress_recorder is None
+        else progress_recorder.list_events(limit=5000),
         usage_summary=_usage_summary(method_results, cfg, predictor),
         repair_summary=_repair_summary(method_results),
         real_provider_run=real_provider_run,
@@ -317,8 +375,155 @@ def run_prompt_training_experiment(
         initial_description=initial_description,
         report_path="",
         prompt_evolution_path="",
+        run_id=run_id,
+        progress_summary=progress_recorder.summary() if progress_recorder else {},
+        events_path="",
     )
     return result.to_dict()
+
+
+def start_prompt_training_background_run(
+    database_path: str | Path,
+    guideline_id: str,
+    config: PromptTrainingConfig | None = None,
+    auto_apply: bool = False,
+    use_llm: bool = True,
+    output_dir: str | Path | None = None,
+) -> str:
+    """Start prompt training in a daemon thread and persist progress to SQLite."""
+
+    cfg = (config or PromptTrainingConfig()).normalized()
+    run_id = f"run-prompt-training-{uuid.uuid4().hex[:10]}"
+    database = Path(database_path)
+    submit_store = RuntimeStore(database)
+    gold_count = _gold_count_for_guideline(submit_store, guideline_id, cfg.target_pass_count)
+    estimated_total = estimate_prompt_training_total_calls(len(cfg.methods), cfg.max_rounds, gold_count, cfg.candidate_count)
+    submit_store.upsert_run(
+        WorkflowRun(
+            id=run_id,
+            workflow="prompt_training",
+            status="running",
+            input_ref=guideline_id,
+            summary="提示词优化训练后台任务已提交。",
+            meta={
+                "guideline_id": guideline_id,
+                "config": cfg.to_dict(),
+                "provider": cfg.provider_id if use_llm else "local",
+                "model": cfg.model if use_llm else "local-rule",
+                "estimated_total_calls": estimated_total,
+            },
+        )
+    )
+    submit_recorder = ProgressRecorder(submit_store, run_id, estimated_total=estimated_total)
+    submit_recorder.emit(
+        "run_submitted",
+        stage="后台排队",
+        message="训练任务已提交到后台线程",
+        total=estimated_total,
+        payload={"guideline_id": guideline_id, "provider": cfg.provider_id, "model": cfg.model, "concurrency": cfg.concurrency},
+    )
+
+    def _target() -> None:
+        thread_store = RuntimeStore(database)
+        recorder = ProgressRecorder(thread_store, run_id, estimated_total=estimated_total)
+        try:
+            predictor = None
+            if use_llm:
+                runtime = LLMServiceRuntime.from_provider(
+                    cfg.provider_id,
+                    cfg.model,
+                    concurrency=cfg.concurrency,
+                    event_sink=recorder.event_sink,
+                )
+
+                def predictor(system_prompt: str, messages: list[dict], temperature: float) -> str:
+                    return runtime.chat(system_prompt, messages, temperature=temperature)
+
+                predictor.is_real_provider = True  # type: ignore[attr-defined]
+                predictor.runtime = runtime  # type: ignore[attr-defined]
+            result = run_prompt_training_experiment(
+                thread_store,
+                guideline_id,
+                predictor=predictor,
+                config=cfg,
+                auto_apply=auto_apply,
+                progress_recorder=recorder,
+                run_id=run_id,
+            )
+            outputs_dir = Path(output_dir) if output_dir is not None else database.parent / "artifacts" / "prompt_training" / run_id
+            written = write_prompt_training_comparison_outputs(result, outputs_dir)
+            output_paths = {
+                "comparison_result_path": written.get("comparison_result_path", ""),
+                "report_path": written.get("report_path", ""),
+                "prompt_evolution_path": written.get("prompt_evolution_path", ""),
+                "events_path": written.get("events_path", ""),
+            }
+            for kind, path in {
+                "prompt_training_report": output_paths["report_path"],
+                "prompt_training_result": output_paths["comparison_result_path"],
+                "prompt_training_evolution": output_paths["prompt_evolution_path"],
+                "prompt_training_events": output_paths["events_path"],
+            }.items():
+                if path:
+                    thread_store.add_artifact(run_id, path, kind, {"guideline_id": guideline_id})
+            recorder.emit(
+                "outputs_written",
+                stage="写入产物",
+                message="训练报告和事件日志已写入",
+                progress=1.0,
+                payload={"output_paths": output_paths},
+            )
+            final_events = recorder.list_events(limit=5000)
+            written["progress_events"] = final_events
+            written["progress_summary"] = recorder.summary()
+            Path(output_paths["events_path"]).write_text(
+                "\n".join(json.dumps(row, ensure_ascii=False) for row in final_events) + ("\n" if final_events else ""),
+                encoding="utf-8",
+            )
+            Path(output_paths["comparison_result_path"]).write_text(
+                json.dumps(written, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            Path(output_paths["report_path"]).write_text(build_prompt_training_comparison_report(written), encoding="utf-8")
+            thread_store.update_run_status(
+                run_id,
+                "succeeded",
+                {
+                    "result_summary": {
+                        "status": written.get("status"),
+                        "best_method": written.get("best_method"),
+                        "best_pass_count": written.get("best_pass_count"),
+                        "best_loss": written.get("best_loss"),
+                        "real_provider_run": written.get("real_provider_run"),
+                        "usage_summary": written.get("usage_summary", {}),
+                        "repair_summary": written.get("repair_summary", {}),
+                    },
+                    "output_paths": output_paths,
+                    "progress_summary": recorder.summary(),
+                },
+            )
+        except Exception as exc:
+            recorder.emit(
+                "run_failed",
+                stage="运行失败",
+                message="提示词优化训练失败",
+                payload={"error": str(exc)[:500]},
+            )
+            try:
+                thread_store.update_run_status(run_id, "failed", {"error": str(exc)[:500], "progress_summary": recorder.summary()})
+            except Exception:
+                pass
+
+    thread = threading.Thread(target=_target, name=f"prompt-training-{run_id}", daemon=True)
+    thread.start()
+    return run_id
+
+
+def _gold_count_for_guideline(store: RuntimeStore, guideline_id: str, fallback: int) -> int:
+    gold_sets = store.list_gold_example_sets(guideline_id=guideline_id, limit=1)
+    if not gold_sets:
+        return fallback
+    return max(1, len(gold_sets[0]["payload"].get("task_ids", [])))
 
 
 def _run_training_method(
@@ -334,8 +539,16 @@ def _run_training_method(
     memorization_guard: MemorizationGuard,
     usage_meter: _TrainingUsageMeter,
     concurrency: int,
+    progress_recorder: ProgressRecorder | None = None,
 ) -> dict[str, Any]:
     method_started = time.perf_counter()
+    _emit_training_progress(
+        progress_recorder,
+        "method_started",
+        "方法训练",
+        f"{method} 开始训练",
+        {"method": method, "max_rounds": config.max_rounds, "candidate_count": config.candidate_count},
+    )
     current_description = initial_description
     rounds: list[dict[str, Any]] = []
     best_description = current_description
@@ -352,8 +565,22 @@ def _run_training_method(
 
     for round_index in range(1, config.max_rounds + 1):
         round_started = time.perf_counter()
+        _emit_training_progress(
+            progress_recorder,
+            "round_started",
+            "训练轮次",
+            f"{method} 第 {round_index} 轮开始",
+            {"method": method, "round_index": round_index, "no_improvement_streak": no_improvement_streak},
+        )
         usage_start = usage_meter.snapshot()
         current_guideline = {**guideline, "stable_description": current_description}
+        _emit_training_progress(
+            progress_recorder,
+            "gold_validation_started",
+            "验证金样例",
+            f"{method} 第 {round_index} 轮正在验证当前提示词",
+            {"method": method, "round_index": round_index, "gold_count": len(task_ids), "candidate_id": "current"},
+        )
         current_result = _evaluate_gold_tasks(
             store,
             guideline_id,
@@ -368,6 +595,20 @@ def _run_training_method(
         )
         current_loss = _concept_loss(current_result)
         current_pass_count = len(current_result["passed"])
+        _emit_training_progress(
+            progress_recorder,
+            "gold_validation_completed",
+            "验证金样例",
+            f"{method} 第 {round_index} 轮当前提示词验证完成",
+            {
+                "method": method,
+                "round_index": round_index,
+                "pass_count": current_pass_count,
+                "failed_count": len(current_result["failed"]),
+                "unstable_count": len(current_result["unstable"]),
+                "loss": current_loss["loss"],
+            },
+        )
         if initial_loss is None:
             initial_loss = current_loss
             initial_pass_count = current_pass_count
@@ -405,10 +646,36 @@ def _run_training_method(
                     usage=usage_meter.delta(usage_start),
                 )
             )
+            _emit_training_progress(
+                progress_recorder,
+                "round_completed",
+                "训练轮次",
+                f"{method} 第 {round_index} 轮达到目标",
+                {
+                    "method": method,
+                    "round_index": round_index,
+                    "status": "stable",
+                    "pass_count": current_pass_count,
+                    "loss": current_loss["loss"],
+                    "round_improved": False,
+                    "no_improvement_streak": no_improvement_streak,
+                    "stop_reason": stop_reason,
+                    "best_method": method,
+                    "best_pass_count": current_pass_count,
+                    "best_loss": current_loss["loss"],
+                },
+            )
             break
 
         failure_summary = _failure_summary(current_result["details"])
         round_guard = memorization_guard.with_validation_result(current_result)
+        _emit_training_progress(
+            progress_recorder,
+            "candidate_generation_started",
+            "生成候选",
+            f"{method} 第 {round_index} 轮正在生成候选提示词",
+            {"method": method, "round_index": round_index, "candidate_count": config.candidate_count},
+        )
         candidates = _generate_training_candidates(
             method,
             current_description,
@@ -419,6 +686,18 @@ def _run_training_method(
             predictor,
             config.candidate_count,
             config.candidate_temperature,
+        )
+        _emit_training_progress(
+            progress_recorder,
+            "candidate_generated",
+            "生成候选",
+            f"{method} 第 {round_index} 轮生成 {len(candidates)} 个候选",
+            {
+                "method": method,
+                "round_index": round_index,
+                "candidate_count": len(candidates),
+                "candidate_ids": [candidate.get("candidate_id", "") for candidate in candidates],
+            },
         )
         selected_result = current_result
         selected_loss = current_loss
@@ -440,6 +719,19 @@ def _run_training_method(
             if memorization_check is not None and not memorization_check.passed:
                 guard_before_repair = memorization_check
                 if config.repair_leaked_candidates and predictor is not None and config.max_repair_attempts > 0:
+                    _emit_training_progress(
+                        progress_recorder,
+                        "candidate_repair_started",
+                        "去语料化修复",
+                        f"{method} 第 {round_index} 轮候选 {candidate['candidate_id']} 进入去语料化修复",
+                        {
+                            "method": method,
+                            "round_index": round_index,
+                            "candidate_id": candidate["candidate_id"],
+                            "memorization_status": memorization_check.severity,
+                            "blocked_terms_count": memorization_check.match_count,
+                        },
+                    )
                     repair_result = _repair_leaked_candidate(
                         candidate_description=candidate_description,
                         current_description=current_description,
@@ -454,6 +746,22 @@ def _run_training_method(
                     guard_after_repair = repair_result["final_check"]
                     repair_accepted = bool(guard_after_repair and guard_after_repair.passed)
                     memorization_check = guard_after_repair
+                    _emit_training_progress(
+                        progress_recorder,
+                        "candidate_repair_completed",
+                        "去语料化修复",
+                        f"{method} 第 {round_index} 轮候选 {candidate['candidate_id']} 修复完成",
+                        {
+                            "method": method,
+                            "round_index": round_index,
+                            "candidate_id": candidate["candidate_id"],
+                            "repair_attempt_count": sum(len(evaluation.get("repair_attempts", [])) for evaluation in candidate_evaluations)
+                            + len(repair_attempts),
+                            "repair_accepted": repair_accepted,
+                            "memorization_status": memorization_check.severity,
+                            "blocked_terms_count": memorization_check.match_count,
+                        },
+                    )
                 if memorization_check is not None and not memorization_check.passed:
                     candidate_evaluations.append(
                         {
@@ -486,6 +794,20 @@ def _run_training_method(
                             "evaluation_index": candidate_index,
                         }
                     )
+                    _emit_training_progress(
+                        progress_recorder,
+                        "candidate_rejected",
+                        "候选筛选",
+                        f"{method} 第 {round_index} 轮候选 {candidate['candidate_id']} 泄露修复失败",
+                        {
+                            "method": method,
+                            "round_index": round_index,
+                            "candidate_id": candidate["candidate_id"],
+                            "status": "memorization_repair_failed" if repair_attempts else "memorization_guard_blocked",
+                            "memorization_status": memorization_check.severity,
+                            "blocked_terms_count": memorization_check.match_count,
+                        },
+                    )
                     continue
             if candidate_description in seen:
                 candidate_evaluations.append(
@@ -511,9 +833,28 @@ def _run_training_method(
                         "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
                     }
                 )
+                _emit_training_progress(
+                    progress_recorder,
+                    "candidate_rejected",
+                    "候选筛选",
+                    f"{method} 第 {round_index} 轮候选 {candidate['candidate_id']} 与已有提示词重复",
+                    {
+                        "method": method,
+                        "round_index": round_index,
+                        "candidate_id": candidate["candidate_id"],
+                        "status": "skipped_duplicate",
+                    },
+                )
                 continue
             seen.add(candidate_description)
             candidate_guideline = {**guideline, "stable_description": candidate_description}
+            _emit_training_progress(
+                progress_recorder,
+                "candidate_evaluation_started",
+                "候选回测",
+                f"{method} 第 {round_index} 轮正在回测候选 {candidate['candidate_id']}",
+                {"method": method, "round_index": round_index, "candidate_id": candidate["candidate_id"], "gold_count": len(task_ids)},
+            )
             candidate_result = _evaluate_gold_tasks(
                 store,
                 guideline_id,
@@ -580,6 +921,43 @@ def _run_training_method(
                     "evaluation_index": candidate_index,
                 }
             )
+            _emit_training_progress(
+                progress_recorder,
+                "candidate_evaluated",
+                "候选回测",
+                f"{method} 第 {round_index} 轮候选 {candidate['candidate_id']} 回测完成",
+                {
+                    "method": method,
+                    "round_index": round_index,
+                    "candidate_id": candidate["candidate_id"],
+                    "status": "accepted" if accepted else "rejected_no_loss_improvement",
+                    "pass_count": len(candidate_result["passed"]),
+                    "failed_count": len(candidate_result["failed"]),
+                    "unstable_count": len(candidate_result["unstable"]),
+                    "loss": candidate_loss["loss"],
+                    "loss_delta": round(current_loss["loss"] - candidate_loss["loss"], 4),
+                    "accepted": accepted,
+                    "reached_target": reached_target,
+                    "repair_attempt_count": sum(
+                        len(evaluation.get("repair_attempts", [])) for evaluation in candidate_evaluations
+                    ),
+                },
+            )
+            _emit_training_progress(
+                progress_recorder,
+                "candidate_accepted" if accepted else "candidate_rejected",
+                "候选选择",
+                f"{method} 第 {round_index} 轮候选 {candidate['candidate_id']} {'已接受' if accepted else '未带来足够改进'}",
+                {
+                    "method": method,
+                    "round_index": round_index,
+                    "candidate_id": candidate["candidate_id"],
+                    "status": "accepted" if accepted else "rejected_no_loss_improvement",
+                    "pass_count": len(candidate_result["passed"]),
+                    "loss": candidate_loss["loss"],
+                    "accepted": accepted,
+                },
+            )
             if accepted:
                 selected_result = candidate_result
                 selected_loss = candidate_loss
@@ -622,6 +1000,26 @@ def _run_training_method(
                 usage=usage_meter.delta(usage_start),
             )
         )
+        _emit_training_progress(
+            progress_recorder,
+            "round_completed",
+            "训练轮次",
+            f"{method} 第 {round_index} 轮完成",
+            {
+                "method": method,
+                "round_index": round_index,
+                "status": round_status,
+                "pass_count": len(selected_result["passed"]),
+                "loss": selected_loss["loss"],
+                "round_improved": round_improved,
+                "no_improvement_streak": no_improvement_streak,
+                "stop_reason": round_stop_reason,
+                "accepted_candidate_id": selected_candidate_id,
+                "best_method": method,
+                "best_pass_count": len(selected_result["passed"]),
+                "best_loss": selected_loss["loss"],
+            },
+        )
         if _is_better_training_result(
             selected_result,
             selected_loss,
@@ -635,6 +1033,19 @@ def _run_training_method(
             best_result = selected_result
             best_loss = selected_loss
             best_round_index = round_index
+            _emit_training_progress(
+                progress_recorder,
+                "best_updated",
+                "更新最优",
+                f"{method} 第 {round_index} 轮刷新当前最优提示词",
+                {
+                    "method": method,
+                    "round_index": round_index,
+                    "best_pass_count": len(selected_result["passed"]),
+                    "best_loss": selected_loss["loss"],
+                    "best_method": method,
+                },
+            )
         final_status = "stable" if round_status == "stable" else "needs_revision"
         if round_status == "stable" or no_improvement_streak >= config.patience_rounds:
             break
@@ -648,6 +1059,23 @@ def _run_training_method(
         memorization_guard.with_validation_result(best_result).check(best_description, field="best_description")
         if config.no_corpus_memorization
         else None
+    )
+    _emit_training_progress(
+        progress_recorder,
+        "method_completed",
+        "方法完成",
+        f"{method} 训练结束",
+        {
+            "method": method,
+            "status": final_status,
+            "stop_reason": stop_reason,
+            "best_pass_count": final_pass_count,
+            "best_loss": best_loss["loss"],
+            "accepted_round_count": accepted_round_count,
+            "evaluated_candidate_count": evaluated_candidate_count,
+            "round_count": len(rounds),
+            "best_method": method,
+        },
     )
     return {
         "method": method,
@@ -710,6 +1138,18 @@ def _is_better_training_result(
         -len(current_best_result.get("passed", [])),
         len(current_best_description),
     )
+
+
+def _emit_training_progress(
+    progress_recorder: ProgressRecorder | None,
+    event_type: str,
+    stage: str,
+    message: str,
+    payload: dict[str, Any] | None = None,
+) -> None:
+    if progress_recorder is None:
+        return
+    progress_recorder.emit(event_type, stage=stage, message=message, payload=payload or {})
 
 
 def _generate_training_candidates(
@@ -1362,14 +1802,21 @@ def write_prompt_training_comparison_outputs(result: dict[str, Any], output_dir:
     report_path = out_dir / "comparison_report.md"
     result_path = out_dir / "comparison_result.json"
     evolution_path = out_dir / "prompt_evolution.jsonl"
+    events_path = out_dir / "run_events.jsonl"
     result_with_paths = {
         **result,
         "report_path": str(report_path),
         "prompt_evolution_path": str(evolution_path),
+        "events_path": str(events_path),
     }
     evolution_rows = _prompt_evolution_rows(result_with_paths)
     evolution_path.write_text(
         "\n".join(json.dumps(row, ensure_ascii=False) for row in evolution_rows) + ("\n" if evolution_rows else ""),
+        encoding="utf-8",
+    )
+    event_rows = list(result_with_paths.get("progress_events", []))
+    events_path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False) for row in event_rows) + ("\n" if event_rows else ""),
         encoding="utf-8",
     )
     report_path.write_text(build_prompt_training_comparison_report(result_with_paths), encoding="utf-8")
@@ -1393,6 +1840,45 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
         f"- Stop policy: `{result.get('stop_policy', '')}`",
         f"- Real provider run: `{result.get('real_provider_run', False)}`",
         f"- Report path: `{result.get('report_path', '')}`",
+        "",
+        "## Progress Summary",
+        "",
+        _markdown_table(
+            ["metric", "value"],
+            [
+                ["run_id", result.get("run_id", "")],
+                ["events_path", result.get("events_path", "")],
+                ["total_events", len(result.get("progress_events", []))],
+                ["llm_calls", result.get("usage_summary", {}).get("llm_call_count", 0)],
+                [
+                    "tokens",
+                    result.get("usage_summary", {}).get(
+                        "total_tokens",
+                        result.get("usage_summary", {}).get("estimated_tokens", 0),
+                    ),
+                ],
+                ["repairs", result.get("repair_summary", {}).get("repair_attempt_count", 0)],
+                ["concurrency", result.get("usage_summary", {}).get("concurrency", "")],
+            ],
+        ),
+        "",
+        "## Timeline Summary",
+        "",
+        _markdown_table(
+            ["event_type", "stage", "message", "progress", "completed", "total", "created_at"],
+            [
+                [
+                    event.get("event_type", ""),
+                    event.get("stage", ""),
+                    event.get("message", ""),
+                    event.get("progress", ""),
+                    event.get("completed", ""),
+                    event.get("total", ""),
+                    event.get("created_at", ""),
+                ]
+                for event in result.get("progress_events", [])[-50:]
+            ],
+        ),
         "",
         "## Method Comparison",
         "",

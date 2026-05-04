@@ -55,6 +55,24 @@ class TestLLMServiceRuntime(unittest.TestCase):
         succeeded = [event for event in runtime.progress_events if event["event_type"] == "call_succeeded"][0]
         self.assertEqual(succeeded["metadata"]["content"], "[redacted]")
 
+    def test_event_sink_receives_redacted_runtime_events(self):
+        provider = DummyProvider()
+        sink_events = []
+        runtime = LLMServiceRuntime(
+            LLMProviderProfile(provider_id="dummy-runtime-sink-test", model="dummy", default_concurrency=2, max_concurrency=2),
+            api_key="test",
+            provider=provider,
+            concurrency=2,
+            event_sink=sink_events.append,
+        )
+
+        runtime.chat("system", [{"role": "user", "content": "hello"}])
+
+        self.assertTrue(any(event["event_type"] == "call_started" for event in sink_events))
+        succeeded = [event for event in sink_events if event["event_type"] == "call_succeeded"][0]
+        self.assertEqual(succeeded["metadata"]["content"], "[redacted]")
+        self.assertEqual(succeeded["provider"], "dummy-runtime-sink-test")
+
 
 if __name__ == "__main__":
     unittest.main()

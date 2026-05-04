@@ -2,6 +2,19 @@
 
 ## 2026-05-04
 
+### Feature / Prompt training realtime progress UI v4.5.2
+
+1. 新增 `RunProgressEvent` 领域模型与 SQLite 表 `run_progress_events`，`RuntimeStore` 支持写入、过滤、读取最新事件和更新 `WorkflowRun` 状态。
+2. 新增 `app/runtime/progress.py`，提供 `ProgressRecorder`、安全 payload 净化、ETA 估算和 prompt training LLM 调用总量估算；事件默认不暴露 raw prompt、raw response、gold 原文或泄露词。
+3. `LLMServiceRuntime` 新增 `event_sink`，每次 `call_queued / call_started / call_succeeded / call_failed / call_retried` 都可同步写入运行事件流，仍保持 provider 级并发上限 `20`。
+4. `run_prompt_training_experiment()` 保持同步 API，但新增 `progress_recorder` 与外部 `run_id`，在方法开始、轮次开始、gold 验证、候选生成、修复、回测、接受/拒绝和完成时写入阶段事件。
+5. 新增 `start_prompt_training_background_run()`，概念实验室点击“开始优化训练”后立即创建 `WorkflowRun(status=running)` 并启动后台 daemon thread；页面通过 SQLite 每 2 秒轮询当前 run，用户可以离开页面再回来查看。
+6. 概念实验室新增“当前训练任务”进度卡片，展示状态、阶段、ETA、已完成调用、运行中调用、token、重试、修复次数、当前最佳方法、最佳通过数和最佳 loss；日志进入折叠区，支持按事件类型和阶段筛选，并可下载 `run_events.jsonl`。
+7. `write_prompt_training_comparison_outputs()` 新增 `run_events.jsonl`，`comparison_report.md` 增加 Progress Summary 和 Timeline Summary。
+8. 新增 [test_runtime_progress.py](../tests/unit/test_runtime_progress.py)，并扩展 LLM runtime 与 prompt training 测试，覆盖事件落盘、payload 净化、event sink、后台运行和四类输出产物。
+9. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md) 和 [用户教程](./user/TUTORIAL.md)，明确 v4.5.2 的后台轮询、实时日志和事件产物。
+10. 首页页脚版本更新为 `v4.5.2`。
+
 ### Docs / Agent onboarding context
 
 1. 新增 [Agent Onboarding](./developer/AGENT_ONBOARDING.md)，作为给后续大模型、代码 agent 和新维护者的压缩上下文包，概括 Rosetta 的产品定位、当前服务实现、主 workflow、LLM service runtime、SQLite runtime store、CLI 和常见边界。

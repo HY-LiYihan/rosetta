@@ -1,6 +1,6 @@
 # LLM Service Runtime Vision
 
-更新时间: 2026-05-03
+更新时间: 2026-05-04
 
 ## 1. 目标
 
@@ -14,7 +14,7 @@ Rosetta 后续应把每一次大模型调用都视为一次可排队、可限流
 4. 用户能看到当前做到哪一步、还剩多少、预计多久结束、用了多少 token、花了多少钱。
 5. 开发者能从 runtime store 和 artifacts 复现每一次模型调用。
 
-当前文档既是愿景与设计契约，也记录 `v4.5.0` 的最小实现边界：`app/infrastructure/llm/runtime.py` 已提供 `LLMServiceRuntime`、`LLMProviderProfile`、provider 级共享 semaphore、重试、进度事件、token 估算和耗时统计。概念实验室的提示词优化训练已经通过 runtime 调用真实 provider；批量标注的任务队列仍在逐步迁移到同一 runtime。
+当前文档既是愿景与设计契约，也记录 `v4.5.2` 的最小实现边界：`app/infrastructure/llm/runtime.py` 已提供 `LLMServiceRuntime`、`LLMProviderProfile`、provider 级共享 semaphore、重试、内存进度事件、token 估算和耗时统计；`app/runtime/progress.py` 已提供 `ProgressRecorder`，并把提示词优化训练的阶段事件与 provider call 事件写入 SQLite `run_progress_events`。概念实验室的提示词优化训练已经通过后台线程和 SQLite 轮询显示实时进度；批量标注的任务队列仍在逐步迁移到同一事件层。
 
 ## 2. 核心原则
 
@@ -328,6 +328,14 @@ UI 文案应避免假装精确：
 4. `TokenCostMeter`: token、费用、是否估算。
 5. `EventLogExpander`: 详细事件日志，仅在展开时显示。
 
+`v4.5.2` 的概念实验室已落地第一版 UI：
+
+1. 点击“开始优化训练”后创建 `WorkflowRun(status=running)`，按钮进入禁用运行态。
+2. 后台 daemon thread 重新创建 `RuntimeStore` 与 `LLMServiceRuntime`，不共享 Streamlit 上下文。
+3. 页面每 2 秒轮询 `run_progress_events`，展示状态、阶段、进度条、ETA、已完成调用、运行中调用、token、重试、修复次数和当前最佳方法。
+4. 最近事件、候选评估事件、provider 调用事件和错误事件统一放入折叠区，并支持下载 `run_events.jsonl`。
+5. 超过 120 秒没有 heartbeat 的 running run 会被 UI 标记为“可能中断”，但第一版还不提供 pause/resume/cancel。
+
 UI 默认只展示用户需要知道的状态，不把 raw prompt、raw response、trace 全部铺开。详细 trace 放进折叠日志。
 
 ## 8. Runtime Store 契约
@@ -337,7 +345,7 @@ UI 默认只展示用户需要知道的状态，不把 raw prompt、raw response
 1. `llm_calls`: 单次 LLM 调用记录。
 2. `llm_call_events`: 调用状态事件。
 3. `token_usage`: token 与成本。
-4. `run_progress_events`: workflow 级进度事件。
+4. `run_progress_events`: workflow 级进度事件；`v4.5.2` 已在 SQLite runtime store 中实现，字段为 `id / run_id / workflow / event_type / stage / message / progress / completed / total / running / failed / payload / created_at`。
 5. `provider_profiles`: 平台参数快照。
 6. `run_manifests`: 每次运行的配置、输入、输出和 artifact。
 

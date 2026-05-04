@@ -309,6 +309,33 @@ class WorkflowRun:
 
 
 @dataclass(frozen=True)
+class RunProgressEvent:
+    id: str
+    run_id: str
+    workflow: str
+    event_type: str
+    stage: str = ""
+    message: str = ""
+    progress: float | None = None
+    completed: int = 0
+    total: int = 0
+    running: int = 0
+    failed: int = 0
+    payload: dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=utc_timestamp)
+
+    def validate(self) -> None:
+        require_text(self.id, "run_progress_event.id")
+        require_text(self.run_id, "run_progress_event.run_id")
+        require_text(self.workflow, "run_progress_event.workflow")
+        require_text(self.event_type, "run_progress_event.event_type")
+        if self.progress is not None and not 0 <= self.progress <= 1:
+            raise ValueError("run_progress_event.progress must be between 0 and 1")
+        if self.completed < 0 or self.total < 0 or self.running < 0 or self.failed < 0:
+            raise ValueError("run_progress_event counters must be non-negative")
+
+
+@dataclass(frozen=True)
 class AgentStep:
     id: str
     run_id: str
