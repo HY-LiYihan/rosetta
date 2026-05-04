@@ -3,6 +3,7 @@ import sys
 
 from app.infrastructure.config.runtime_flags import parse_runtime_flags
 from app.infrastructure.debug import configure_debug, is_debug_mode, log_debug_event
+from app.runtime.official_seed import ensure_official_sample_on_process_start
 from app.ui.components.debug_notice import render_debug_notice
 from app.ui.i18n import LANGUAGES, get_language, init_language, set_language, t
 
@@ -18,7 +19,9 @@ init_language()
 
 runtime_flags = parse_runtime_flags(sys.argv[1:])
 configure_debug(enabled=runtime_flags.debug_mode)
+seed_result = ensure_official_sample_on_process_start()
 if is_debug_mode():
+    log_debug_event("runtime_seed", seed_result)
     log_debug_event("app_entry", {"argv": sys.argv[1:]})
     if not render_debug_notice(countdown_seconds=5):
         st.stop()

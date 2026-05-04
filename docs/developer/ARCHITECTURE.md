@@ -168,6 +168,7 @@ workflow
 1. 默认数据库：`.runtime/rosetta.sqlite3`。
 2. Docker 默认数据库：`/opt/rosetta/runtime/rosetta.sqlite3`。
 3. 表：`projects / tasks / predictions / reviews / runs / artifacts / agent_steps / concept_guidelines / gold_example_sets / concept_versions / jobs / job_items / job_events / run_progress_events`。
+4. 本地 Streamlit 默认采用 clean demo seed：进程重启时刷新主 SQLite 业务表，只保留官方“专业命名实体标注”样例；该行为不删除 runtime 下的实验报告、PDF、HTML 或 artifact 文件。
 
 ## 7. 用户流程
 

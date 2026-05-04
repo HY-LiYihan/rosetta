@@ -2,6 +2,17 @@
 
 ## 2026-05-04
 
+### Fix / Official sample runtime reset v4.5.3
+
+1. 新增 `app/data/official_sample.py`，将官方样例统一命名为“专业命名实体标注”，内置 15 条金样例和不包含 gold 具体实体词的基础提示词；内部标签继续保持 `Term`。
+2. 新增 `app/runtime/official_seed.py`，Streamlit 进程首次启动时默认刷新主 SQLite `.runtime/rosetta.sqlite3`，只保留官方项目、概念、金样例和初始概念版本。
+3. 清理范围限于主 SQLite 业务表，不删除 `.runtime/experiments/`、导出报告、PDF、HTML 或其他 artifact；可用 `ROSETTA_RESET_RUNTIME_ON_START=false` 临时关闭。
+4. 概念实验室移除旧的“一键填入示例”按钮，默认展示官方项目和 15 条金样例；自定义项目创建入口保留在高级折叠区，并提示重启后会恢复官方样例。
+5. CLI 内置 prompt training case 默认改为 `professional-ner`，旧 `hard-science` case 名仍保留兼容。
+6. 新增 [test_official_seed.py](../tests/unit/test_official_seed.py)，覆盖官方 seed 计数、脏数据清理、gold task 合法性和 operational prompt 不包含 gold 实体词。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md) 和 [Developer README](./developer/README.md)，说明启动即内置官方样例的新体验。
+8. 首页页脚版本更新为 `v4.5.3`。
+
 ### Feature / Prompt training realtime progress UI v4.5.2
 
 1. 新增 `RunProgressEvent` 领域模型与 SQLite 表 `run_progress_events`，`RuntimeStore` 支持写入、过滤、读取最新事件和更新 `WorkflowRun` 状态。
@@ -28,7 +39,7 @@
 2. `run_prompt_training_experiment` 的停止逻辑从“第一轮无改进即停止”改为“每个方法连续 5 轮 loss 无下降才停止”；达到 `15/15` 仍会提前以 `stop_reason=reached_target` 成功结束。
 3. 每个 method result 新增 `stop_reason`、`initial_loss`、`initial_pass_count`、`best_round_index`、`total_loss_delta`、`no_improvement_streak`、`accepted_round_count` 和 `evaluated_candidate_count`；每轮 trace 新增 `round_improved`、`round_loss_delta`、`round_best_candidate_id`、`no_improvement_streak_after_round` 和 `stop_reason_if_stopped`。
 4. 新增 `write_prompt_training_comparison_outputs()` 和 `build_prompt_training_comparison_report()`，输出 `comparison_report.md`、`comparison_result.json` 和 `prompt_evolution.jsonl`，报告包含方法总表、每轮进化速度、候选状态和提示词演化；最佳方法、最佳 loss 和最佳提示词按历史最优接受版本计算，不被最后一轮波动覆盖。
-5. 新增 CLI：`scripts/tool/rosetta_tool.py prompt-training-experiment`，默认使用内置“硬科学科普术语标注”15 gold，在隔离 runtime 中运行 DeepSeek `deepseek-v4-pro` 三方法对比实验，避免污染当前 UI 数据库。
+5. 新增 CLI：`scripts/tool/rosetta_tool.py prompt-training-experiment`，默认使用内置“专业命名实体标注”15 gold，在隔离 runtime 中运行 DeepSeek `deepseek-v4-pro` 三方法对比实验，避免污染当前 UI 数据库。
 6. 概念实验室 UI 新增“连续无下降轮数”，结果表新增停止原因、初始损失、损失下降、接受轮数和无下降连续轮数。
 7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)、[用户教程](./user/TUTORIAL.md)、[Developer README](./developer/README.md) 和 [Roadmap](./developer/ROADMAP.md)，明确 v4.5.1 的实验停止口径与结果产物。
 8. 首页页脚版本更新为 `v4.5.1`。

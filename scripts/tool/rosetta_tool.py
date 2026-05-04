@@ -14,7 +14,7 @@ if str(REPO_ROOT) not in sys.path:
 from app.core.models import Project
 from app.infrastructure.llm.runtime import LLMServiceRuntime
 from app.runtime.store import RuntimeStore
-from app.ui.examples import HARD_SCIENCE_TERM_EXAMPLE
+from app.data.official_sample import PROFESSIONAL_NER_EXAMPLE
 from app.workflows.bootstrap import (
     PROMPT_TRAINING_METHODS,
     PromptTrainingConfig,
@@ -40,14 +40,14 @@ def build_parser() -> argparse.ArgumentParser:
     bootstrap.add_argument("--record", action="store_true", help="Record workflow run in the local SQLite store.")
 
     prompt_training = subparsers.add_parser("prompt-training-experiment", help="Run a prompt training method comparison experiment.")
-    prompt_training.add_argument("--case", default="hard-science", choices=["hard-science"])
+    prompt_training.add_argument("--case", default="professional-ner", choices=["professional-ner", "hard-science"])
     prompt_training.add_argument("--provider", default="deepseek")
     prompt_training.add_argument("--model", default="deepseek-v4-pro")
     prompt_training.add_argument("--concurrency", type=int, default=20)
     prompt_training.add_argument("--candidate-count", type=int, default=3)
     prompt_training.add_argument("--patience-rounds", type=int, default=5)
     prompt_training.add_argument("--max-rounds", type=int, default=30)
-    prompt_training.add_argument("--output-dir", default=".runtime/experiments/prompt_training_hard_science")
+    prompt_training.add_argument("--output-dir", default=".runtime/experiments/prompt_training_professional_ner")
     prompt_training.add_argument("--record", action="store_true", help="Record runs in the experiment-local SQLite store.")
 
     corpus_prepare = subparsers.add_parser("corpus-prepare", help="Prepare seed corpus chunks.")
@@ -137,9 +137,9 @@ def main() -> int:
 def _run_prompt_training_experiment_command(args: argparse.Namespace) -> dict:
     output_dir = Path(args.output_dir)
     experiment_store = RuntimeStore(output_dir / "runtime" / "rosetta.sqlite3")
-    example = HARD_SCIENCE_TERM_EXAMPLE
+    example = PROFESSIONAL_NER_EXAMPLE
     project = Project(
-        id="project-hard-science-prompt-training",
+        id="project-professional-ner-prompt-training",
         name=example["project_name"],
         description=example["project_description"],
         task_schema="span",
@@ -147,7 +147,7 @@ def _run_prompt_training_experiment_command(args: argparse.Namespace) -> dict:
     experiment_store.upsert_project(project)
     gold_tasks = [
         gold_task_from_markup(
-            task_id=f"hard-science-gold-{index:05d}",
+            task_id=f"professional-ner-gold-{index:05d}",
             text=row["text"],
             annotation_markup=row["annotation"],
             label_hint="Term",

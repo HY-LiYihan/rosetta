@@ -15,7 +15,6 @@ from app.infrastructure.llm.providers import PLATFORM_CONFIGS
 from app.infrastructure.llm.runtime import LLMServiceRuntime
 from app.runtime.store import RuntimeStore
 from app.ui.components.busy import busy_button, clear_busy
-from app.ui.examples import HARD_SCIENCE_TERM_EXAMPLE, hard_science_gold_jsonl
 from app.ui.i18n import t
 from app.workflows.bootstrap import (
     PROMPT_TRAINING_METHODS,
@@ -314,31 +313,15 @@ def _provider_event_rows(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rows
 
 
-def _fill_example() -> None:
-    st.session_state["concept_lab_project_mode"] = "new"
-    st.session_state["concept_lab_project_name"] = HARD_SCIENCE_TERM_EXAMPLE["project_name"]
-    st.session_state["concept_lab_project_description"] = HARD_SCIENCE_TERM_EXAMPLE["project_description"]
-    st.session_state["concept_lab_name"] = HARD_SCIENCE_TERM_EXAMPLE["concept_name"]
-    st.session_state["concept_lab_brief"] = HARD_SCIENCE_TERM_EXAMPLE["brief"]
-    st.session_state["concept_lab_labels"] = HARD_SCIENCE_TERM_EXAMPLE["labels"]
-    st.session_state["concept_lab_boundary"] = HARD_SCIENCE_TERM_EXAMPLE["boundary_rules"]
-    st.session_state["concept_lab_negative"] = HARD_SCIENCE_TERM_EXAMPLE["negative_rules"]
-    st.session_state["concept_lab_output_format"] = HARD_SCIENCE_TERM_EXAMPLE["output_format"]
-    st.session_state["concept_lab_manual_text"] = ""
-    st.session_state["concept_lab_manual_markup"] = ""
-    st.session_state["concept_lab_pasted_jsonl"] = hard_science_gold_jsonl()
-    st.session_state["concept_lab_csv_text_column"] = "text"
-
-
 for key, value in {
     "concept_lab_project_mode": "existing",
-    "concept_lab_project_name": "术语标注项目",
-    "concept_lab_project_description": "用于概念阐释、金样例和批量标注。",
-    "concept_lab_name": "硬科学术语",
-    "concept_lab_brief": "标出英文科普新闻中与硬科学概念、技术、物理过程或实验对象直接相关的术语。",
+    "concept_lab_project_name": "临时专业命名实体标注项目",
+    "concept_lab_project_description": "用于本次会话内测试自定义概念、金样例和批量标注。",
+    "concept_lab_name": "专业命名实体",
+    "concept_lab_brief": "标出英文科学与技术文本中具有明确领域含义、可命名且边界清楚的专业实体。",
     "concept_lab_labels": "Term",
-    "concept_lab_boundary": "优先标注最小完整术语\n包含必要修饰词，但不要扩大到整个句子",
-    "concept_lab_negative": "不标注泛泛的普通名词\n不标注没有科学含义的修辞表达",
+    "concept_lab_boundary": "优先标注最小完整实体名称\n包含形成实体名称所必需的修饰成分，但不要扩大到整个句子",
+    "concept_lab_negative": "不标注泛泛的普通名词\n不标注没有专业概念指向的修辞表达",
     "concept_lab_output_format": "[原文]{标签}",
     "concept_lab_manual_text": "",
     "concept_lab_manual_markup": "",
@@ -354,23 +337,28 @@ if st.session_state.get("concept_validation_mode") not in {None, "local", "llm"}
 
 _render_flash()
 
-if st.button(t("concept_lab.load_example"), use_container_width=True):
-    _fill_example()
-    st.success(t("concept_lab.example_loaded"))
-    st.rerun()
-
 projects = _project_options()
 st.subheader(t("concept_lab.section_project"))
-project_mode = st.radio(
-    t("concept_lab.project_source"),
-    ["existing", "new"],
-    horizontal=True,
-    format_func=lambda mode: t(f"concept_lab.project_{mode}"),
-    key="concept_lab_project_mode",
-)
-
 selected_project_id = ""
-if project_mode == "new" or not projects:
+if projects:
+    official_index = next(
+        (index for index, row in enumerate(projects) if row["payload"].get("metadata", {}).get("official_sample")),
+        0,
+    )
+    selected_project_id = st.selectbox(
+        t("concept_lab.select_project"),
+        [row["id"] for row in projects],
+        index=official_index,
+        format_func=lambda project_id: next(row["payload"]["name"] for row in projects if row["id"] == project_id),
+    )
+    selected_project_payload = next(row["payload"] for row in projects if row["id"] == selected_project_id)
+    if selected_project_payload.get("metadata", {}).get("official_sample"):
+        st.success(t("concept_lab.official_sample_ready"))
+else:
+    st.info(t("concept_lab.no_project_seed"))
+
+with st.expander(t("concept_lab.advanced_project_expander"), expanded=not projects):
+    st.caption(t("concept_lab.temporary_project_notice"))
     with st.form("create_project_form"):
         project_name = st.text_input(t("concept_lab.project_name"), key="concept_lab_project_name")
         project_description = st.text_area(t("concept_lab.project_description"), height=80, key="concept_lab_project_description")
@@ -385,78 +373,70 @@ if project_mode == "new" or not projects:
         store.upsert_project(project)
         st.success(t("concept_lab.project_saved"))
         st.rerun()
-else:
-    selected_project_id = st.selectbox(
-        t("concept_lab.select_project"),
-        [row["id"] for row in projects],
-        format_func=lambda project_id: next(row["payload"]["name"] for row in projects if row["id"] == project_id),
-    )
-
-if not selected_project_id and projects and project_mode != "new":
-    selected_project_id = projects[0]["id"]
 
 st.divider()
-st.subheader(t("concept_lab.section_guideline"))
-with st.form("guideline_form"):
-    concept_name = st.text_input(t("concept_lab.concept_name"), key="concept_lab_name")
-    brief = st.text_area(t("concept_lab.brief"), height=100, key="concept_lab_brief")
-    labels_text = st.text_input(t("concept_lab.labels"), key="concept_lab_labels")
-    boundary_text = st.text_area(t("concept_lab.boundary"), height=90, key="concept_lab_boundary")
-    negative_text = st.text_area(t("concept_lab.negative"), height=90, key="concept_lab_negative")
-    output_format = st.text_input(t("concept_lab.output_format"), key="concept_lab_output_format")
+with st.expander(t("concept_lab.advanced_guideline_expander"), expanded=False):
+    st.caption(t("concept_lab.temporary_guideline_notice"))
+    with st.form("guideline_form"):
+        concept_name = st.text_input(t("concept_lab.concept_name"), key="concept_lab_name")
+        brief = st.text_area(t("concept_lab.brief"), height=100, key="concept_lab_brief")
+        labels_text = st.text_input(t("concept_lab.labels"), key="concept_lab_labels")
+        boundary_text = st.text_area(t("concept_lab.boundary"), height=90, key="concept_lab_boundary")
+        negative_text = st.text_area(t("concept_lab.negative"), height=90, key="concept_lab_negative")
+        output_format = st.text_input(t("concept_lab.output_format"), key="concept_lab_output_format")
 
-    st.markdown(f"**{t('concept_lab.gold_examples')}**")
-    manual_text = st.text_area(
-        t("concept_lab.manual_text"),
-        height=90,
-        placeholder=t("concept_lab.manual_text_placeholder"),
-        key="concept_lab_manual_text",
-    )
-    manual_markup = st.text_area(
-        t("concept_lab.manual_markup"),
-        height=90,
-        placeholder=t("concept_lab.manual_markup_placeholder"),
-        key="concept_lab_manual_markup",
-    )
-    pasted_jsonl = st.text_area(t("concept_lab.paste_jsonl"), height=160, key="concept_lab_pasted_jsonl")
-    upload = st.file_uploader(t("concept_lab.upload_gold"), type=["jsonl", "csv"])
-    csv_text_column = st.text_input(t("concept_lab.csv_text_column"), key="concept_lab_csv_text_column")
-    save_clicked = st.form_submit_button(t("concept_lab.save_guideline"), type="primary", use_container_width=True)
-
-if save_clicked:
-    if not selected_project_id:
-        st.error(t("concept_lab.need_project"))
-        st.stop()
-    gold_tasks: list[AnnotationTask] = []
-    if manual_text.strip() and manual_markup.strip():
-        gold_tasks.append(
-            gold_task_from_markup(
-                task_id=f"gold-manual-{len(store.list_tasks(limit=10000)) + 1:05d}",
-                text=manual_text.strip(),
-                annotation_markup=manual_markup.strip(),
-                label_hint=labels_text.split(",")[0].strip() or "Concept",
-            )
+        st.markdown(f"**{t('concept_lab.gold_examples')}**")
+        manual_text = st.text_area(
+            t("concept_lab.manual_text"),
+            height=90,
+            placeholder=t("concept_lab.manual_text_placeholder"),
+            key="concept_lab_manual_text",
         )
-    if pasted_jsonl.strip():
-        gold_tasks.extend(_parse_gold_jsonl(pasted_jsonl, source_name="pasted.jsonl"))
-    gold_tasks.extend(_parse_uploaded_gold(upload, csv_text_column))
+        manual_markup = st.text_area(
+            t("concept_lab.manual_markup"),
+            height=90,
+            placeholder=t("concept_lab.manual_markup_placeholder"),
+            key="concept_lab_manual_markup",
+        )
+        pasted_jsonl = st.text_area(t("concept_lab.paste_jsonl"), height=160, key="concept_lab_pasted_jsonl")
+        upload = st.file_uploader(t("concept_lab.upload_gold"), type=["jsonl", "csv"])
+        csv_text_column = st.text_input(t("concept_lab.csv_text_column"), key="concept_lab_csv_text_column")
+        save_clicked = st.form_submit_button(t("concept_lab.save_guideline"), type="primary", use_container_width=True)
 
-    if not gold_tasks:
-        st.error(t("concept_lab.need_gold"))
-        st.stop()
+    if save_clicked:
+        if not selected_project_id:
+            st.error(t("concept_lab.need_project"))
+            st.stop()
+        gold_tasks: list[AnnotationTask] = []
+        if manual_text.strip() and manual_markup.strip():
+            gold_tasks.append(
+                gold_task_from_markup(
+                    task_id=f"gold-manual-{len(store.list_tasks(limit=10000)) + 1:05d}",
+                    text=manual_text.strip(),
+                    annotation_markup=manual_markup.strip(),
+                    label_hint=labels_text.split(",")[0].strip() or "Concept",
+                )
+            )
+        if pasted_jsonl.strip():
+            gold_tasks.extend(_parse_gold_jsonl(pasted_jsonl, source_name="pasted.jsonl"))
+        gold_tasks.extend(_parse_uploaded_gold(upload, csv_text_column))
 
-    package = save_guideline_package(
-        store=store,
-        project_id=selected_project_id,
-        name=concept_name,
-        brief=brief,
-        labels=[item.strip() for item in labels_text.split(",") if item.strip()],
-        boundary_rules=_lines(boundary_text),
-        negative_rules=_lines(negative_text),
-        gold_tasks=gold_tasks,
-    )
-    st.success(t("concept_lab.saved_package", count=len(gold_tasks)))
-    st.session_state["selected_guideline_id"] = package["guideline"].id
+        if not gold_tasks:
+            st.error(t("concept_lab.need_gold"))
+            st.stop()
+
+        package = save_guideline_package(
+            store=store,
+            project_id=selected_project_id,
+            name=concept_name,
+            brief=brief,
+            labels=[item.strip() for item in labels_text.split(",") if item.strip()],
+            boundary_rules=_lines(boundary_text),
+            negative_rules=_lines(negative_text),
+            gold_tasks=gold_tasks,
+        )
+        st.success(t("concept_lab.saved_package", count=len(gold_tasks)))
+        st.session_state["selected_guideline_id"] = package["guideline"].id
 
 st.divider()
 st.subheader(t("concept_lab.section_validate"))
@@ -473,6 +453,11 @@ else:
     )
     guideline_payload = next(row["payload"] for row in guidelines if row["id"] == selected_guideline)
     st.text_area(t("concept_lab.current_description"), value=guideline_payload.get("stable_description", ""), height=180)
+    gold_sets = store.list_gold_example_sets(guideline_id=selected_guideline, limit=1)
+    gold_count = len(gold_sets[0]["payload"].get("task_ids", [])) if gold_sets else 0
+    target_count = int(gold_sets[0]["payload"].get("target_count", 15)) if gold_sets else 15
+    if guideline_payload.get("metadata", {}).get("official_sample"):
+        st.info(t("concept_lab.official_gold_ready", count=gold_count, target=target_count))
 
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
@@ -607,9 +592,6 @@ else:
 
     st.divider()
     st.subheader(t("concept_lab.bootstrap_section"))
-    gold_sets = store.list_gold_example_sets(guideline_id=selected_guideline, limit=1)
-    gold_count = len(gold_sets[0]["payload"].get("task_ids", [])) if gold_sets else 0
-    target_count = int(gold_sets[0]["payload"].get("target_count", 15)) if gold_sets else 15
     st.caption(t("concept_lab.bootstrap_help"))
     if gold_count < target_count:
         st.warning(t("concept_lab.bootstrap_need_gold", target=target_count, count=gold_count))

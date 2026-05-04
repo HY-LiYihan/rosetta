@@ -127,14 +127,14 @@ job_events
 
 ```bash
 conda run -n rosetta-dev python scripts/tool/rosetta_tool.py prompt-training-experiment \
-  --case hard-science \
+  --case professional-ner \
   --provider deepseek \
   --model deepseek-v4-pro \
   --concurrency 20 \
   --candidate-count 3 \
   --patience-rounds 5 \
   --max-rounds 30 \
-  --output-dir .runtime/experiments/prompt_training_hard_science \
+  --output-dir .runtime/experiments/prompt_training_professional_ner \
   --record
 ```
 
