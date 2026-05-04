@@ -2,6 +2,13 @@
 
 ## 2026-05-04
 
+### Fix / Concurrent concept validation progress v4.5.4
+
+1. `validate_gold_examples()` 新增 `concurrency` 和 `progress_callback`，网页概念验证现在会并发验证 15 条 gold；真实 LLM 模式默认并发上限为 `20`，本地结构验证保持轻量顺序执行。
+2. 概念实验室“验证概念”按钮新增实时进度条、完成数、运行中数量、并发上限、已用时和 ETA；真实 LLM 验证完成后展示调用数、token、模型耗时和实际并发。
+3. 新增回归测试，确认概念验证会实际并发执行，并为每条 gold 写出进度事件。
+4. 首页页脚版本更新为 `v4.5.4`。
+
 ### Fix / Official sample runtime reset v4.5.3
 
 1. 新增 `app/data/official_sample.py`，将官方样例统一命名为“专业命名实体标注”，内置 15 条金样例和不包含 gold 具体实体词的基础提示词；内部标签继续保持 `Term`。

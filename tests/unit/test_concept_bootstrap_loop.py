@@ -1,5 +1,7 @@
 import json
+import threading
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -11,6 +13,7 @@ from app.workflows.bootstrap import (
     run_concept_refinement_loop,
     sanitize_concept_description,
     save_guideline_package,
+    validate_gold_examples,
 )
 
 
@@ -76,6 +79,41 @@ gold-00001: 漏标 Quantum dots
         self.assertEqual(result["rounds"][0]["pass_count"], 15)
         guideline = store.get_guideline(guideline_id)["payload"]
         self.assertEqual(guideline["status"], "stable")
+
+    def test_validation_uses_concurrency_and_reports_progress(self):
+        tmp, store, guideline_id = _store_with_guideline(gold_count=15)
+        self.addCleanup(tmp.cleanup)
+        state = {"active": 0, "max_active": 0}
+        lock = threading.Lock()
+        events: list[dict] = []
+
+        def predictor(system_prompt, messages, temperature):
+            with lock:
+                state["active"] += 1
+                state["max_active"] = max(state["max_active"], state["active"])
+            try:
+                time.sleep(0.01)
+                text = messages[-1]["content"].split("文本：", 1)[-1].strip()
+                term = text.split(" appears here.", 1)[0]
+                return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears here.", "explanation": "matched"})
+            finally:
+                with lock:
+                    state["active"] -= 1
+
+        result = validate_gold_examples(
+            store,
+            guideline_id,
+            predictor=predictor,
+            concurrency=4,
+            progress_callback=events.append,
+        )
+
+        self.assertEqual(result["status"], "stable")
+        self.assertEqual(result["concurrency"], 4)
+        self.assertEqual(len(result["details"]), 15)
+        self.assertGreater(state["max_active"], 1)
+        self.assertEqual(len(events), 15)
+        self.assertEqual(events[-1]["completed"], 15)
 
     def test_extra_spans_are_not_counted_as_passed(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=15)

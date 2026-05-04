@@ -490,9 +490,56 @@ else:
         use_container_width=True,
     ):
         try:
+            progress_bar = st.progress(
+                0.0,
+                text=t("concept_lab.validation_progress_text", completed=0, total=target_count),
+            )
+            progress_status = st.empty()
+            progress_metrics = st.empty()
+            started_at = time.perf_counter()
+
+            def _render_validation_progress(event: dict[str, Any]) -> None:
+                total = max(1, int(event.get("total") or target_count or 1))
+                completed = min(total, int(event.get("completed") or 0))
+                elapsed = time.perf_counter() - started_at
+                eta = None
+                if completed > 0 and completed < total:
+                    eta = elapsed / completed * (total - completed)
+                progress_bar.progress(
+                    completed / total,
+                    text=t("concept_lab.validation_progress_text", completed=completed, total=total),
+                )
+                progress_status.caption(
+                    t(
+                        "concept_lab.validation_progress_status",
+                        running=int(event.get("running") or 0),
+                        concurrency=int(event.get("concurrency") or 1),
+                        elapsed=_format_seconds(elapsed),
+                        eta=_format_seconds(eta),
+                    )
+                )
+                with progress_metrics.container():
+                    cols = st.columns(4)
+                    cols[0].metric(t("common.completed"), completed)
+                    cols[1].metric(t("concept_lab.training_running_calls"), int(event.get("running") or 0))
+                    cols[2].metric(t("concept_lab.training_concurrency"), int(event.get("concurrency") or 1))
+                    cols[3].metric(t("concept_lab.training_eta"), _format_seconds(eta))
+
             with st.spinner(t("concept_lab.validating_status")):
-                predictor = _make_predictor(platform_id, model_name) if validation_mode == "llm" else None
-                result = validate_gold_examples(store, selected_guideline, predictor=predictor)
+                predictor = _make_predictor(platform_id, model_name, concurrency=20) if validation_mode == "llm" else None
+                result = validate_gold_examples(
+                    store,
+                    selected_guideline,
+                    predictor=predictor,
+                    concurrency=20 if predictor is not None else 1,
+                    progress_callback=_render_validation_progress,
+                )
+                if predictor is not None and hasattr(predictor, "runtime"):
+                    result["usage_summary"] = predictor.runtime.usage_summary()  # type: ignore[attr-defined]
+            progress_bar.progress(
+                1.0,
+                text=t("concept_lab.validation_progress_done", completed=result.get("total_count", target_count)),
+            )
             st.session_state["concept_lab_validation_result"] = result
             _set_flash(
                 "success",
@@ -515,6 +562,13 @@ else:
         metrics[0].metric(t("concept_lab.passed"), len(result["passed"]))
         metrics[1].metric(t("common.failed"), len(result["failed"]))
         metrics[2].metric(t("concept_lab.unstable"), len(result["unstable"]))
+        usage_summary = result.get("usage_summary", {})
+        if usage_summary:
+            usage_cols = st.columns(4)
+            usage_cols[0].metric(t("concept_lab.training_concurrency_used"), usage_summary.get("concurrency", result.get("concurrency", 1)))
+            usage_cols[1].metric(t("concept_lab.training_total_calls"), usage_summary.get("llm_call_count", 0))
+            usage_cols[2].metric(t("concept_lab.training_total_tokens"), usage_summary.get("total_tokens", 0))
+            usage_cols[3].metric(t("concept_lab.training_elapsed"), usage_summary.get("provider_elapsed_seconds", 0.0))
         st.json(result)
         revise_button_key = "concept_lab_revise_button"
         if busy_button(

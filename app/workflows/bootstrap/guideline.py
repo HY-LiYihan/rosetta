@@ -4,7 +4,7 @@ import json
 import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable
+from typing import Any, Callable
 
 from app.core.models import (
     AnnotationSpan,
@@ -25,6 +25,7 @@ from app.workflows.bootstrap.prompt_optimizer import (
 )
 
 Predictor = Callable[[str, list[dict], float], str]
+ProgressCallback = Callable[[dict[str, Any]], None]
 
 DIAGNOSTIC_PATTERNS = (
     re.compile(r"\bgold-\d+\b", re.IGNORECASE),
@@ -121,6 +122,8 @@ def validate_gold_examples(
     guideline_id: str,
     predictor: Predictor | None = None,
     temperature: float = 0.0,
+    concurrency: int = 1,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict:
     guideline_row = store.get_guideline(guideline_id)
     if guideline_row is None:
@@ -130,32 +133,22 @@ def validate_gold_examples(
     if not gold_sets:
         raise ValueError("该概念还没有金样例库")
 
-    passed: list[str] = []
-    failed: list[str] = []
-    unstable: list[str] = []
-    for task_id in gold_sets[0]["payload"]["task_ids"]:
-        task_row = store.get_task(task_id)
-        if task_row is None:
-            failed.append(task_id)
-            continue
-        task_payload = task_row["payload"]
-        prediction_payload = _predict_guideline(guideline, task_payload, predictor, temperature)
-        prediction = Prediction(
-            id=f"pred-{uuid.uuid4().hex[:10]}",
-            task_id=task_id,
-            source="guideline_validation",
-            model=prediction_payload.get("model", "local-rule"),
-            score=prediction_payload["score"],
-            raw_response=prediction_payload["raw_response"],
-            meta={"guideline_id": guideline_id, "route": prediction_payload["route"]},
-        )
-        store.upsert_prediction(prediction)
-        if prediction_payload["route"] == "passed":
-            passed.append(task_id)
-        elif prediction_payload["route"] == "unstable":
-            unstable.append(task_id)
-        else:
-            failed.append(task_id)
+    task_ids = list(gold_sets[0]["payload"]["task_ids"])
+    evaluation = _evaluate_gold_tasks(
+        store=store,
+        guideline_id=guideline_id,
+        guideline=guideline,
+        task_ids=task_ids,
+        predictor=predictor,
+        temperature=temperature,
+        round_index=0,
+        source="guideline_validation",
+        concurrency=concurrency,
+        progress_callback=progress_callback,
+    )
+    passed = list(evaluation["passed"])
+    failed = list(evaluation["failed"])
+    unstable = list(evaluation["unstable"])
 
     status = "stable" if not failed and not unstable else "needs_revision"
     clean_description, sanitizer_warnings = sanitize_concept_description(
@@ -183,6 +176,9 @@ def validate_gold_examples(
         "passed": passed,
         "failed": failed,
         "unstable": unstable,
+        "details": evaluation["details"],
+        "concurrency": max(1, int(concurrency)),
+        "total_count": len(task_ids),
         "summary": f"通过 {len(passed)} 条，失败 {len(failed)} 条，边界不稳定 {len(unstable)} 条。",
     }
 
@@ -556,26 +552,58 @@ def _evaluate_gold_tasks(
     source: str = "concept_refinement",
     candidate_id: str | None = None,
     concurrency: int = 1,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict:
     passed: list[str] = []
     failed: list[str] = []
     unstable: list[str] = []
     details: list[dict] = []
     prediction_inputs: list[tuple[str, dict]] = []
+    total = len(task_ids)
+    completed = 0
+    prediction_completed = 0
     for task_id in task_ids:
         task_row = store.get_task(task_id)
         if task_row is None:
             failed.append(task_id)
             details.append({"task_id": task_id, "route": "failed", "reason": "任务不存在"})
+            completed += 1
+            _emit_progress(
+                progress_callback,
+                {
+                    "event_type": "item_completed",
+                    "task_id": task_id,
+                    "route": "failed",
+                    "completed": completed,
+                    "total": total,
+                    "running": 0,
+                    "concurrency": max(1, int(concurrency)),
+                    "source": source,
+                },
+            )
             continue
         prediction_inputs.append((task_id, task_row["payload"]))
 
     prediction_rows: list[tuple[str, dict, dict]] = []
     if concurrency <= 1 or predictor is None or len(prediction_inputs) <= 1:
-        prediction_rows = [
-            (task_id, task_payload, _safe_predict_guideline(guideline, task_payload, predictor, temperature))
-            for task_id, task_payload in prediction_inputs
-        ]
+        for task_id, task_payload in prediction_inputs:
+            prediction_payload = _safe_predict_guideline(guideline, task_payload, predictor, temperature)
+            prediction_completed += 1
+            completed += 1
+            _emit_progress(
+                progress_callback,
+                {
+                    "event_type": "item_completed",
+                    "task_id": task_id,
+                    "route": prediction_payload["route"],
+                    "completed": completed,
+                    "total": total,
+                    "running": max(0, len(prediction_inputs) - prediction_completed),
+                    "concurrency": 1,
+                    "source": source,
+                },
+            )
+            prediction_rows.append((task_id, task_payload, prediction_payload))
     else:
         max_workers = max(1, min(int(concurrency), len(prediction_inputs)))
         indexed_rows: list[tuple[int, str, dict, dict] | None] = [None] * len(prediction_inputs)
@@ -586,7 +614,23 @@ def _evaluate_gold_tasks(
             }
             for future in as_completed(future_map):
                 index, task_id, task_payload = future_map[future]
-                indexed_rows[index] = (index, task_id, task_payload, future.result())
+                prediction_payload = future.result()
+                indexed_rows[index] = (index, task_id, task_payload, prediction_payload)
+                prediction_completed += 1
+                completed += 1
+                _emit_progress(
+                    progress_callback,
+                    {
+                        "event_type": "item_completed",
+                        "task_id": task_id,
+                        "route": prediction_payload["route"],
+                        "completed": completed,
+                        "total": total,
+                        "running": max(0, min(max_workers, len(prediction_inputs) - prediction_completed)),
+                        "concurrency": max_workers,
+                        "source": source,
+                    },
+                )
         prediction_rows = [
             (task_id, task_payload, prediction_payload)
             for row in indexed_rows
@@ -621,6 +665,12 @@ def _evaluate_gold_tasks(
         else:
             failed.append(task_id)
     return {"passed": passed, "failed": failed, "unstable": unstable, "details": details}
+
+
+def _emit_progress(progress_callback: ProgressCallback | None, event: dict[str, Any]) -> None:
+    if progress_callback is None:
+        return
+    progress_callback(event)
 
 
 def _safe_predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor | None, temperature: float) -> dict:
