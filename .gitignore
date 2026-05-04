@@ -11,6 +11,11 @@
 .runtime/experiments/prompt_training_hard_science/*
 !.runtime/experiments/prompt_training_hard_science/comparison_report.pdf
 
+# Local saved webpage snapshots and root-level papers
+/Rosetta.html
+/Rosetta_files/
+/*.pdf
+
 # Python cache and build outputs
 __pycache__/
 *.py[cod]
