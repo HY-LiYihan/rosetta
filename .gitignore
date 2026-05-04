@@ -3,7 +3,13 @@
 .streamlit/secrets.toml
 
 # Runtime artifacts
-.runtime/
+.runtime/*
+!.runtime/
+!.runtime/experiments/
+.runtime/experiments/*
+!.runtime/experiments/prompt_training_hard_science/
+.runtime/experiments/prompt_training_hard_science/*
+!.runtime/experiments/prompt_training_hard_science/comparison_report.pdf
 
 # Python cache and build outputs
 __pycache__/
@@ -32,7 +38,6 @@ env/
 # Claude Code and agent config
 .claude/
 CLAUDE.md
-AGENTS.md
 
 # Temporary files
 tmp/
