@@ -7,6 +7,7 @@ from pathlib import Path
 from app.core.models import Project, WorkflowRun
 from app.runtime.progress import ProgressRecorder
 from app.runtime.store import RuntimeStore
+from app.services.annotation_service import ANNOTATION_ASSISTANT_SYSTEM_PROMPT
 from app.workflows.bootstrap import (
     LLM_OPTIMIZE_ONLY,
     LLM_REFLECTION,
@@ -275,7 +276,7 @@ class TestPromptTraining(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
 
         def predictor(system_prompt, messages, temperature):
-            if system_prompt != "你是严谨的标注校验助手，只输出 JSON。":
+            if system_prompt != ANNOTATION_ASSISTANT_SYSTEM_PROMPT:
                 return "\n".join(
                     [
                         "概念描述：只保留一个模糊定义。",
@@ -391,6 +392,14 @@ class TestPromptTraining(unittest.TestCase):
                     "predicted_spans": [{"text": "Wrong", "label": "Term"}],
                     "missing_spans": [{"text": "Quantum term 1", "label": "Term"}],
                     "extra_spans": [{"text": "Wrong", "label": "Term"}],
+                    "model_raw_response": json.dumps(
+                        {
+                            "text": "Quantum term 1 appears here.",
+                            "annotation": "[Wrong]{Term}",
+                            "explanation": "wrong span",
+                        },
+                        ensure_ascii=False,
+                    ),
                 }
             ]
         }
@@ -402,7 +411,14 @@ class TestPromptTraining(unittest.TestCase):
         )
 
         self.assertIn("training_feedback_only=true", prompt)
-        self.assertIn("Quantum term 1", prompt)
+        self.assertIn("当前提示词（只包含可优化的概念定义和边界规则）：", prompt)
+        self.assertIn("失败样例 1", prompt)
+        self.assertIn("原文：Quantum term 1 appears here.", prompt)
+        self.assertIn("标准答案 annotation：[Quantum term 1]{Term}", prompt)
+        self.assertIn('"annotation": "[Wrong]{Term}"', prompt)
+        self.assertIn("错误摘要：应补：[Quantum term 1]{Term}；应排除或收紧：[Wrong]{Term}", prompt)
+        self.assertLess(prompt.index("标准答案 annotation"), prompt.index("模型回答 JSON"))
+        self.assertLess(prompt.index("模型回答 JSON"), prompt.index("错误摘要"))
         self.assertNotIn("标签集合：Term", prompt)
         self.assertNotIn("[原文]{标签}", prompt)
 

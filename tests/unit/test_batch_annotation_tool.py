@@ -8,6 +8,7 @@ from app.data.exporters import build_dataset_stats, filter_tasks_for_export, row
 from app.data.prodigy_jsonl import read_tasks_jsonl
 from app.data.text_ingestion import split_sentences, tasks_from_csv, tasks_from_jsonl, tasks_from_txt, tokenize_text
 from app.runtime.store import RuntimeStore
+from app.services.annotation_service import ANNOTATION_ASSISTANT_SYSTEM_PROMPT
 from app.workflows.annotation import run_batch_worker, submit_batch_annotation
 from app.workflows.bootstrap import (
     FULL_JSON_OUTPUT_FORMAT,
@@ -108,7 +109,10 @@ class TestBatchAnnotationTool(unittest.TestCase):
                 auto_sample_rate=0.0,
             )
 
+            seen = {}
+
             def predictor(system_prompt, messages, temperature):
+                seen["system_prompt"] = system_prompt
                 return json.dumps(
                     {
                         "text": "heart failure is common.",
@@ -122,6 +126,7 @@ class TestBatchAnnotationTool(unittest.TestCase):
             result = run_batch_worker(store, job.id, predictor, platform="mock", model="mock")
             self.assertEqual(result["status"], "completed")
             self.assertEqual(result["review_items"], 1)
+            self.assertEqual(seen["system_prompt"], ANNOTATION_ASSISTANT_SYSTEM_PROMPT)
 
             queue = list_review_queue(store, threshold=0.99)
             self.assertEqual(len(queue), 1)

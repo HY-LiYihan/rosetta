@@ -180,7 +180,7 @@ prompt_evolution.jsonl
 | 方法 | 给模型什么 | 用途 |
 | --- | --- | --- |
 | `llm_optimize_only` | 只给当前提示词，要求“优化提示词” | 最弱 baseline |
-| `llm_reflection` | 给当前提示词 + 批改参考 + 失败摘要 | 普通 LLM 反思 baseline |
+| `llm_reflection` | 先给当前可优化提示词，再按失败 detail 就近给原文、gold `[span]{Term}`、模型 JSON 回答、错误摘要和整体失败摘要 | 普通 LLM 反思 baseline |
 | `text_gradient_adamw` | 给当前提示词 + 批改参考 + 文本梯度 + 长度惩罚方向 | Rosetta 方法候选 |
 
 停止口径：

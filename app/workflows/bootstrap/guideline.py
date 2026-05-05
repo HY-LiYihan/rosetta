@@ -17,7 +17,11 @@ from app.core.models import (
 )
 from app.domain.annotation_doc import legacy_string_to_spans
 from app.runtime.store import RuntimeStore
-from app.services.annotation_service import build_runtime_annotation_prompt, parse_annotation_response
+from app.services.annotation_service import (
+    ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
+    build_runtime_annotation_prompt,
+    parse_annotation_response,
+)
 from app.workflows.bootstrap.prompt_optimizer import (
     build_llm_adamw_trace,
     finalize_candidate_trace,
@@ -737,6 +741,7 @@ def _gold_comparison_detail(task_payload: dict, prediction_payload: dict, route:
         "predicted_spans": [_span_key_to_dict(key) for key in sorted(pred_keys)],
         "missing_spans": [_span_key_to_dict(key) for key in missing],
         "extra_spans": [_span_key_to_dict(key) for key in extra],
+        "model_raw_response": prediction_payload.get("raw_response", ""),
     }
 
 
@@ -1088,7 +1093,7 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
             "只输出 JSON，字段为 text、annotation、explanation；不要输出 markdown、解释性段落或额外字段。"
         ),
     )
-    raw = predictor("你是严谨的标注校验助手，只输出 JSON。", [{"role": "user", "content": prompt}], temperature)
+    raw = predictor(ANNOTATION_ASSISTANT_SYSTEM_PROMPT, [{"role": "user", "content": prompt}], temperature)
     parsed, warning = parse_annotation_response(raw)
     if warning or not parsed:
         return {"score": 0.2, "route": "failed", "raw_response": raw, "model": "llm", "predicted_spans": ()}

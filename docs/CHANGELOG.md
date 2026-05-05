@@ -2,6 +2,16 @@
 
 ## 2026-05-05
 
+### Fix / Reflection feedback and annotation assistant prompt v4.5.10
+
+1. 概念验证、候选回测、单条标注和批量标注统一使用同一个 system prompt：`你是严谨的标注助手，只输出 JSON。`。workflow 差异只保留在 user prompt 的概念定义、标注格式、待标注文本和任务强调中。
+2. 新增 `ANNOTATION_ASSISTANT_SYSTEM_PROMPT` 常量，避免概念验证、单条标注和批量标注各自维护“标注校验助手 / 批量标注助手 / 语言学助手”等不同身份。
+3. `llm_reflection` 的优化 prompt 改为先展示当前可优化提示词，再展示逐条失败样例批改对照。
+4. 每个失败 detail 块内就近组织 `原文 -> 标准答案 annotation -> 模型回答 JSON -> 错误摘要`，避免同一句的 gold 和 model answer 被分散到不同段落。
+5. 失败对照优先使用概念验证 detail 中的 `model_raw_response`；如果缺失，则根据 parsed spans 重构一个安全的模型 JSON 摘要。
+6. `ConceptVersion.description` 仍只保存 concept-only 的干净提示词；失败 detail、gold answer、model answer 和错误摘要只作为 `training_feedback_only=true` 的训练反馈，不进入最终 operational prompt。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Annotation Format](./developer/ANNOTATION_FORMAT.md) 和 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，并将首页版本更新为 `v4.5.10`。
+
 ### Fix / Unified annotation prompt contract v4.5.9
 
 1. 概念验证、候选回测、单条标注和批量标注改用同一个运行时 prompt 框架：`请根据以下概念定义标注文本 -> 概念定义 -> 标注格式 -> 通用格式示例 -> 待标注文本 -> 任务强调`。

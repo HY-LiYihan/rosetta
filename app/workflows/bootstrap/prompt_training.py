@@ -1318,22 +1318,19 @@ def _generate_reflection_candidates(
 
 
 def _build_reflection_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
-    missing_terms, extra_terms = _revision_terms(validation_result.get("details", []))
-    missing_line = "；".join(missing_terms[:12]) or "无"
-    extra_line = "；".join(extra_terms[:8]) or "无"
     concept_description = strip_frozen_protocol_sections(current_description)
-    return f"""请根据金样例校准中的失败点，优化下面的概念阐释。
+    return f"""请根据逐条批改对照，优化下面的概念阐释。
 
 training_feedback_only=true
 
-当前可优化定义：
+当前提示词（只包含可优化的概念定义和边界规则）：
 {concept_description}
 
-失败摘要（只供你理解，不要原样写进最终提示词）：
+整体失败摘要（只供你判断改写方向，不要原样写进最终提示词）：
 {failure_summary}
 
-需要更明确纳入的片段类型：{missing_line}
-需要更明确排除或收紧边界的片段类型：{extra_line}
+失败样例批改对照（每个样例的原文、标准答案和模型回答彼此相邻，只供学习，不要复制到最终提示词）：
+{_reflection_detail_context(validation_result.get("details", []))}
 
 输出要求：
 1. 只输出可以直接用于下一轮标注的概念阐释正文。
@@ -1345,6 +1342,63 @@ training_feedback_only=true
 
 def build_training_feedback_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
     return _build_reflection_prompt(current_description, validation_result, failure_summary)
+
+
+def _reflection_detail_context(details: list[dict[str, Any]], limit: int = 15) -> str:
+    failed = [detail for detail in details if detail.get("route") != "passed"][:limit]
+    if not failed:
+        return "无失败样例。"
+    blocks: list[str] = []
+    for index, detail in enumerate(failed, start=1):
+        blocks.append(
+            "\n".join(
+                [
+                    f"失败样例 {index}",
+                    f"原文：{detail.get('text', '')}",
+                    f"标准答案 annotation：{_spans_to_markup(detail.get('gold_spans', []))}",
+                    f"模型回答 JSON：{_model_response_json_for_feedback(detail)}",
+                    f"错误摘要：{_detail_error_summary(detail)}",
+                ]
+            )
+        )
+    return "\n\n".join(blocks)
+
+
+def _spans_to_markup(spans: list[dict[str, Any]]) -> str:
+    parts: list[str] = []
+    for span in spans:
+        text = str(span.get("text", "")).strip()
+        label = str(span.get("label", "Term")).strip() or "Term"
+        implicit = bool(span.get("implicit", False))
+        prefix = "!" if implicit else ""
+        if text:
+            parts.append(f"[{prefix}{text}]{{{label}}}")
+    return " ".join(parts)
+
+
+def _model_response_json_for_feedback(detail: dict[str, Any]) -> str:
+    raw = str(detail.get("model_raw_response") or "").strip()
+    if raw:
+        return raw
+    payload = {
+        "text": detail.get("text", ""),
+        "annotation": _spans_to_markup(detail.get("predicted_spans", [])),
+        "explanation": "model output reconstructed from parsed spans",
+    }
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def _detail_error_summary(detail: dict[str, Any]) -> str:
+    parts: list[str] = []
+    missing = _spans_to_markup(detail.get("missing_spans", []))
+    extra = _spans_to_markup(detail.get("extra_spans", []))
+    if missing:
+        parts.append(f"应补：{missing}")
+    if extra:
+        parts.append(f"应排除或收紧：{extra}")
+    if not parts:
+        parts.append(f"route={detail.get('route', 'failed')}, score={detail.get('score', 0.0)}")
+    return "；".join(parts)
 
 
 def repair_leaked_prompt(

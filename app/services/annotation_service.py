@@ -5,6 +5,7 @@ from app.domain.annotation_doc import make_annotation_doc, validate_annotation_d
 from app.domain.annotation_format import validate_annotation_markup
 
 FULL_JSON_OUTPUT_FORMAT = "rosetta.annotation_doc.v3.1.full_json"
+ANNOTATION_ASSISTANT_SYSTEM_PROMPT = "你是严谨的标注助手，只输出 JSON。"
 
 
 def build_protocol_instruction(output_format: str, label: str = "Term") -> tuple[str, str]:

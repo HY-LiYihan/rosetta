@@ -165,7 +165,7 @@ PromptTrainingConfig(
 | 方法 | 训练反馈材料 | 候选生成信息 | 防背答案约束 | 用途 |
 | --- | --- | --- | --- | --- |
 | `llm_optimize_only` | 不提供原文、标准答案、模型答案、失败详情、loss 或文本梯度 | 只告诉大模型“请优化当前概念语义提示词” | 候选只允许包含概念定义和边界规则；如有负例约束，只能作为抽象边界条件 | 最简单 baseline |
-| `llm_reflection` | 提供原文、gold answer、model answer、错误类型和失败摘要，标记 `training_feedback_only=true` | 要求 LLM 把具体错误抽象成整体概念阐释 | 候选不能复制原文、gold span、model span 或可识别答案片段，也不能改输出协议 | 普通 LLM 反思 baseline |
+| `llm_reflection` | 先提供当前可优化提示词，再按失败 detail 就近提供原文、gold `[span]{Term}`、model JSON answer、错误摘要和整体失败摘要，标记 `training_feedback_only=true` | 要求 LLM 把具体错误抽象成整体概念阐释 | 候选不能复制原文、gold span、model span 或可识别答案片段，也不能改输出协议 | 普通 LLM 反思 baseline |
 | `text_gradient_adamw` | 提供原始批改对照、系统计算的文本梯度方向、loss 和长度变化 | 使用 Text Gradient / `LLM-AdamW` 方向生成概念候选 | 梯度可来自具体错误，但最终候选只能保留抽象规则；格式协议由 harness 注入 | Rosetta 默认方法 |
 
 每种方法独立运行，不共享中间 prompt，避免方法之间互相污染。每轮固定执行：
@@ -202,6 +202,25 @@ evaluate current prompt
 2. `learned operational prompt` 是后续批量标注使用的概念阐释，不能复制语料词、gold span、model span、原句或可识别答案片段。
 3. `ConceptVersion.description` 只保存通过防背答案检查的 concept-only operational prompt。
 4. raw feedback、raw response、失败样例和完整候选日志只进入 artifact 或折叠日志。
+
+`v4.5.10` 后，`llm_reflection` 的批改反馈必须保持句子级对照相邻，而不是把 gold answer、model answer 和错误摘要分散在不同段落：
+
+```text
+当前提示词（只包含可优化的概念定义和边界规则）：
+{current ConceptPromptSpec}
+
+整体失败摘要（只供判断改写方向）：
+{failure_summary}
+
+失败样例批改对照：
+失败样例 1
+原文：{failed_detail.text}
+标准答案 annotation：{gold spans rendered as [span]{Term}}
+模型回答 JSON：{"text": "...", "annotation": "...", "explanation": "..."}
+错误摘要：{missing / extra / route / score summary}
+```
+
+反馈构建优先读取概念验证 detail：`gold_spans` 渲染为 `[span]{Term}`，`model_raw_response` 作为模型回答 JSON；如果没有 raw response，则从 `predicted_spans` 重构一个安全 JSON 摘要。这个结构可以让优化模型像看逐题批改一样学习边界问题，但输出要求仍然是只返回概念阐释正文，不能带回样例编号、失败摘要、gold answer、model answer 或输出协议。
 
 `MemorizationGuard` 的输入来自同一批 15 条 gold：
 
@@ -354,12 +373,14 @@ ConceptPromptSpec
 3. `v4.5.7` 的评估调用会把冻结标签、JSON 字段和 annotation 格式重新注入给标注模型，因此候选生成阶段不需要也不允许学习输出协议。
 4. `v4.5.8` 已把新概念表单收紧为概念名称、概念定义、边界说明和协议选项；标签从 gold span label 推断，缺省为 `Term`。解析器已能接受 `[span]{Term}` 字符串和完整 AnnotationDoc dict。
 5. `v4.5.9` 已把概念验证和批量标注的运行时 prompt 统一到同一个 helper，移除“不要参考金答案”表述，并把批量上下文里的输出格式说明移入冻结 `标注格式` 段落。
-6. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
+6. `v4.5.10` 已把概念验证、候选回测、单条标注和批量标注的 system prompt 统一为 `你是严谨的标注助手，只输出 JSON。`；workflow 差异只留在 user prompt 和冻结协议注入中。
+7. `v4.5.10` 已把 `llm_reflection` 的 training feedback 改为逐条失败 detail 的相邻批改对照，优先使用验证 detail 中的 `model_raw_response`。
+8. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
 
-7. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-8. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
-9. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
-10. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
+9. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+10. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+11. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+12. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 

@@ -20,7 +20,7 @@ from app.core.models import (
 )
 from app.data.prodigy_jsonl import task_from_dict
 from app.runtime.store import RuntimeStore
-from app.services.annotation_service import build_annotation_prompt, parse_annotation_response
+from app.services.annotation_service import ANNOTATION_ASSISTANT_SYSTEM_PROMPT, build_annotation_prompt, parse_annotation_response
 from app.workflows.annotation.context import build_annotation_context
 
 Predictor = Callable[[str, list[dict], float], str]
@@ -185,7 +185,7 @@ def _run_one_item(
     predictions: list[Prediction] = []
     for run_index in range(job.sample_count):
         raw = predictor(
-            "你是严谨的批量标注助手，只输出 JSON。",
+            ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
             [{"role": "user", "content": build_annotation_prompt(concept, task.text)}],
             temperature,
         )
