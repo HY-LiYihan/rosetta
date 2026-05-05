@@ -107,7 +107,7 @@ class _TrainingUsageMeter:
 class PromptTrainingConfig:
     methods: tuple[str, ...] = PROMPT_TRAINING_METHODS
     max_rounds: int = 30
-    candidate_count: int = 3
+    candidate_count: int = 5
     target_pass_count: int = 15
     min_loss_delta: float = 0.01
     patience_rounds: int = 5
@@ -175,6 +175,7 @@ class PromptTrainingResult:
     stop_policy: str
     experiment_case: str
     initial_description: str
+    prompt_versions: list[dict[str, Any]]
     report_path: str
     prompt_evolution_path: str
     run_id: str = ""
@@ -339,6 +340,7 @@ def run_prompt_training_experiment(
         initial_warnings=initial_warnings,
         auto_apply=applied,
         leakage_report=leakage_report,
+        prompt_versions=_prompt_versions_for_best_method(initial_description, best),
     )
     if applied:
         updated_guideline = _guideline_from_payload(
@@ -385,6 +387,7 @@ def run_prompt_training_experiment(
         stop_policy=cfg.stop_policy,
         experiment_case=str(guideline.get("metadata", {}).get("experiment_case", "")),
         initial_description=initial_description,
+        prompt_versions=_prompt_versions_for_best_method(initial_description, best),
         report_path="",
         prompt_evolution_path="",
         run_id=run_id,
@@ -574,6 +577,8 @@ def _run_training_method(
     evaluated_candidate_count = 0
     stop_reason = "max_rounds"
     final_status = "needs_revision"
+    prompt_versions: list[dict[str, Any]] = []
+    accepted_history: list[dict[str, Any]] = []
 
     for round_index in range(1, config.max_rounds + 1):
         round_started = time.perf_counter()
@@ -624,6 +629,20 @@ def _run_training_method(
         if initial_loss is None:
             initial_loss = current_loss
             initial_pass_count = current_pass_count
+            prompt_versions.append(
+                {
+                    "version_label": "v0",
+                    "method": method,
+                    "round_index": 0,
+                    "candidate_id": "initial",
+                    "description": current_description,
+                    "loss": current_loss["loss"],
+                    "pass_count": current_pass_count,
+                    "loss_delta": 0.0,
+                    "accepted": True,
+                    "event": "initial",
+                }
+            )
         if _is_better_training_result(
             current_result,
             current_loss,
@@ -698,6 +717,7 @@ def _run_training_method(
             predictor,
             config.candidate_count,
             config.candidate_temperature,
+            accepted_history,
         )
         _emit_training_progress(
             progress_recorder,
@@ -887,7 +907,8 @@ def _run_training_method(
                 else _loss_without_length_penalty(raw_loss, current_description, candidate_description)
             )
             reached_target = len(candidate_result["passed"]) >= target_pass_count and not candidate_result["failed"] and not candidate_result["unstable"]
-            accepted = candidate_loss["loss"] + config.min_loss_delta < selected_loss["loss"]
+            improved_current = candidate_loss["loss"] + config.min_loss_delta < current_loss["loss"]
+            round_best_so_far = candidate_loss["loss"] + config.min_loss_delta < selected_loss["loss"]
             optimization_trace = finalize_candidate_trace(
                 candidate.get("prompt_optimization", {}),
                 candidate["candidate_id"],
@@ -895,14 +916,14 @@ def _run_training_method(
                 candidate_description,
                 current_loss,
                 candidate_loss,
-                accepted,
+                round_best_so_far,
             )
             candidate_evaluations.append(
                 {
                     "method": method,
                     "round_index": round_index,
                     "candidate_id": candidate["candidate_id"],
-                    "status": "accepted" if accepted else "rejected_no_loss_improvement",
+                    "status": "candidate_improved_current" if improved_current else "rejected_no_loss_improvement",
                     "source": candidate["source"],
                     "pass_count": len(candidate_result["passed"]),
                     "failed_count": len(candidate_result["failed"]),
@@ -913,7 +934,9 @@ def _run_training_method(
                     "raw_loss_detail": raw_loss,
                     "length_delta": candidate_loss["length_delta"],
                     "prompt_length": len(candidate_description),
-                    "accepted": accepted,
+                    "accepted": False,
+                    "improved_current": improved_current,
+                    "round_best_so_far": round_best_so_far,
                     "reached_target": reached_target,
                     "memorization_passed": True,
                     "memorization_status": "clean",
@@ -942,35 +965,22 @@ def _run_training_method(
                     "method": method,
                     "round_index": round_index,
                     "candidate_id": candidate["candidate_id"],
-                    "status": "accepted" if accepted else "rejected_no_loss_improvement",
+                    "status": "candidate_improved_current" if improved_current else "rejected_no_loss_improvement",
                     "pass_count": len(candidate_result["passed"]),
                     "failed_count": len(candidate_result["failed"]),
                     "unstable_count": len(candidate_result["unstable"]),
                     "loss": candidate_loss["loss"],
                     "loss_delta": round(current_loss["loss"] - candidate_loss["loss"], 4),
-                    "accepted": accepted,
+                    "accepted": False,
+                    "improved_current": improved_current,
+                    "round_best_so_far": round_best_so_far,
                     "reached_target": reached_target,
                     "repair_attempt_count": sum(
                         len(evaluation.get("repair_attempts", [])) for evaluation in candidate_evaluations
                     ),
                 },
             )
-            _emit_training_progress(
-                progress_recorder,
-                "candidate_accepted" if accepted else "candidate_rejected",
-                "候选选择",
-                f"{method} 第 {round_index} 轮候选 {candidate['candidate_id']} {'已接受' if accepted else '未带来足够改进'}",
-                {
-                    "method": method,
-                    "round_index": round_index,
-                    "candidate_id": candidate["candidate_id"],
-                    "status": "accepted" if accepted else "rejected_no_loss_improvement",
-                    "pass_count": len(candidate_result["passed"]),
-                    "loss": candidate_loss["loss"],
-                    "accepted": accepted,
-                },
-            )
-            if accepted:
+            if round_best_so_far:
                 selected_result = candidate_result
                 selected_loss = candidate_loss
                 selected_description = candidate_description
@@ -979,8 +989,53 @@ def _run_training_method(
         round_status = "stable" if len(selected_result["passed"]) >= target_pass_count and not selected_result["failed"] and not selected_result["unstable"] else "needs_revision"
         round_improved = selected_candidate_id != "current"
         if round_improved:
+            for evaluation in candidate_evaluations:
+                trace = evaluation.get("prompt_optimization_trace", {}).get("trace")
+                if evaluation.get("candidate_id") == selected_candidate_id:
+                    evaluation["status"] = "accepted"
+                    evaluation["accepted"] = True
+                    if isinstance(trace, dict):
+                        trace["accepted"] = True
+                elif evaluation.get("status") == "candidate_improved_current":
+                    evaluation["status"] = "rejected_not_round_best"
+                    evaluation["accepted"] = False
+                    if isinstance(trace, dict):
+                        trace["accepted"] = False
+            _emit_training_progress(
+                progress_recorder,
+                "candidate_accepted",
+                "候选选择",
+                f"{method} 第 {round_index} 轮已接受 loss 最低候选 {selected_candidate_id}",
+                {
+                    "method": method,
+                    "round_index": round_index,
+                    "candidate_id": selected_candidate_id,
+                    "status": "accepted",
+                    "pass_count": len(selected_result["passed"]),
+                    "loss": selected_loss["loss"],
+                    "loss_delta": round(current_loss["loss"] - selected_loss["loss"], 4),
+                    "accepted": True,
+                },
+            )
+        if round_improved:
             no_improvement_streak = 0
             accepted_round_count += 1
+            version_entry = {
+                "version_label": f"v{len(prompt_versions)}",
+                "method": method,
+                "round_index": round_index,
+                "candidate_id": selected_candidate_id,
+                "previous_description": current_description,
+                "description": selected_description,
+                "loss_before": current_loss["loss"],
+                "loss": selected_loss["loss"],
+                "pass_count": len(selected_result["passed"]),
+                "loss_delta": round(current_loss["loss"] - selected_loss["loss"], 4),
+                "accepted": True,
+                "event": "accepted",
+            }
+            prompt_versions.append(version_entry)
+            accepted_history.append(version_entry)
         else:
             no_improvement_streak += 1
             round_status = "no_improvement"
@@ -1115,6 +1170,7 @@ def _run_training_method(
         "elapsed_seconds": round(time.perf_counter() - method_started, 4),
         "usage": usage_meter.summary(),
         "progress_events": _progress_events(method, rounds),
+        "prompt_versions": prompt_versions,
     }
 
 
@@ -1174,6 +1230,7 @@ def _generate_training_candidates(
     predictor: Predictor | None,
     candidate_count: int,
     temperature: float,
+    accepted_history: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     if method == TEXT_GRADIENT_ADAMW:
         return _generate_text_gradient_candidates(
@@ -1187,7 +1244,15 @@ def _generate_training_candidates(
             temperature,
         )
     if method == LLM_REFLECTION:
-        return _generate_reflection_candidates(current_description, validation_result, failure_summary, predictor, candidate_count, temperature)
+        return _generate_reflection_candidates(
+            current_description,
+            validation_result,
+            failure_summary,
+            predictor,
+            candidate_count,
+            temperature,
+            accepted_history or [],
+        )
     if method == LLM_OPTIMIZE_ONLY:
         return _generate_optimize_only_candidates(current_description, predictor, candidate_count, temperature)
     raise ValueError(f"Unsupported prompt training method: {method}")
@@ -1284,6 +1349,7 @@ def _generate_reflection_candidates(
     predictor: Predictor | None,
     candidate_count: int,
     temperature: float,
+    accepted_history: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     fallback = current_description
     if predictor is None:
@@ -1299,7 +1365,7 @@ def _generate_reflection_candidates(
         ]
     candidates: list[dict[str, Any]] = []
     for index in range(1, candidate_count + 1):
-        prompt = _build_reflection_prompt(current_description, validation_result, failure_summary)
+        prompt = _build_reflection_prompt(current_description, validation_result, failure_summary, accepted_history or [])
         raw = predictor("你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, warnings = sanitize_concept_description(raw, fallback=fallback)
         cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=fallback)
@@ -1317,7 +1383,12 @@ def _generate_reflection_candidates(
     return candidates
 
 
-def _build_reflection_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
+def _build_reflection_prompt(
+    current_description: str,
+    validation_result: dict,
+    failure_summary: str,
+    accepted_history: list[dict[str, Any]] | None = None,
+) -> str:
     concept_description = strip_frozen_protocol_sections(current_description)
     return f"""请根据逐条批改对照，优化下面的概念阐释。
 
@@ -1325,6 +1396,9 @@ training_feedback_only=true
 
 当前提示词（只包含可优化的概念定义和边界规则）：
 {concept_description}
+
+历史优化摘要（旧 prompt -> 新 prompt -> loss 变化；只供判断哪些方向有效，不要原样复述）：
+{_accepted_history_context(accepted_history or [])}
 
 整体失败摘要（只供你判断改写方向，不要原样写进最终提示词）：
 {failure_summary}
@@ -1342,6 +1416,36 @@ training_feedback_only=true
 
 def build_training_feedback_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
     return _build_reflection_prompt(current_description, validation_result, failure_summary)
+
+
+def _accepted_history_context(history: list[dict[str, Any]], limit: int = 5) -> str:
+    if not history:
+        return "暂无。"
+    lines: list[str] = []
+    for item in history[-limit:]:
+        label = str(item.get("version_label", "v?"))
+        previous = _compact_prompt_text(str(item.get("previous_description", "")))
+        current = _compact_prompt_text(str(item.get("description", "")))
+        loss_before = item.get("loss_before", "")
+        loss_after = item.get("loss", "")
+        loss_delta = item.get("loss_delta", "")
+        lines.append(
+            "\n".join(
+                [
+                    f"- {label}: loss {loss_before} -> {loss_after}，下降 {loss_delta}，候选 {item.get('candidate_id', '')}",
+                    f"  旧 prompt 摘要：{previous}",
+                    f"  新 prompt 摘要：{current}",
+                ]
+            )
+        )
+    return "\n".join(lines)
+
+
+def _compact_prompt_text(text: str, limit: int = 360) -> str:
+    normalized = " ".join(line.strip() for line in text.splitlines() if line.strip())
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 3] + "..."
 
 
 def _reflection_detail_context(details: list[dict[str, Any]], limit: int = 15) -> str:
@@ -1825,7 +1929,9 @@ def _store_training_version(
     initial_warnings: list[str],
     auto_apply: bool,
     leakage_report: dict[str, Any],
+    prompt_versions: list[dict[str, Any]],
 ) -> None:
+    _store_prompt_version_history(store, guideline_id, prompt_versions, artifact_path, config)
     next_version = _next_concept_version(store, guideline_id)
     store.upsert_concept_version(
         ConceptVersion(
@@ -1849,6 +1955,7 @@ def _store_training_version(
                     "best_loss": best["best_loss"],
                     "best_pass_count": best["best_pass_count"],
                     "best_round_index": best.get("best_round_index", 0),
+                    "prompt_version_count": len(prompt_versions),
                     "initial_loss": best.get("initial_loss", 0.0),
                     "total_loss_delta": best.get("total_loss_delta", 0.0),
                     "accepted_round_count": best.get("accepted_round_count", 0),
@@ -1873,6 +1980,65 @@ def _store_training_version(
             },
         )
     )
+
+
+def _prompt_versions_for_best_method(initial_description: str, best: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = list(best.get("prompt_versions", []))
+    if rows:
+        return rows
+    return [
+        {
+            "version_label": "v0",
+            "method": best.get("method", ""),
+            "round_index": 0,
+            "candidate_id": "initial",
+            "description": initial_description,
+            "loss": best.get("initial_loss", ""),
+            "pass_count": best.get("initial_pass_count", ""),
+            "loss_delta": 0.0,
+            "accepted": True,
+            "event": "initial",
+        }
+    ]
+
+
+def _store_prompt_version_history(
+    store: RuntimeStore,
+    guideline_id: str,
+    prompt_versions: list[dict[str, Any]],
+    artifact_path: str,
+    config: PromptTrainingConfig,
+) -> None:
+    next_version = _next_concept_version(store, guideline_id)
+    for row in prompt_versions:
+        description = str(row.get("description", "")).strip()
+        if not description:
+            continue
+        store.upsert_concept_version(
+            ConceptVersion(
+                id=f"concept-version-{uuid.uuid4().hex[:10]}",
+                guideline_id=guideline_id,
+                version=next_version,
+                description=description,
+                notes=f"提示词优化版本 {row.get('version_label', '')}",
+                metadata={
+                    "prompt_training_version": True,
+                    "prompt_version_label": row.get("version_label", ""),
+                    "prompt_version_event": row.get("event", ""),
+                    "method": row.get("method", ""),
+                    "round_index": row.get("round_index", 0),
+                    "candidate_id": row.get("candidate_id", ""),
+                    "loss": row.get("loss", ""),
+                    "loss_before": row.get("loss_before", ""),
+                    "loss_delta": row.get("loss_delta", ""),
+                    "pass_count": row.get("pass_count", ""),
+                    "artifact_path": artifact_path,
+                    "provider_id": config.provider_id,
+                    "model": config.model,
+                },
+            )
+        )
+        next_version += 1
 
 
 def write_prompt_training_comparison_outputs(result: dict[str, Any], output_dir: str | Path) -> dict[str, Any]:
@@ -2092,6 +2258,22 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
 
 
 def _prompt_evolution_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
+    prompt_versions = list(result.get("prompt_versions", []))
+    if prompt_versions:
+        return [
+            {
+                "method": row.get("method", result.get("best_method", "")),
+                "round_index": row.get("round_index", 0),
+                "event": row.get("event", ""),
+                "version_label": row.get("version_label", ""),
+                "loss": row.get("loss", ""),
+                "loss_delta": row.get("loss_delta", ""),
+                "pass_count": row.get("pass_count", ""),
+                "candidate_id": row.get("candidate_id", ""),
+                "description": row.get("description", ""),
+            }
+            for row in prompt_versions
+        ]
     rows: list[dict[str, Any]] = []
     initial_description = result.get("initial_description", "")
     methods = [row.get("method", "") for row in result.get("method_results", [])]

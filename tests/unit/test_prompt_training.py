@@ -23,6 +23,7 @@ from app.workflows.bootstrap import (
     strip_frozen_protocol_sections,
     write_prompt_training_comparison_outputs,
 )
+from app.workflows.bootstrap.prompt_training import _build_reflection_prompt
 
 
 def _store_with_guideline(gold_count: int = 15):
@@ -151,8 +152,12 @@ class TestPromptTraining(unittest.TestCase):
         self.assertGreater(winning_method["estimated_tokens"], 0)
         self.assertGreaterEqual(winning_method["elapsed_seconds"], 0.0)
         self.assertIn("estimated_tokens", result["rounds"][0])
+        self.assertGreaterEqual(len(result["prompt_versions"]), 2)
+        self.assertEqual(result["prompt_versions"][0]["version_label"], "v0")
         versions = store.list_concept_versions(guideline_id=guideline_id, limit=10)
         training_versions = [row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training")]
+        stored_prompt_versions = [row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training_version")]
+        self.assertTrue(stored_prompt_versions)
         self.assertEqual(training_versions[0]["metadata"]["best_method"], TEXT_GRADIENT_ADAMW)
         self.assertTrue(training_versions[0]["metadata"]["reached_target"])
         self.assertEqual(training_versions[0]["metadata"]["stop_policy"], "patience_no_loss_improvement")
@@ -227,6 +232,57 @@ class TestPromptTraining(unittest.TestCase):
         self.assertEqual(result["rounds"][1]["round_improved"], False)
         self.assertEqual(result["rounds"][1]["no_improvement_streak_after_round"], 1)
         self.assertEqual(result["method_results"][0]["accepted_round_count"], 1)
+
+    def test_round_accepts_only_lowest_loss_candidate_and_records_prompt_version(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+        state = {"candidate_calls": 0}
+
+        def predictor(system_prompt, messages, temperature):
+            prompt = messages[-1]["content"]
+            if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
+                state["candidate_calls"] += 1
+                marker = {
+                    1: "profile_alpha",
+                    2: "profile_beta",
+                    3: "profile_gamma",
+                }.get(state["candidate_calls"], "profile_gamma")
+                return "\n".join(
+                    [
+                        f"概念描述：{marker} 标出明确专业术语。",
+                        "边界规则：只标文本中可独立定位的完整术语。",
+                        "排除规则：不标普通功能词。",
+                    ]
+                )
+            text = _target_text_from_prompt(prompt)
+            number = int(text.split("Quantum term ", 1)[-1].split(" ", 1)[0])
+            if "profile_alpha" in prompt and number <= 5:
+                return _correct_annotation(prompt)
+            if "profile_beta" in prompt and number <= 10:
+                return _correct_annotation(prompt)
+            if "profile_gamma" in prompt and number <= 7:
+                return _correct_annotation(prompt)
+            return _wrong_annotation(prompt)
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(LLM_REFLECTION,), max_rounds=1, candidate_count=3),
+        )
+
+        evaluations = result["rounds"][0]["candidate_evaluations"]
+        accepted = [row for row in evaluations if row.get("accepted")]
+        self.assertEqual(len(accepted), 1)
+        self.assertEqual(accepted[0]["candidate_id"], "llm-reflection-02")
+        self.assertEqual(accepted[0]["status"], "accepted")
+        self.assertEqual(evaluations[0]["status"], "rejected_not_round_best")
+        self.assertEqual(evaluations[2]["status"], "rejected_not_round_best")
+        self.assertEqual(result["rounds"][0]["accepted_candidate_id"], "llm-reflection-02")
+        self.assertEqual(result["prompt_versions"][0]["version_label"], "v0")
+        self.assertEqual(result["prompt_versions"][1]["version_label"], "v1")
+        self.assertEqual(result["prompt_versions"][1]["candidate_id"], "llm-reflection-02")
+        self.assertIn("profile_beta", result["prompt_versions"][1]["description"])
 
     def test_method_summary_keeps_historical_best_prompt(self):
         tmp, store, guideline_id = _store_with_guideline()
@@ -421,6 +477,29 @@ class TestPromptTraining(unittest.TestCase):
         self.assertLess(prompt.index("模型回答 JSON"), prompt.index("错误摘要"))
         self.assertNotIn("标签集合：Term", prompt)
         self.assertNotIn("[原文]{标签}", prompt)
+
+    def test_reflection_prompt_includes_accepted_prompt_history(self):
+        prompt = _build_reflection_prompt(
+            "概念描述：旧定义。",
+            {"details": []},
+            "仍有失败。",
+            [
+                {
+                    "version_label": "v1",
+                    "previous_description": "概念描述：旧定义。",
+                    "description": "概念描述：新定义。",
+                    "loss_before": 10.0,
+                    "loss": 6.0,
+                    "loss_delta": 4.0,
+                    "candidate_id": "candidate-01",
+                }
+            ],
+        )
+
+        self.assertIn("历史优化摘要", prompt)
+        self.assertIn("loss 10.0 -> 6.0", prompt)
+        self.assertIn("旧 prompt 摘要", prompt)
+        self.assertIn("新 prompt 摘要", prompt)
 
     def test_candidate_copying_gold_answer_is_repaired_before_evaluation(self):
         tmp, store, guideline_id = _store_with_guideline()

@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from math import sqrt
 from typing import Any, Callable
 
 from app.core.models import (
@@ -15,7 +17,7 @@ from app.core.models import (
     Prediction,
     utc_timestamp,
 )
-from app.domain.annotation_doc import legacy_string_to_spans
+from app.domain.annotation_doc import legacy_string_to_spans, spans_to_legacy_string
 from app.runtime.store import RuntimeStore
 from app.services.annotation_service import (
     ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
@@ -152,6 +154,7 @@ def validate_gold_examples(
     temperature: float = 0.0,
     concurrency: int = 1,
     progress_callback: ProgressCallback | None = None,
+    reference_k: int = 0,
 ) -> dict:
     guideline_row = store.get_guideline(guideline_id)
     if guideline_row is None:
@@ -173,6 +176,7 @@ def validate_gold_examples(
         source="guideline_validation",
         concurrency=concurrency,
         progress_callback=progress_callback,
+        reference_k=reference_k,
     )
     passed = list(evaluation["passed"])
     failed = list(evaluation["failed"])
@@ -206,8 +210,67 @@ def validate_gold_examples(
         "unstable": unstable,
         "details": evaluation["details"],
         "concurrency": max(1, int(concurrency)),
+        "reference_k": max(0, int(reference_k)),
         "total_count": len(task_ids),
         "summary": f"通过 {len(passed)} 条，失败 {len(failed)} 条，边界不稳定 {len(unstable)} 条。",
+    }
+
+
+def validate_prompt_format_contract(store: RuntimeStore, guideline_id: str) -> dict[str, Any]:
+    """Validate local prompt/gold/protocol structure without calling an LLM."""
+    guideline_row = store.get_guideline(guideline_id)
+    if guideline_row is None:
+        raise ValueError(f"未找到概念阐释: {guideline_id}")
+    guideline = guideline_row["payload"]
+    gold_sets = store.list_gold_example_sets(guideline_id=guideline_id, limit=1)
+    if not gold_sets:
+        raise ValueError("该概念还没有金样例库")
+
+    output_protocol = frozen_output_protocol_from_guideline(guideline)
+    issues: list[dict[str, str]] = []
+    concept_spec = concept_prompt_spec_from_guideline(guideline).text.strip()
+    if not concept_spec:
+        issues.append({"scope": "concept", "reason": "ConceptPromptSpec 为空"})
+    if not output_protocol.labels:
+        issues.append({"scope": "protocol", "reason": "冻结标签集合为空"})
+    if not output_protocol.json_fields:
+        issues.append({"scope": "protocol", "reason": "冻结 JSON 字段为空"})
+
+    task_ids = list(gold_sets[0]["payload"].get("task_ids", []))
+    checked = 0
+    for task_id in task_ids:
+        task_row = store.get_task(task_id)
+        if task_row is None:
+            issues.append({"scope": task_id, "reason": "金样例任务不存在"})
+            continue
+        checked += 1
+        task = task_row["payload"]
+        if not str(task.get("text", "")).strip():
+            issues.append({"scope": task_id, "reason": "金样例 text 为空"})
+        spans = task.get("spans", [])
+        if not isinstance(spans, list):
+            issues.append({"scope": task_id, "reason": "金样例 spans 不是 list"})
+            continue
+        for index, span in enumerate(spans):
+            text = str(span.get("text", ""))
+            label = str(span.get("label", ""))
+            if not text:
+                issues.append({"scope": task_id, "reason": f"span[{index}] text 为空"})
+            if label and label not in output_protocol.labels:
+                issues.append({"scope": task_id, "reason": f"span[{index}] label 不在冻结标签集合中: {label}"})
+            if text and not span.get("implicit") and text not in str(task.get("text", "")):
+                issues.append({"scope": task_id, "reason": f"span[{index}] 无法在原文中定位"})
+
+    return {
+        "status": "passed" if not issues else "failed",
+        "checked_gold_count": checked,
+        "target_count": int(gold_sets[0]["payload"].get("target_count", 15)),
+        "labels": list(output_protocol.labels),
+        "protocol": output_protocol.protocol,
+        "json_fields": output_protocol.json_fields,
+        "annotation_markup": output_protocol.annotation_markup,
+        "issues": issues,
+        "summary": f"格式验证通过：{checked} 条金样例。" if not issues else f"格式验证发现 {len(issues)} 个问题。",
     }
 
 
@@ -601,6 +664,7 @@ def _evaluate_gold_tasks(
     candidate_id: str | None = None,
     concurrency: int = 1,
     progress_callback: ProgressCallback | None = None,
+    reference_k: int = 0,
 ) -> dict:
     passed: list[str] = []
     failed: list[str] = []
@@ -635,7 +699,8 @@ def _evaluate_gold_tasks(
     prediction_rows: list[tuple[str, dict, dict]] = []
     if concurrency <= 1 or predictor is None or len(prediction_inputs) <= 1:
         for task_id, task_payload in prediction_inputs:
-            prediction_payload = _safe_predict_guideline(guideline, task_payload, predictor, temperature)
+            reference_examples = _reference_examples_for_task(store, prediction_inputs, task_id, task_payload, reference_k)
+            prediction_payload = _safe_predict_guideline(guideline, task_payload, predictor, temperature, reference_examples)
             prediction_completed += 1
             completed += 1
             _emit_progress(
@@ -657,7 +722,14 @@ def _evaluate_gold_tasks(
         indexed_rows: list[tuple[int, str, dict, dict] | None] = [None] * len(prediction_inputs)
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
             future_map = {
-                pool.submit(_safe_predict_guideline, guideline, task_payload, predictor, temperature): (index, task_id, task_payload)
+                pool.submit(
+                    _safe_predict_guideline,
+                    guideline,
+                    task_payload,
+                    predictor,
+                    temperature,
+                    _reference_examples_for_task(store, prediction_inputs, task_id, task_payload, reference_k),
+                ): (index, task_id, task_payload)
                 for index, (task_id, task_payload) in enumerate(prediction_inputs)
             }
             for future in as_completed(future_map):
@@ -721,9 +793,15 @@ def _emit_progress(progress_callback: ProgressCallback | None, event: dict[str, 
     progress_callback(event)
 
 
-def _safe_predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor | None, temperature: float) -> dict:
+def _safe_predict_guideline(
+    guideline: dict,
+    task_payload: dict,
+    predictor: Predictor | None,
+    temperature: float,
+    reference_examples: list[dict[str, Any]] | None = None,
+) -> dict:
     try:
-        return _predict_guideline(guideline, task_payload, predictor, temperature)
+        return _predict_guideline(guideline, task_payload, predictor, temperature, reference_examples or [])
     except Exception as exc:
         return {"score": 0.0, "route": "failed", "raw_response": str(exc), "model": "llm", "predicted_spans": ()}
 
@@ -1067,7 +1145,13 @@ def _normalize_output_format(output_format: str, labels: list[str]) -> str:
     return value or span_markup_output_format(labels[0] if labels else DEFAULT_SPAN_LABEL)
 
 
-def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor | None, temperature: float) -> dict:
+def _predict_guideline(
+    guideline: dict,
+    task_payload: dict,
+    predictor: Predictor | None,
+    temperature: float,
+    reference_examples: list[dict[str, Any]] | None = None,
+) -> dict:
     if predictor is None:
         span_count = len(task_payload.get("spans", []))
         score = 1.0 if span_count else 0.4
@@ -1082,6 +1166,9 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
         }
 
     concept_spec = concept_prompt_spec_from_guideline(guideline).text
+    reference_context = _reference_examples_prompt(reference_examples or [])
+    if reference_context:
+        concept_spec = f"{concept_spec}\n\n{reference_context}"
     output_protocol = frozen_output_protocol_from_guideline(guideline)
     prompt = build_runtime_annotation_prompt(
         concept_definition=concept_spec,
@@ -1110,6 +1197,65 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
         "model": "llm",
         "predicted_spans": tuple(_span_from_dict(span, index) for index, span in enumerate(predicted_spans, start=1)),
     }
+
+
+def _reference_examples_for_task(
+    store: RuntimeStore,
+    prediction_inputs: list[tuple[str, dict]],
+    task_id: str,
+    task_payload: dict,
+    reference_k: int,
+) -> list[dict[str, Any]]:
+    k = max(0, min(int(reference_k), 15))
+    if k <= 0:
+        return []
+    scored: list[tuple[float, str, dict]] = []
+    for other_id, other_payload in prediction_inputs:
+        if other_id == task_id:
+            continue
+        score = _cosine_text_similarity(str(task_payload.get("text", "")), str(other_payload.get("text", "")))
+        scored.append((score, other_id, other_payload))
+    return [
+        {
+            "id": other_id,
+            "text": payload.get("text", ""),
+            "annotation": spans_to_legacy_string(payload.get("spans", [])),
+            "similarity": round(score, 4),
+        }
+        for score, other_id, payload in sorted(scored, key=lambda row: (-row[0], row[1]))[:k]
+    ]
+
+
+def _reference_examples_prompt(reference_examples: list[dict[str, Any]]) -> str:
+    if not reference_examples:
+        return ""
+    lines = [
+        "参考样例（按与当前待标注文本的 top-k 语义相似度选择；只用于理解边界，不是当前文本答案）："
+    ]
+    for index, example in enumerate(reference_examples, start=1):
+        lines.append(
+            f"参考 {index}，相似度 {example.get('similarity', 0.0)}：原文：{example.get('text', '')}\n"
+            f"标准 annotation：{example.get('annotation', '')}"
+        )
+    return "\n".join(lines)
+
+
+def _cosine_text_similarity(left: str, right: str) -> float:
+    left_counts = Counter(_similarity_tokens(left))
+    right_counts = Counter(_similarity_tokens(right))
+    if not left_counts or not right_counts:
+        return 0.0
+    shared = set(left_counts) & set(right_counts)
+    dot = sum(left_counts[token] * right_counts[token] for token in shared)
+    left_norm = sqrt(sum(value * value for value in left_counts.values()))
+    right_norm = sqrt(sum(value * value for value in right_counts.values()))
+    if not left_norm or not right_norm:
+        return 0.0
+    return round(dot / (left_norm * right_norm), 4)
+
+
+def _similarity_tokens(text: str) -> list[str]:
+    return re.findall(r"[A-Za-z0-9_]+|[\u4e00-\u9fff]", text.lower())
 
 
 def _guideline_from_payload(payload: dict, status: str, stable_description: str | None = None) -> ConceptGuideline:

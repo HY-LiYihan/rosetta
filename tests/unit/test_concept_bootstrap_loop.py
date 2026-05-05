@@ -14,6 +14,7 @@ from app.workflows.bootstrap import (
     sanitize_concept_description,
     save_guideline_package,
     validate_gold_examples,
+    validate_prompt_format_contract,
 )
 
 
@@ -127,6 +128,35 @@ gold-00001: 漏标 Quantum dots
         self.assertGreater(state["max_active"], 1)
         self.assertEqual(len(events), 15)
         self.assertEqual(events[-1]["completed"], 15)
+
+    def test_format_validation_checks_gold_and_frozen_protocol(self):
+        tmp, store, guideline_id = _store_with_guideline(gold_count=15)
+        self.addCleanup(tmp.cleanup)
+
+        result = validate_prompt_format_contract(store, guideline_id)
+
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(result["checked_gold_count"], 15)
+        self.assertEqual(result["labels"], ["Term"])
+
+    def test_llm_validation_can_include_top_k_reference_examples(self):
+        tmp, store, guideline_id = _store_with_guideline(gold_count=15)
+        self.addCleanup(tmp.cleanup)
+        prompts: list[str] = []
+
+        def predictor(system_prompt, messages, temperature):
+            prompt = messages[-1]["content"]
+            prompts.append(prompt)
+            text = _target_text_from_prompt(prompt)
+            term = text.split(" appears here.", 1)[0]
+            return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears here.", "explanation": "matched"})
+
+        result = validate_gold_examples(store, guideline_id, predictor=predictor, reference_k=2)
+
+        self.assertEqual(result["status"], "stable")
+        self.assertEqual(result["reference_k"], 2)
+        self.assertIn("参考样例", prompts[0])
+        self.assertIn("标准 annotation", prompts[0])
 
     def test_extra_spans_are_not_counted_as_passed(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=15)

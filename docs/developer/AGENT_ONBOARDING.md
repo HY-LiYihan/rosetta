@@ -131,7 +131,7 @@ conda run -n rosetta-dev python scripts/tool/rosetta_tool.py prompt-training-exp
   --provider deepseek \
   --model deepseek-v4-pro \
   --concurrency 20 \
-  --candidate-count 3 \
+  --candidate-count 5 \
   --patience-rounds 5 \
   --max-rounds 30 \
   --output-dir .runtime/experiments/prompt_training_professional_ner \
@@ -148,9 +148,14 @@ prompt_evolution.jsonl
 
 ## 3. 核心算法电路
 
-### 3.1 概念自举
+### 3.1 提示词验证与优化页面
 
-定义与规范保存：
+`v4.5.11` 后，“定义与规范”页面主操作只有两个 tab：
+
+1. `提示词验证`：格式验证、无样例标注验证、带 top-k 相似 gold 参考的标注验证。
+2. `提示词优化`：人工优化、无样例自监督优化、类训练优化。
+
+页面仍保存：
 
 1. `ConceptGuideline`：概念阐释、标签、边界规则、负例规则、输出格式。
 2. `GoldExampleSet`：目标 15 条金样例。

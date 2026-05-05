@@ -2,6 +2,17 @@
 
 ## 2026-05-05
 
+### UX / Prompt validation and optimization workspace v4.5.11
+
+1. “定义与规范”页面主操作收敛为两个 tab：`提示词验证` 和 `提示词优化`。项目、金样例和冻结输出协议保留为前置配置，不再把自举校准、修订草案和导出作为页面主功能。
+2. `提示词验证` 拆成三种验证：`格式验证`、`无样例标注验证`、`标注验证（top-k 参考）`。格式验证只做本地 ConceptPromptSpec / FrozenOutputProtocolSpec / gold span contract 检查，不消耗模型。
+3. `标注验证（top-k 参考）` 为每条待验证 gold 按文本向量余弦相似度选择 top-k 参考金样例，默认可选 `2-15` 个，并把参考原文与标准 annotation 注入概念上下文；无样例验证保持 reference_k=0。
+4. `提示词优化` 拆成三种方式：`人工优化`、`无样例自监督优化` 和 `类训练优化`。人工优化直接保存编辑框内容为新版本；无样例自监督优化只调用 `llm_optimize_only`；类训练优化第一版调用 `llm_reflection`。
+5. 类训练优化默认每轮生成 5 个候选，逐个回测 15 条 gold，先选出本轮 loss 最低候选，再仅在其 loss 下降超过阈值时接受；一轮最多产生一个新提示词版本，连续多轮无提升或达到目标后停止。
+6. `llm_reflection` 下一轮候选生成会接收已接受历史摘要：`旧 prompt -> 新 prompt -> loss 变化`，用于避免重复走无效方向。
+7. Prompt training 结果新增 `prompt_versions`，并把当前 run 的 v0、v1 ... vn 接受版本写入 `ConceptVersion`，metadata 标记 `prompt_training_version=true`；最终 summary 版本仍用 `prompt_training=true` 兼容旧报告。
+8. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md) 和 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，并将首页版本更新为 `v4.5.11`。
+
 ### Fix / Reflection feedback and annotation assistant prompt v4.5.10
 
 1. 概念验证、候选回测、单条标注和批量标注统一使用同一个 system prompt：`你是严谨的标注助手，只输出 JSON。`。workflow 差异只保留在 user prompt 的概念定义、标注格式、待标注文本和任务强调中。

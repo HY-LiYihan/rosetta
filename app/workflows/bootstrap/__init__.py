@@ -9,6 +9,7 @@ from app.workflows.bootstrap.guideline import (
     sanitize_concept_description,
     save_guideline_package,
     validate_gold_examples,
+    validate_prompt_format_contract,
 )
 from app.workflows.bootstrap.prompt_optimizer import (
     PromptOptimizationTrace,
@@ -100,5 +101,6 @@ __all__ = [
     "TEXT_GRADIENT_ADAMW",
     "TextGradient",
     "validate_gold_examples",
+    "validate_prompt_format_contract",
     "write_prompt_training_comparison_outputs",
 ]

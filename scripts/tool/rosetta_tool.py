@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     prompt_training.add_argument("--provider", default="deepseek")
     prompt_training.add_argument("--model", default="deepseek-v4-pro")
     prompt_training.add_argument("--concurrency", type=int, default=20)
-    prompt_training.add_argument("--candidate-count", type=int, default=3)
+    prompt_training.add_argument("--candidate-count", type=int, default=5)
     prompt_training.add_argument("--patience-rounds", type=int, default=5)
     prompt_training.add_argument("--max-rounds", type=int, default=30)
     prompt_training.add_argument("--output-dir", default=".runtime/experiments/prompt_training_professional_ner")

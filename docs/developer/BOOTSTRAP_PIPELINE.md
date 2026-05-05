@@ -141,7 +141,7 @@ Trace 至少记录：
 PromptTrainingConfig(
     methods=("llm_optimize_only", "llm_reflection", "text_gradient_adamw"),
     max_rounds=30,
-    candidate_count=3,
+    candidate_count=5,
     target_pass_count=15,
     min_loss_delta=0.01,
     patience_rounds=5,
@@ -185,6 +185,29 @@ evaluate current prompt
   -> accept only loss-decreasing clean candidate
   -> stop if 15/15 pass or 5 consecutive rounds have no loss improvement
 ```
+
+`v4.5.11` 页面层把 prompt training 暂时收敛为三种用户可理解的优化方式：
+
+| 页面方式 | 底层方法 | 说明 |
+| --- | --- | --- |
+| 人工优化 | manual `ConceptVersion` write | 用户直接编辑可优化提示词，保存后写入新的 prompt 版本 |
+| 无样例自监督优化 | `llm_optimize_only` | 候选生成阶段只告诉 LLM “请优化当前提示词”，不提供失败样例、gold answer、model answer、loss 或历史 |
+| 类训练优化 | `llm_reflection` | 当前第一版训练式优化器：每轮基于失败对照生成候选，默认 5 个，逐个回测 15 条 gold |
+
+类训练优化的默认循环必须保持如下语义：
+
+```text
+current prompt
+  -> ask LLM for 5 optimized candidates
+  -> evaluate each candidate on the same 15 gold examples
+  -> choose the candidate with the lowest loss
+  -> accept only if loss improves
+  -> record old prompt -> new prompt -> loss delta
+  -> include accepted-history summary in the next LLM reflection prompt
+  -> stop at 15/15 or after patience rounds with no improvement
+```
+
+每个 run 需要产生 `prompt_versions`：`v0` 是初始 prompt，后续 `v1...vn` 是每次被接受的候选。每个版本至少记录 `method / round_index / candidate_id / description / loss / loss_delta / pass_count`。这些版本会写入 `ConceptVersion`，metadata 使用 `prompt_training_version=true`；最终兼容 summary 版本继续使用 `prompt_training=true`。
 
 `v4.5.1` 后，`max_rounds` 不再等于成功标准。每个方法独立维护 `no_improvement_streak`：
 
@@ -375,12 +398,14 @@ ConceptPromptSpec
 5. `v4.5.9` 已把概念验证和批量标注的运行时 prompt 统一到同一个 helper，移除“不要参考金答案”表述，并把批量上下文里的输出格式说明移入冻结 `标注格式` 段落。
 6. `v4.5.10` 已把概念验证、候选回测、单条标注和批量标注的 system prompt 统一为 `你是严谨的标注助手，只输出 JSON。`；workflow 差异只留在 user prompt 和冻结协议注入中。
 7. `v4.5.10` 已把 `llm_reflection` 的 training feedback 改为逐条失败 detail 的相邻批改对照，优先使用验证 detail 中的 `model_raw_response`。
-8. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
+8. `v4.5.11` 已新增本地格式验证和 `reference_k` gold validation；带样例验证会按 top-k 文本向量余弦相似度选择参考 gold 并注入概念上下文。
+9. `v4.5.11` 已把页面主操作收敛为提示词验证和提示词优化，并把类训练优化的 accepted prompt history 写回下一轮 reflection prompt。
+10. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
 
-9. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-10. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
-11. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
-12. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
+11. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+12. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+13. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+14. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 
