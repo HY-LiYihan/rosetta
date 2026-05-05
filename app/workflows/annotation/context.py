@@ -140,7 +140,6 @@ def _compose_context_prompt(
         sections.append(f"边界远例数量：{len(boundary)}。这些样例用于提醒不要过度泛化。")
     if failure_memory:
         sections.append("近期失败模式：\n" + "\n".join(f"- {item}" for item in failure_memory[:5]))
-    sections.append(f"模型输出格式：{guideline.get('output_format', '[原文]{标签}')}")
     return "\n\n".join(section for section in sections if section)
 
 

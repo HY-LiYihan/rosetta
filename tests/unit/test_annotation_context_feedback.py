@@ -45,6 +45,8 @@ class TestAnnotationContextFeedback(unittest.TestCase):
         context = build_annotation_context(store, guideline_id, task_id, similar_k=2, boundary_k=1, failure_k=2)
 
         self.assertIn("Mark hard science terms", context["prompt"])
+        self.assertNotIn("模型输出格式", context["prompt"])
+        self.assertNotIn("[span]{Term}", context["prompt"])
         self.assertEqual(len(context["similar_examples"]), 2)
         self.assertEqual(len(context["boundary_examples"]), 1)
         self.assertEqual(len(context["context_example_ids"]), 3)

@@ -2,6 +2,16 @@
 
 ## 2026-05-05
 
+### Fix / Unified annotation prompt contract v4.5.9
+
+1. 概念验证、候选回测、单条标注和批量标注改用同一个运行时 prompt 框架：`请根据以下概念定义标注文本 -> 概念定义 -> 标注格式 -> 通用格式示例 -> 待标注文本 -> 任务强调`。
+2. 移除概念验证 prompt 中的“不要参考金答案”表述，改为更自然的“请根据以下概念定义标注文本”。
+3. 标注格式段落保留通用、概念无关的 JSON 示例；示例只说明输出结构，不再把当前任务 gold 或相似样例当作格式示例。
+4. 批量标注上下文不再把“模型输出格式”混进概念定义；输出协议只由冻结标注格式段落注入。
+5. `parse_annotation_response()` 接受空 `annotation` 字符串并转换为空 spans，匹配“没有目标片段时返回空字符串”的运行时协议。
+6. 更新单元测试，固定四段式 prompt contract，并确认通用格式示例不会复制 gold 样例。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Annotation Format](./developer/ANNOTATION_FORMAT.md) 和 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，并将首页版本更新为 `v4.5.9`。
+
 ### UX / Concept form and output protocol selector v4.5.8
 
 1. “定义与规范”临时概念表单收敛为 `概念名称 / 概念描述或定义 / 边界说明 / 标注输出协议 / 金样例`，不再要求用户手填标签集合和负例规则。

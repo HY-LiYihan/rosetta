@@ -50,13 +50,18 @@ def _store_with_guideline(gold_count: int = 15):
     return tmp, store, package["guideline"].id
 
 
+def _target_text_from_prompt(prompt: str) -> str:
+    value = prompt.split("待标注文本：", 1)[-1].strip()
+    return value.split("\n\n任务强调：", 1)[0].strip()
+
+
 def _wrong_annotation(prompt: str) -> str:
-    text = prompt.split("文本：", 1)[-1].strip()
+    text = _target_text_from_prompt(prompt)
     return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
 
 
 def _correct_annotation(prompt: str) -> str:
-    text = prompt.split("文本：", 1)[-1].strip()
+    text = _target_text_from_prompt(prompt)
     term = text.split(" appears here.", 1)[0]
     return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears here.", "explanation": "matched"})
 
@@ -201,9 +206,9 @@ class TestPromptTraining(unittest.TestCase):
                         "排除规则：不标普通词。",
                         "输出格式：[原文]{标签}",
                     ]
-                )
+            )
             if "partial-rule" in prompt:
-                text = prompt.split("文本：", 1)[-1].strip()
+                text = _target_text_from_prompt(prompt)
                 number = int(text.split("Quantum term ", 1)[-1].split(" ", 1)[0])
                 if number <= 5:
                     return _correct_annotation(prompt)
@@ -241,7 +246,7 @@ class TestPromptTraining(unittest.TestCase):
                         "输出格式：[原文]{标签}",
                     ]
                 )
-            text = prompt.split("文本：", 1)[-1].strip()
+            text = _target_text_from_prompt(prompt)
             number = int(text.split("Quantum term ", 1)[-1].split(" ", 1)[0])
             if "good-rule" in prompt:
                 state["good_eval_calls"] += 1

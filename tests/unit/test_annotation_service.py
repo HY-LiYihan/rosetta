@@ -17,9 +17,29 @@ class TestAnnotationService(unittest.TestCase):
             "examples": [{"text": "a", "annotation": "[a]{demo}", "explanation": "c"}],
         }
         prompt = build_annotation_prompt(concept, "input text")
-        self.assertIn("概念：demo", prompt)
-        self.assertIn('"text": "input text"', prompt)
+        self.assertIn("请根据以下概念定义标注文本。", prompt)
+        self.assertIn("概念定义：\ndefinition", prompt)
+        self.assertIn("标注格式：", prompt)
+        self.assertIn("通用格式示例（只说明输出格式，不代表当前任务概念）：", prompt)
+        self.assertIn("待标注文本：\ninput text", prompt)
+        self.assertIn("任务强调：", prompt)
+        self.assertIn('"text": "Example source text."', prompt)
         self.assertIn("annotation", prompt)
+        self.assertNotIn("不要参考金答案", prompt)
+
+    def test_build_annotation_prompt_uses_concept_neutral_protocol_example(self):
+        concept = {
+            "name": "demo",
+            "prompt": "Mark ACTER terms.",
+            "examples": [{"text": "Corruption ?", "annotation": "[Corruption]{Term}", "explanation": "gold"}],
+        }
+        prompt = build_annotation_prompt(concept, "Not in our company …")
+
+        self.assertIn('"text": "Example source text."', prompt)
+        self.assertIn("[Example]{Term}", prompt)
+        self.assertNotIn('"text": "Corruption ?"', prompt)
+        self.assertNotIn("[Corruption]{Term}", prompt)
+        self.assertIn("待标注文本：\nNot in our company …", prompt)
 
     def test_build_annotation_prompt_can_request_full_json_protocol(self):
         concept = {
@@ -33,6 +53,7 @@ class TestAnnotationService(unittest.TestCase):
         self.assertIn("完整 AnnotationDoc JSON object", prompt)
         self.assertIn("relations", prompt)
         self.assertNotIn("必须使用 [原文]{概念标签} 格式", prompt)
+        self.assertIn("通用格式示例（只说明输出格式，不代表当前任务概念）：", prompt)
 
     def test_parse_annotation_response_json_code_block(self):
         raw = """```json\n{\"text\":\"t\",\"annotation\":\"[t]{demo}\",\"explanation\":\"e\"}\n```"""
@@ -62,6 +83,13 @@ class TestAnnotationService(unittest.TestCase):
 
         self.assertIsNone(warning)
         self.assertEqual(parsed["annotation"]["layers"]["spans"][0]["label"], "Term")
+
+    def test_parse_annotation_response_accepts_empty_annotation_for_no_spans(self):
+        raw = """{"text":"ordinary sentence","annotation":"","explanation":"no target spans"}"""
+        parsed, warning = parse_annotation_response(raw)
+
+        self.assertIsNone(warning)
+        self.assertEqual(parsed["annotation"]["layers"]["spans"], [])
 
     def test_parse_annotation_response_missing_fields(self):
         raw = "{\"text\":\"t\"}"

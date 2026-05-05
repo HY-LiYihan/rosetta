@@ -303,6 +303,19 @@ ConceptPromptSpec
   -> semantic loss only after format is valid
 ```
 
+`v4.5.9` 起，运行时标注 prompt 的段落顺序必须固定为：
+
+```text
+请根据以下概念定义标注文本。
+-> 概念定义
+-> 标注格式
+-> 通用格式示例
+-> 待标注文本
+-> 任务强调
+```
+
+这条约定同时适用于 15 gold 概念验证、候选回测、单条标注和批量标注。`标注格式` 只来自冻结协议；通用格式示例只说明 JSON / markup / AnnotationDoc 返回结构，不能放入当前 gold、相似样例、失败样例或任务答案。批量标注的相似样例、边界远例和失败记忆可以进入 `ConceptPromptSpec` 的上下文增强部分，但不能再携带“模型输出格式”这类协议说明。
+
 冻结输出协议默认采用 `JSON+markup`，也可以选择完整 `AnnotationDoc` JSON：
 
 ```json
@@ -340,12 +353,13 @@ ConceptPromptSpec
 2. `v4.5.7` 已加入轻量 concept-only 清理：候选提示词如果带回标签集合、输出格式、JSON schema 或 annotation markup，会从候选 description 中剥离，并记录 `removed_frozen_output_protocol` warning。
 3. `v4.5.7` 的评估调用会把冻结标签、JSON 字段和 annotation 格式重新注入给标注模型，因此候选生成阶段不需要也不允许学习输出协议。
 4. `v4.5.8` 已把新概念表单收紧为概念名称、概念定义、边界说明和协议选项；标签从 gold span label 推断，缺省为 `Term`。解析器已能接受 `[span]{Term}` 字符串和完整 AnnotationDoc dict。
-5. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
+5. `v4.5.9` 已把概念验证和批量标注的运行时 prompt 统一到同一个 helper，移除“不要参考金答案”表述，并把批量上下文里的输出格式说明移入冻结 `标注格式` 段落。
+6. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
 
-6. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-7. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
-8. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
-9. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
+7. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+8. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+9. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+10. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 

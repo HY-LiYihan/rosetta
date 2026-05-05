@@ -1,82 +1,136 @@
 import json
 from datetime import datetime
 
-from app.domain.annotation_doc import make_annotation_doc, spans_to_legacy_string, validate_annotation_doc
+from app.domain.annotation_doc import make_annotation_doc, validate_annotation_doc
 from app.domain.annotation_format import validate_annotation_markup
 
 FULL_JSON_OUTPUT_FORMAT = "rosetta.annotation_doc.v3.1.full_json"
 
 
+def build_protocol_instruction(output_format: str, label: str = "Term") -> tuple[str, str]:
+    """Return the frozen runtime protocol instruction and a concept-neutral example."""
+    clean_label = str(label or "Term").strip() or "Term"
+    output_format = str(output_format or "").strip()
+    if output_format == FULL_JSON_OUTPUT_FORMAT:
+        instruction = """标注格式：
+- 返回一个 JSON object。
+- JSON 字段固定为 text、annotation、explanation。
+- annotation 必须是完整 AnnotationDoc JSON object，包含 version、text、layers。
+- layers 至少包含 spans、relations、attributes、comments、document_labels。
+- span 字段必须包含 id、start、end、text、label、implicit。
+- text 必须与待标注文本完全一致。"""
+        example = {
+            "text": "Example source text.",
+            "annotation": {
+                "version": "3.1",
+                "text": "Example source text.",
+                "layers": {
+                    "spans": [
+                        {
+                            "id": "s1",
+                            "start": 0,
+                            "end": 7,
+                            "text": "Example",
+                            "label": clean_label,
+                            "implicit": False,
+                        }
+                    ],
+                    "relations": [],
+                    "attributes": [],
+                    "comments": [],
+                    "document_labels": [],
+                },
+            },
+            "explanation": "Briefly state why the marked span matches the concept.",
+        }
+    else:
+        instruction = f"""标注格式：
+- 返回一个 JSON object。
+- JSON 字段固定为 text、annotation、explanation。
+- annotation 使用 [span]{{{clean_label}}} 标出所有目标片段。
+- 如果没有目标片段，annotation 返回空字符串。
+- text 必须与待标注文本完全一致。"""
+        example = {
+            "text": "Example source text.",
+            "annotation": f"[Example]{{{clean_label}}}",
+            "explanation": "Briefly state why the marked span matches the concept.",
+        }
+    return instruction, json.dumps(example, ensure_ascii=False, indent=2)
+
+
+def build_runtime_annotation_prompt(
+    concept_definition: str,
+    input_text: str,
+    output_format: str = "",
+    labels: list[str] | tuple[str, ...] | None = None,
+    task_emphasis: str = "",
+) -> str:
+    """Build the frozen annotation prompt used by validation and batch annotation."""
+    label = next((str(item).strip() for item in labels or [] if str(item).strip()), "Term")
+    protocol_instruction, protocol_example = build_protocol_instruction(output_format, label=label)
+    emphasis = str(task_emphasis or "").strip() or (
+        "请根据概念定义独立判断所有应标注片段。只输出 JSON，不要输出 markdown、列表、解释性段落或 schema 外字段。"
+    )
+    return f"""请根据以下概念定义标注文本。
+
+概念定义：
+{str(concept_definition or '').strip()}
+
+{protocol_instruction}
+
+通用格式示例（只说明输出格式，不代表当前任务概念）：
+{protocol_example}
+
+待标注文本：
+{input_text}
+
+任务强调：
+{emphasis}"""
+
+
 def build_annotation_prompt(concept: dict, input_text: str) -> str:
     """Build the user prompt for annotation request."""
-    output_format = str(concept.get("output_format") or "").strip()
-    use_full_json = output_format == FULL_JSON_OUTPUT_FORMAT
-    annotation_rule = (
-        """- annotation: 完整 AnnotationDoc JSON object，必须包含 version、text、layers；layers 至少包含 spans、relations、attributes、comments、document_labels。"""
-        if use_full_json
-        else "- annotation: 标注结果，必须使用 [原文]{概念标签} 格式；隐含义使用 [!隐含义]{概念标签}"
+    labels = concept.get("labels") or []
+    if not labels:
+        labels = _labels_from_examples(concept.get("examples", []))
+    return build_runtime_annotation_prompt(
+        concept_definition=str(concept.get("prompt", "")),
+        input_text=input_text,
+        output_format=str(concept.get("output_format") or ""),
+        labels=labels,
+        task_emphasis=str(
+            concept.get("task_emphasis")
+            or "请根据概念定义独立判断所有应标注片段。参考样例只用于理解相似边界，通用格式示例只用于说明输出格式。只输出 JSON。"
+        ),
     )
-    annotation_example = {
-        "version": "3.1",
-        "text": input_text,
-        "layers": {
-            "spans": [
-                {
-                    "id": "s1",
-                    "start": 0,
-                    "end": 3,
-                    "text": "示例词",
-                    "label": "Term",
-                    "implicit": False,
-                }
-            ],
-            "relations": [],
-            "attributes": [],
-            "comments": [],
-            "document_labels": [],
-        },
-    } if use_full_json else "[示例词]{标签} ... [!隐含义]{标签}"
-    prompt = f"""你是一个语言学标注助手。请根据以下概念进行文本标注：
 
-概念：{concept['name']}
-定义：{concept['prompt']}
 
-标注示例（JSON格式）：
-[
-"""
+def _labels_from_examples(examples: list[dict]) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for example in examples:
+        annotation = example.get("annotation", "")
+        if isinstance(annotation, dict):
+            for span in annotation.get("layers", {}).get("spans", []):
+                label = str(span.get("label") or "").strip()
+                if label and label not in seen:
+                    seen.add(label)
+                    labels.append(label)
+        else:
+            for label in _markup_labels(str(annotation or "")):
+                if label and label not in seen:
+                    seen.add(label)
+                    labels.append(label)
+    return labels
 
-    examples_json = []
-    for example in concept.get("examples", []):
-        ann = example["annotation"]
-        if isinstance(ann, dict):
-            ann = spans_to_legacy_string(ann.get("layers", {}).get("spans", []))
-        example_dict = {
-            "text": example["text"],
-            "annotation": ann,
-            "explanation": example.get("explanation", ""),
-        }
-        examples_json.append(json.dumps(example_dict, ensure_ascii=False))
 
-    prompt += ",\n".join(examples_json)
-    prompt += f"""
-]
-
-现在请标注以下文本：
-文本：\"{input_text}\"
-
-请以JSON格式返回标注结果，只包含JSON，不要有其他文本。JSON应包含以下字段：
-- text: 原始文本
-{annotation_rule}
-- explanation: 解释说明
-
-返回格式示例：
-{{
-  "text": "{input_text}",
-  "annotation": {json.dumps(annotation_example, ensure_ascii=False)},
-  "explanation": "解释说明..."
-}}"""
-
-    return prompt
+def _markup_labels(annotation: str) -> list[str]:
+    labels: list[str] = []
+    for chunk in annotation.split("{")[1:]:
+        label = chunk.split("}", 1)[0].strip()
+        if label:
+            labels.append(label)
+    return labels
 
 
 def parse_annotation_response(raw_response: str) -> tuple[dict | None, str | None]:
@@ -113,10 +167,14 @@ def parse_annotation_response(raw_response: str) -> tuple[dict | None, str | Non
             return None, "完整 annotation JSON 的 text 与顶层 text 不一致，显示原始响应"
         parsed["annotation"] = annotation
     else:
-        ok, reason = validate_annotation_markup(str(annotation or ""))
+        annotation_text = str(annotation or "")
+        if not annotation_text.strip():
+            parsed["annotation"] = make_annotation_doc(parsed["text"], "")
+            return parsed, None
+        ok, reason = validate_annotation_markup(annotation_text)
         if not ok:
             return None, f"标注格式不符合规范：{reason}，显示原始响应"
-        parsed["annotation"] = make_annotation_doc(parsed["text"], str(annotation))
+        parsed["annotation"] = make_annotation_doc(parsed["text"], annotation_text)
     return parsed, None
 
 

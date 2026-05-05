@@ -43,6 +43,11 @@ def _store_with_guideline(gold_count: int = 15):
     return tmp, store, package["guideline"].id
 
 
+def _target_text_from_prompt(prompt: str) -> str:
+    value = prompt.split("待标注文本：", 1)[-1].strip()
+    return value.split("\n\n任务强调：", 1)[0].strip()
+
+
 class TestConceptBootstrapLoop(unittest.TestCase):
     def test_sanitize_removes_failure_diagnostics_from_description(self):
         dirty = """以下是优化后的概念阐释：
@@ -93,7 +98,15 @@ gold-00001: 漏标 Quantum dots
                 state["max_active"] = max(state["max_active"], state["active"])
             try:
                 time.sleep(0.01)
-                text = messages[-1]["content"].split("文本：", 1)[-1].strip()
+                prompt = messages[-1]["content"]
+                self.assertIn("请根据以下概念定义标注文本。", prompt)
+                self.assertIn("概念定义：", prompt)
+                self.assertIn("标注格式：", prompt)
+                self.assertIn("通用格式示例（只说明输出格式，不代表当前任务概念）：", prompt)
+                self.assertIn("待标注文本：", prompt)
+                self.assertIn("任务强调：", prompt)
+                self.assertNotIn("不要参考金答案", prompt)
+                text = _target_text_from_prompt(prompt)
                 term = text.split(" appears here.", 1)[0]
                 return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears here.", "explanation": "matched"})
             finally:
@@ -120,7 +133,7 @@ gold-00001: 漏标 Quantum dots
         self.addCleanup(tmp.cleanup)
 
         def extra_predictor(system_prompt, messages, temperature):
-            text = messages[-1]["content"].split("文本：", 1)[-1].strip()
+            text = _target_text_from_prompt(messages[-1]["content"])
             term = text.split(" appears here.", 1)[0]
             return json.dumps({"text": text, "annotation": f"[{term}]{{Term}} appears [here]{{Term}}.", "explanation": "extra"})
 
@@ -135,7 +148,7 @@ gold-00001: 漏标 Quantum dots
         self.addCleanup(tmp.cleanup)
 
         def bad_predictor(system_prompt, messages, temperature):
-            text = messages[-1]["content"].split("文本：", 1)[-1].strip()
+            text = _target_text_from_prompt(messages[-1]["content"])
             return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
 
         result = run_concept_refinement_loop(store, guideline_id, predictor=bad_predictor, max_rounds=2)
@@ -177,7 +190,7 @@ gold-00001: 漏标 Quantum dots
                         "输出格式：[原文]{标签}",
                     ]
                 )
-            text = prompt.split("文本：", 1)[-1].strip()
+            text = _target_text_from_prompt(prompt)
             if "Quantum term 这类" not in prompt:
                 return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
             term = text.split(" appears here.", 1)[0]
@@ -219,7 +232,7 @@ gold-00001: 漏标 Quantum dots
                         "输出格式：[原文]{标签}",
                     ]
                 )
-            text = prompt.split("文本：", 1)[-1].strip()
+            text = _target_text_from_prompt(prompt)
             if "Quantum term 这类" not in prompt:
                 return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
             term = text.split(" appears here.", 1)[0]
@@ -255,7 +268,7 @@ gold-00001: 漏标 Quantum dots
             prompt = messages[-1]["content"]
             if "优化下面的概念阐释" in prompt:
                 return "概念描述：bad\n失败摘要：gold-00001 漏标 Quantum dots\n修订建议：复制日志"
-            text = prompt.split("文本：", 1)[-1].strip()
+            text = _target_text_from_prompt(prompt)
             return json.dumps({"text": text, "annotation": "[Wrong]{Term}", "explanation": "wrong"})
 
         run_concept_refinement_loop(store, guideline_id, predictor=predictor, max_rounds=1)

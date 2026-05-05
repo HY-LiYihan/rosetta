@@ -38,7 +38,7 @@ def _render_flash() -> None:
 def _make_mock_predictor(label: str):
     def predictor(system_prompt: str, messages: list[dict], temperature: float) -> str:
         user_content = messages[-1]["content"] if messages else ""
-        match = re.search(r'文本：["“](.*?)["”]', user_content, flags=re.S)
+        match = re.search(r"待标注文本：\s*(.*?)(?:\n\n任务强调：|$)", user_content, flags=re.S)
         text = match.group(1).strip() if match else user_content.strip()
         first = next((part.strip("，。,.!?;；：:()[]{}\"'") for part in text.split() if part.strip()), "")
         if not first:

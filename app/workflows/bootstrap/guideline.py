@@ -17,7 +17,7 @@ from app.core.models import (
 )
 from app.domain.annotation_doc import legacy_string_to_spans
 from app.runtime.store import RuntimeStore
-from app.services.annotation_service import parse_annotation_response
+from app.services.annotation_service import build_runtime_annotation_prompt, parse_annotation_response
 from app.workflows.bootstrap.prompt_optimizer import (
     build_llm_adamw_trace,
     finalize_candidate_trace,
@@ -1078,30 +1078,16 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
 
     concept_spec = concept_prompt_spec_from_guideline(guideline).text
     output_protocol = frozen_output_protocol_from_guideline(guideline)
-    labels = ", ".join(output_protocol.labels)
-    json_fields = ", ".join(output_protocol.json_fields)
-    if output_protocol.protocol == "full_json":
-        annotation_instruction = """- annotation 必须是完整 AnnotationDoc JSON object，包含 version、text、layers。
-- layers 至少包含 spans、relations、attributes、comments、document_labels。
-- span 字段必须包含 id、start、end、text、label、implicit；relation 任务可在 layers.relations 中填写。"""
-    else:
-        annotation_instruction = f"- annotation 格式：{output_protocol.annotation_markup}"
-    prompt = f"""请只根据以下概念定义标注文本，不要参考金答案。
-
-可优化定义：
-{concept_spec}
-
-冻结输出协议（必须遵守，不要改写）：
-- 标签集合：{labels}
-- JSON 字段：{json_fields}
-{annotation_instruction}
-- 只能返回一个 JSON object，不能有 markdown fence 或额外说明。
-- text 必须与输入文本完全一致；annotation 中的 span 必须能在 text 中定位。
-
-文本：
-{task_payload['text']}
-
-请只输出 JSON，字段为 text、annotation、explanation。"""
+    prompt = build_runtime_annotation_prompt(
+        concept_definition=concept_spec,
+        input_text=str(task_payload["text"]),
+        output_format=str(guideline.get("output_format") or ""),
+        labels=output_protocol.labels,
+        task_emphasis=(
+            "请标出所有符合概念定义的片段，并保持边界与文本中的原始片段一致。"
+            "只输出 JSON，字段为 text、annotation、explanation；不要输出 markdown、解释性段落或额外字段。"
+        ),
+    )
     raw = predictor("你是严谨的标注校验助手，只输出 JSON。", [{"role": "user", "content": prompt}], temperature)
     parsed, warning = parse_annotation_response(raw)
     if warning or not parsed:
