@@ -83,7 +83,7 @@ ConceptGuideline + GoldExampleSet
 用户看到的是 5 个页面：
 
 ```text
-工作台 -> 概念实验室 -> 批量标注 -> 审核队列 -> 导出与可视化
+项目总览 -> 定义与规范 -> 批量标注 -> 审核与修正 -> 结果与导出
 ```
 
 开发者维护的是 5 类能力：
@@ -96,10 +96,10 @@ core models -> workflows -> agents/tools -> data formats -> runtime store
 
 | 用户页面 | 主要 workflow | 主要数据 |
 | --- | --- | --- |
-| 概念实验室 | `app/workflows/bootstrap` | `ConceptGuideline / GoldExampleSet / ConceptVersion` |
+| 定义与规范 | `app/workflows/bootstrap` | `ConceptGuideline / GoldExampleSet / ConceptVersion` |
 | 批量标注 | `app/workflows/annotation` | `AnnotationTask / Prediction / BatchJob` |
-| 审核队列 | `app/workflows/review` | `ReviewTask / hard examples / gold-like feedback` |
-| 导出与可视化 | `app/workflows/evaluation`、`app/data` | JSONL exports / report / manifest |
+| 审核与修正 | `app/workflows/review` | `ReviewTask / hard examples / gold-like feedback` |
+| 结果与导出 | `app/workflows/evaluation`、`app/data` | JSONL exports / report / manifest |
 
 ## 4. 核心数据模型
 
@@ -173,21 +173,21 @@ workflow
 ## 7. 用户流程
 
 ```text
-工作台
-  -> 概念实验室
+项目总览
+  -> 定义与规范
   -> 概念自举校准
   -> 批量标注
-  -> 审核队列
-  -> 导出与可视化
+  -> 审核与修正
+  -> 结果与导出
 ```
 
 页面职责：
 
-1. `工作台`: 展示核心指标、最近任务、最近审核状态和一个继续下一步入口。
-2. `概念实验室`: 创建项目，维护 15 条金样例，运行 concept bootstrap loop 或 prompt training experiment，用同一批 gold loss 比较当前概念与候选概念，只接受变好的干净版本，并将失败摘要、方法对比和原始修订响应保存为日志。
+1. `项目总览`: 展示核心指标、最近任务、最近审核状态和一个继续下一步入口。
+2. `定义与规范`: 创建项目，维护 15 条金样例，运行 concept bootstrap loop 或 prompt training experiment，用同一批 gold loss 比较当前概念与候选概念，只接受变好的干净版本，并将失败摘要、方法对比和原始修订响应保存为日志。
 3. `批量标注`: 导入 TXT/JSONL/CSV，分句、tokenize，并用概念版本、相似样例、边界远例和失败记忆构建标注上下文。
-4. `审核队列`: 按阈值、抽检和路由原因逐条展示候选，让专家选择或修正，并记录错误类型、hard example 和 gold-like 反馈。
-5. `导出与可视化`: 导出 Prodigy-compatible JSONL、实验报告和运行清单，展示统计图。
+4. `审核与修正`: 按阈值、抽检和路由原因逐条展示候选，让专家选择或修正，并记录错误类型、hard example 和 gold-like 反馈。
+5. `结果与导出`: 导出 Prodigy-compatible JSONL、实验报告和运行清单，展示统计图。
 
 概念自举闭环不新增顶层产品边界，优先落在 `app/workflows/bootstrap`、`app/workflows/annotation`、`app/workflows/review` 和 `app/workflows/evaluation`。`app/research` 的 consistency、contrastive retrieval、label statistics、reflection 仍可作为算法参考或兼容实现，但不再作为主入口。
 
@@ -198,7 +198,7 @@ workflow
 1. `app/research/*` 和 `app/corpusgen/*` 保留，避免旧测试和脚本回归。
 2. 新入口放在 `app/workflows/*`。
 3. 旧 CLI 会打印迁移提示，并转发到新 workflow wrappers。
-4. UI 默认导航使用 `工作台 / 概念实验室 / 批量标注 / 审核队列 / 导出与可视化`。
+4. UI 默认导航使用 `项目总览 / 定义与规范 / 批量标注 / 审核与修正 / 结果与导出`。
 5. 等新 UI 和 CLI 完全覆盖旧功能后，再删除或冻结 legacy 目录。
 
 ## 9. 修改建议

@@ -2,6 +2,14 @@
 
 ## 2026-05-05
 
+### UX / Main navigation naming v4.5.6
+
+1. 主导航中文命名更新为 `项目总览 / 定义与规范 / 批量标注 / 审核与修正 / 结果与导出`，替换原先偏后台或研究感的入口名称。
+2. 首页页脚版本更新为 `v4.5.6`，项目总览和定义与规范的页面说明同步使用新命名。
+3. “定义与规范”页面顶部新增任务摘要，说明这里需要完成项目选择、概念定义与边界/负例规则确认、15 条金样例维护，以及验证、自举校准或提示词优化训练。
+4. 批量标注、审核与修正、结果与导出的提示文案同步调整，使主流程语言保持一致。
+5. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Architecture](./developer/ARCHITECTURE.md)、[Agent Onboarding](./developer/AGENT_ONBOARDING.md)、[Developer README](./developer/README.md)、[LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md) 和 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，确保当前文档入口使用新名称。
+
 ### Docs / Frozen output protocol and annotation harness v4.5.5
 
 1. 更新 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，将 prompt 参数空间拆成可优化的 `ConceptPromptSpec` 和冻结的 `Frozen OutputProtocolSpec`；概念定义、边界规则和排除规则可训练，标签、JSON schema、markup、parser 和 format repair 指令不可被 optimizer 修改。

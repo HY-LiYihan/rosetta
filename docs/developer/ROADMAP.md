@@ -20,7 +20,7 @@
 ## 下一阶段路线
 
 1. `v4.6`：把批量标注真实 provider 调用完全迁入 `LLMServiceRuntime`，补齐 pause/resume/cancel、单条重试、整批重试和 checkpoint 恢复。
-2. `v4.7`：过程进度可视化与 token/cost 统计。概念实验室、工作台和批量页展示实时进度、吞吐、预计剩余、当前并发、token 和成本聚合。
+2. `v4.7`：过程进度可视化与 token/cost 统计。定义与规范、项目总览和批量页展示实时进度、吞吐、预计剩余、当前并发、token 和成本聚合。
 3. `v4.8`：UI 简化、审核体验和教程优化。继续压缩页面噪声，强化“一条一条蹦出”的审核卡片，并重写 30 分钟最小闭环教程。
 4. `v4.9`：完整项目测试与实验报告。补齐 fake provider 全电路、真实 API 小样本 smoke、Docker healthcheck、PLM/LLM 对比、loss 曲线、人工审核收益和 ablation 表。
 5. `v5.0`：论文级实验包。提供可复现实验配置、报告模板、图表、数据集转换和 ablation runner。

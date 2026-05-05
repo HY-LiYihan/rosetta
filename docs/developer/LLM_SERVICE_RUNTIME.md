@@ -14,7 +14,7 @@ Rosetta 后续应把每一次大模型调用都视为一次可排队、可限流
 4. 用户能看到当前做到哪一步、还剩多少、预计多久结束、用了多少 token、花了多少钱。
 5. 开发者能从 runtime store 和 artifacts 复现每一次模型调用。
 
-当前文档既是愿景与设计契约，也记录 `v4.5.2` 的最小实现边界：`app/infrastructure/llm/runtime.py` 已提供 `LLMServiceRuntime`、`LLMProviderProfile`、provider 级共享 semaphore、重试、内存进度事件、token 估算和耗时统计；`app/runtime/progress.py` 已提供 `ProgressRecorder`，并把提示词优化训练的阶段事件与 provider call 事件写入 SQLite `run_progress_events`。概念实验室的提示词优化训练已经通过后台线程和 SQLite 轮询显示实时进度；批量标注的任务队列仍在逐步迁移到同一事件层。
+当前文档既是愿景与设计契约，也记录 `v4.5.2` 的最小实现边界：`app/infrastructure/llm/runtime.py` 已提供 `LLMServiceRuntime`、`LLMProviderProfile`、provider 级共享 semaphore、重试、内存进度事件、token 估算和耗时统计；`app/runtime/progress.py` 已提供 `ProgressRecorder`，并把提示词优化训练的阶段事件与 provider call 事件写入 SQLite `run_progress_events`。定义与规范的提示词优化训练已经通过后台线程和 SQLite 轮询显示实时进度；批量标注的任务队列仍在逐步迁移到同一事件层。
 
 ## 2. 核心原则
 
@@ -114,7 +114,7 @@ created
 | `item_scored` | 样本或候选已评分 |
 | `candidate_generated` | prompt 候选已生成 |
 | `candidate_evaluated` | prompt 候选已完成 gold loss 验证 |
-| `item_routed` | 样本进入自动通过或审核队列 |
+| `item_routed` | 样本进入自动通过或审核与修正 |
 | `run_completed` | workflow run 完成 |
 | `run_cancelled` | 用户取消 |
 
@@ -209,7 +209,7 @@ UI 应显示两层进度：
 2. 每个 job item 会生成 `sample_count` 次 LLM call。
 3. 调度器按 provider profile 控制并发，真实 API 默认并发 20。
 4. 每个 item 的多个候选完成后，立即计算自洽性、模型自评、规则风险和路由结果。
-5. 高置信进入自动通过池，低置信进入审核队列。
+5. 高置信进入自动通过池，低置信进入审核与修正。
 
 UI 应避免变成后台管理表格，而是展示足够直接的运行状态：
 
@@ -328,7 +328,7 @@ UI 文案应避免假装精确：
 4. `TokenCostMeter`: token、费用、是否估算。
 5. `EventLogExpander`: 详细事件日志，仅在展开时显示。
 
-`v4.5.2` 的概念实验室已落地第一版 UI：
+`v4.5.2` 的定义与规范已落地第一版 UI：
 
 1. 点击“开始优化训练”后创建 `WorkflowRun(status=running)`，按钮进入禁用运行态。
 2. 后台 daemon thread 重新创建 `RuntimeStore` 与 `LLMServiceRuntime`，不共享 Streamlit 上下文。
@@ -389,7 +389,7 @@ LLM service runtime 应把错误分层：
 ### v4.6: 进度、ETA、Token/Cost UI
 
 1. 新增 `RunProgressEvent`。
-2. 概念实验室显示自举轮次、当前阶段、ETA、并发、token/cost。
+2. 定义与规范显示自举轮次、当前阶段、ETA、并发、token/cost。
 3. 批量页显示实时吞吐、失败、待审核、预计剩余。
 4. 导出页增加 `usage_report.csv` 和 `usage_report.md`。
 

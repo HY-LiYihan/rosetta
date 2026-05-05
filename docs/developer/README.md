@@ -62,7 +62,7 @@
 7. v4.2.2 概念自举使用 loss-guided candidate search，只接受 gold loss 下降的干净概念版本。
 8. v4.2.1 修正概念修订边界：`ConceptVersion.description` 只保存干净提示词，失败摘要和原始响应进入 `metadata`。
 9. v4.2.0 默认主线是 concept bootstrap loop：15 条金样例校准、概念版本、失败摘要、增强上下文标注和主动审核反馈。
-10. 工作台收敛为轻量状态入口，Streamlit 重启后主运行库自动恢复为“专业命名实体标注”官方样例。
+10. 项目总览收敛为轻量状态入口，Streamlit 重启后主运行库自动恢复为“专业命名实体标注”官方样例。
 11. 本地批量任务队列使用 SQLite 存储 `jobs / job_items / job_events`。
 12. 概念阐释与金样例模型使用 `concept_guidelines / gold_example_sets / concept_versions` 存储。
 13. `Annotate` 单条旧流程保留为兼容页面；新主流程优先走 `app.workflows.annotation.batch`。

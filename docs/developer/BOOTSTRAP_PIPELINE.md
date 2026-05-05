@@ -249,7 +249,7 @@ evaluate current prompt
 `v4.5.2` 后，提示词优化训练增加后台运行与进度事件层，但不改变三方法优化算法：
 
 ```text
-Concept Lab click
+Definition & Guideline click
   -> create WorkflowRun(status=running)
   -> start_prompt_training_background_run()
   -> background thread creates RuntimeStore + LLMServiceRuntime
@@ -335,7 +335,7 @@ ConceptPromptSpec
 实现边界：
 
 1. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-2. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Concept Lab prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+2. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
 3. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
 4. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
@@ -729,5 +729,5 @@ python scripts/research/run_bootstrap.py analyze \
 2. 是否仍然只保存干净概念阐释到 `ConceptVersion.description`。
 3. 是否仍然能从 metadata 复现失败样例、loss 和候选选择。
 4. 是否能导出 PLM / LLM 对比所需字段。
-5. 是否能让用户在概念实验室看懂“当前为什么变好或没有变好”。
+5. 是否能让用户在定义与规范看懂“当前为什么变好或没有变好”。
 6. 如果实现 Prompt-as-Parameter，是否记录了被扰动片段、梯度估算方法、loss delta 和长度变化。

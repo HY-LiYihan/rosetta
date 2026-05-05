@@ -30,6 +30,7 @@ from app.workflows.bootstrap import (
 
 st.title(t("concept_lab.title"))
 st.caption(t("concept_lab.caption"))
+st.info(t("concept_lab.workflow_summary"))
 
 store = RuntimeStore()
 
