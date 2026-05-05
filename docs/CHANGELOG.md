@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-05
+
+### Docs / Frozen output protocol and annotation harness v4.5.5
+
+1. 更新 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，将 prompt 参数空间拆成可优化的 `ConceptPromptSpec` 和冻结的 `Frozen OutputProtocolSpec`；概念定义、边界规则和排除规则可训练，标签、JSON schema、markup、parser 和 format repair 指令不可被 optimizer 修改。
+2. 更新 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，新增 `Annotation Harness Contract`：运行链路固定为 `ConceptPromptSpec -> inject Frozen OutputProtocolSpec -> LLM call -> strict JSON parse -> format repair loop -> semantic loss`。
+3. 更新 [Annotation Format](./developer/ANNOTATION_FORMAT.md)，将运行时协议明确为 JSON+markup：核心字段为 `text / annotation / explanation`，`annotation` 使用 `[span]{Term}`，JSON 外不允许 markdown fence、额外 prose 或自由 schema。
+4. 更新 [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md)，新增 ACTER `en/corp` 100 正例实验计划：任务名为“ACTER 反腐败术语抽取”，数据源为 `/Users/liyh/rosetta/tmp/acter_en_corp/gold_examples_first100_markup.jsonl`，模型为 DeepSeek `deepseek-v4-flash`，目标为 `100/100`。
+5. 明确三种提示词优化方法共用同一个冻结输出协议、同一个 parser、同一个 format repair loop 和同一个 semantic loss；方法差异只来自如何优化概念语义。
+6. 文档要求后续报告拆分 `format_failure_rate`、`format_repair_success_rate`、`semantic_loss` 和 `pass_count`，避免把格式错误混入概念 loss。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md) 和 [用户教程](./user/TUTORIAL.md)，用用户语言说明：用户负责写概念，Rosetta 负责固定输出格式、校验格式和修复格式错误。
+8. 本轮只更新文档契约，不声称统一 format repair harness 已经在所有 workflow 中实现，因此不更新 Home 页脚版本。
+
 ## 2026-05-04
 
 ### Fix / Concurrent concept validation progress v4.5.4

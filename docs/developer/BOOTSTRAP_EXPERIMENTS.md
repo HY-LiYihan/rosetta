@@ -1,6 +1,6 @@
 # Bootstrap Experiments (Developer)
 
-更新时间: 2026-05-03
+更新时间: 2026-05-05
 
 ## 1. 目标
 
@@ -52,6 +52,53 @@ python scripts/research/run_bootstrap.py analyze \
 
 该组实验重点展示：传统 PLM 需要先有标签体系和训练集，而 Rosetta 可以从概念阐释与 15 条金样例启动，并把失败样例转化为后续提示策略。
 
+### 3.3 ACTER en/corp 100 正例提示词训练
+
+`v4.5.5` 文档契约新增一个更强的 prompt training 测试入口：ACTER `en/corp` 反腐败术语抽取。
+
+本地数据源：
+
+```text
+/Users/liyh/rosetta/tmp/acter_en_corp/gold_examples_first100_markup.jsonl
+```
+
+任务口径：
+
+1. 任务名：`ACTER 反腐败术语抽取`。
+2. 数据集：`ACTER v1.5` 的 `en/corp` 子集。
+3. 任务类型：terminology extraction，不是普通 NER。
+4. 标签：`Term`。
+5. 样例：100 条 positive-only gold sentences。
+6. 模型：DeepSeek `deepseek-v4-flash`。
+7. 目标：`100/100` 通过。
+8. 停止条件：达到 `100/100`，或连续 5 轮 loss 没有下降，或达到 `max_rounds=30`。
+
+第一阶段先跑 `llm_optimize_only`，用于回答一个最弱 baseline 问题：只告诉大模型“请优化当前概念提示词”，不给失败详情、gold answer、模型答案、loss 或文本梯度，它能不能仅靠自我改写提高 100 条正例上的通过数。
+
+该实验必须使用冻结输出协议：
+
+```text
+ConceptPromptSpec
+  -> 只包含概念定义、边界规则、排除规则
+Frozen OutputProtocolSpec
+  -> JSON schema, label=Term, annotation=[span]{Term}, format repair
+```
+
+`llm_optimize_only` 的优化模型只看到 `ConceptPromptSpec`，不看到 `Frozen OutputProtocolSpec` 的可编辑版本。标注模型实际执行时，由 harness 注入冻结协议并强制返回 JSON+markup。
+
+每轮报告必须包含：
+
+1. 当前 accepted prompt 的版本号和长度。
+2. 本轮候选数、被接受候选、拒绝原因。
+3. `pass_count / 100`。
+4. semantic loss 与 loss delta。
+5. format failure count。
+6. format repair attempt count 与 repair success count。
+7. token、耗时、并发上限和真实模型。
+8. 是否触发防背答案或去语料化修复。
+
+限制必须写在报告开头：100 条 positive-only 只能测试正例术语召回、边界稳定性和格式稳定性，不能证明模型不会在负例中过度标注。后续正式实验必须加入 negative sentences 或 held-out split。
+
 ## 4. Baselines
 
 必须至少比较：
@@ -101,6 +148,9 @@ python scripts/research/run_bootstrap.py analyze \
 15. prompt length growth
 16. accepted candidate rate
 17. gradient-method agreement
+18. format failure rate
+19. format repair success rate
+20. positive-only pass count
 
 ## 6. 参考数据集
 
@@ -123,5 +173,7 @@ python scripts/research/run_bootstrap.py analyze \
 6. 与 PLM baselines 的 F1 / 人工预算 / 成本对比。
 7. 典型成功样例和失败样例。
 8. Prompt-as-Parameter ablation，说明 Mask 遮挡、对比替换、消融链路、LLM 自诊断和 `LLM-AdamW` 是否真实降低 loss。
+9. 格式错误与语义错误拆分：`format_failed` 不能和漏标、多标、边界错误混在同一个 loss 解释里。
+10. 冻结输出协议说明：明确 prompt optimizer 没有编辑 JSON schema、标签集合、markup 格式或 repair 指令。
 
 论文表述约束：不能只展示最终 F1，就声称文本梯度有效。必须报告每轮 loss delta、候选接受率、无效改写率和 prompt 长度增长，证明优化器不是靠堆叠规则偶然变好。

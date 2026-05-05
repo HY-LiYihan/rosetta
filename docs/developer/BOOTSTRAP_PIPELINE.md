@@ -1,6 +1,6 @@
 # Concept Bootstrap Pipeline (Developer)
 
-更新时间: 2026-05-04
+更新时间: 2026-05-05
 
 ## 1. 目标
 
@@ -96,7 +96,7 @@ ConceptVersion
 
 未来实现应包含以下组件：
 
-1. `PromptSegmenter`: 将概念阐释切成角色、任务定义、标签、边界规则、负例规则、输出格式、示例和失败记忆。
+1. `PromptSegmenter`: 将概念阐释切成任务定义、概念定义、边界规则、负例规则和失败模式抽象。
 2. `TextGradientEstimator`: 用 Mask 遮挡、对比替换、消融链路和 LLM 自我诊断估算文本梯度。
 3. `PromptOptimizer`: 根据梯度方向、历史状态和长度惩罚生成更新策略。
 4. `CandidateGenerator`: 调用 LLM 生成干净候选 prompt，不把失败日志拼进最终文本。
@@ -160,13 +160,13 @@ PromptTrainingConfig(
 )
 ```
 
-三种方法必须使用同一套 gold loss、同一批金样例和同一套候选接受规则：
+三种方法必须使用同一套 gold loss、同一批金样例、同一套候选接受规则和同一个冻结输出协议：
 
 | 方法 | 训练反馈材料 | 候选生成信息 | 防背答案约束 | 用途 |
 | --- | --- | --- | --- | --- |
-| `llm_optimize_only` | 不提供原文、标准答案、模型答案或失败详情 | 只告诉大模型“请优化当前提示词” | 候选提示词过 `MemorizationGuard` | 最简单 baseline |
-| `llm_reflection` | 提供原文、gold answer、model answer、错误类型和失败摘要，标记 `training_feedback_only=true` | 要求 LLM 把具体错误抽象成整体概念阐释 | 候选不能复制原文、gold span、model span 或可识别答案片段 | 普通 LLM 反思 baseline |
-| `text_gradient_adamw` | 提供原始批改对照、系统计算的文本梯度方向、loss 和长度变化 | 使用 Text Gradient / `LLM-AdamW` 方向生成候选 | 梯度可来自具体错误，但最终候选只能保留抽象规则 | Rosetta 默认方法 |
+| `llm_optimize_only` | 不提供原文、标准答案、模型答案、失败详情、loss 或文本梯度 | 只告诉大模型“请优化当前概念语义提示词” | 候选只允许包含概念定义、边界规则和排除规则 | 最简单 baseline |
+| `llm_reflection` | 提供原文、gold answer、model answer、错误类型和失败摘要，标记 `training_feedback_only=true` | 要求 LLM 把具体错误抽象成整体概念阐释 | 候选不能复制原文、gold span、model span 或可识别答案片段，也不能改输出协议 | 普通 LLM 反思 baseline |
+| `text_gradient_adamw` | 提供原始批改对照、系统计算的文本梯度方向、loss 和长度变化 | 使用 Text Gradient / `LLM-AdamW` 方向生成概念候选 | 梯度可来自具体错误，但最终候选只能保留抽象规则；格式协议由 harness 注入 | Rosetta 默认方法 |
 
 每种方法独立运行，不共享中间 prompt，避免方法之间互相污染。每轮固定执行：
 
@@ -174,11 +174,13 @@ PromptTrainingConfig(
 evaluate current prompt
   -> compute gold loss
   -> build training feedback prompt
-  -> generate candidate prompts
+  -> generate concept-only candidate prompts
   -> sanitize candidate prompts
   -> run MemorizationGuard on candidate prompts
   -> repair leaked candidate prompts when possible
   -> run MemorizationGuard again
+  -> inject frozen output protocol
+  -> strict parse and format repair
   -> evaluate each candidate on the same 15 gold examples
   -> accept only loss-decreasing clean candidate
   -> stop if 15/15 pass or 5 consecutive rounds have no loss improvement
@@ -198,7 +200,7 @@ evaluate current prompt
 
 1. `training feedback prompt` 是优化模型看的批改材料，可以包含原文、标准答案和模型回答，但必须标记 `training_feedback_only=true`。
 2. `learned operational prompt` 是后续批量标注使用的概念阐释，不能复制语料词、gold span、model span、原句或可识别答案片段。
-3. `ConceptVersion.description` 只保存通过防背答案检查的 operational prompt。
+3. `ConceptVersion.description` 只保存通过防背答案检查的 concept-only operational prompt。
 4. raw feedback、raw response、失败样例和完整候选日志只进入 artifact 或折叠日志。
 
 `MemorizationGuard` 的输入来自同一批 15 条 gold：
@@ -271,11 +273,71 @@ Concept Lab click
 
 事件 payload 必须是安全摘要：不能包含 raw prompt、raw response、gold 原文、gold span、model span 或 private leakage matches。完整可复现实验依赖 artifact 中的受控 trace，而 UI 日志只展示阶段、计数、loss、候选状态、token 和错误摘要。
 
+### 3.4 Annotation Harness Contract
+
+`v4.5.5` 文档契约把标注 prompt 拆成两部分：
+
+```text
+ConceptPromptSpec
+  -> concept_definition
+  -> boundary_rules
+  -> negative_rules
+
+Frozen OutputProtocolSpec
+  -> labels
+  -> JSON schema
+  -> annotation markup
+  -> parser contract
+  -> format repair instructions
+```
+
+`ConceptPromptSpec` 是 prompt training 的优化对象。`Frozen OutputProtocolSpec` 是 harness 责任，不进入 optimizer 的可编辑空间。后续代码实现时，页面、CLI 和 workflow 都应遵守同一条运行链路：
+
+```text
+ConceptPromptSpec
+  -> inject Frozen OutputProtocolSpec
+  -> LLM call
+  -> strict JSON parse
+  -> schema / text / label / markup validation
+  -> format repair loop if needed
+  -> semantic loss only after format is valid
+```
+
+冻结输出协议默认采用 `JSON+markup`：
+
+```json
+{
+  "text": "原始输入文本，必须与任务 text 一致",
+  "annotation": "使用 [span]{Term} 标出所有目标片段",
+  "explanation": "一句简短理由"
+}
+```
+
+约束：
+
+1. JSON 外不能有 markdown fence、解释性 prose 或额外包装。
+2. `annotation` 必须使用 `[span]{Term}` 行内 markup；`Term` 来自 harness 注入的标签集合，不由 optimizer 学习。
+3. `text` 必须与当前任务原文一致；不能改写、翻译或摘要。
+4. 每个 span 必须能在 `text` 中定位，label 必须属于冻结标签集合。
+5. schema、标签、markup 格式、repair 指令和 parser 行为不能被候选提示词修改。
+
+格式失败和语义失败必须分开：
+
+1. 先做 strict parse 与 schema validation。
+2. 如果 JSON、字段、markup、label 或 span 定位失败，进入最多 2 次 format repair。
+3. format repair prompt 只能强调冻结输出协议，不能改写概念定义、边界规则或负例规则。
+4. repair 成功后才计算 semantic loss。
+5. repair 失败记录为 `format_failed`，不混入漏标、多标或边界错误。
+6. 实验报告必须单独展示 `format_failure_rate`、`format_repair_success_rate`、`semantic_loss` 和 `pass_count`。
+
+当前状态边界：现有解析器和部分 workflow 已能处理 JSON 响应与 markup 字段，但统一的 `AnnotationHarness`、跨 workflow 的 strict validation / repair loop 和格式指标拆分仍是下一阶段实现任务。本节是实现契约，不表示这些能力已经全部接入每条路径。
+
 实现边界：
 
 1. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
 2. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Concept Lab prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
 3. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+4. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 
