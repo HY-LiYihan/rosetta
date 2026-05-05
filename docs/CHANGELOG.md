@@ -9,7 +9,9 @@
 3. 标注格式从自由文本框改为选项：`Span 标注：JSON + [span]{Term}` 和 `全量 JSON：AnnotationDoc`。前者是当前默认 span 标注路径，后者为 relation / attributes / 多层标注任务提供完整 JSON 协议入口。
 4. `parse_annotation_response()` 现在同时接受 `annotation` 为 `[span]{Term}` 字符串和完整 AnnotationDoc dict；完整 JSON 会校验 `version / text / layers / spans` 基础结构。
 5. 官方样例初始 operational prompt 只保留概念描述和边界规则，标签与输出格式留在冻结协议中注入。
-6. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md) 和 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，并将首页版本更新为 `v4.5.8`。
+6. 标注输出协议选择器移到表单外，切换选项时说明文字会即时刷新，不需要先提交表单。
+7. UI 文案明确区分模型运行时返回格式与最终存储格式：模型可以返回简单 `[span]{Term}`，Rosetta 会解析为统一 AnnotationDoc / Prodigy-compatible 存储结构。
+8. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md) 和 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，并将首页版本更新为 `v4.5.8`。
 
 ### UX / Definition guideline harness view v4.5.7
 

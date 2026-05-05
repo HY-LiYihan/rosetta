@@ -433,17 +433,17 @@ with st.expander(t("concept_lab.advanced_project_expander"), expanded=not projec
 st.divider()
 with st.expander(t("concept_lab.advanced_guideline_expander"), expanded=False):
     st.caption(t("concept_lab.temporary_guideline_notice"))
+    format_option = st.selectbox(
+        t("concept_lab.annotation_format"),
+        list(ANNOTATION_FORMAT_OPTIONS.keys()),
+        key="concept_lab_format_option",
+        format_func=lambda value: t(ANNOTATION_FORMAT_OPTIONS[value]),
+    )
+    st.caption(t(f"concept_lab.format_help_{format_option}"))
     with st.form("guideline_form"):
         concept_name = st.text_input(t("concept_lab.concept_name"), key="concept_lab_name")
         brief = st.text_area(t("concept_lab.brief"), height=100, key="concept_lab_brief")
         boundary_text = st.text_area(t("concept_lab.boundary"), height=90, key="concept_lab_boundary")
-        format_option = st.selectbox(
-            t("concept_lab.annotation_format"),
-            list(ANNOTATION_FORMAT_OPTIONS.keys()),
-            key="concept_lab_format_option",
-            format_func=lambda value: t(ANNOTATION_FORMAT_OPTIONS[value]),
-        )
-        st.caption(t(f"concept_lab.format_help_{format_option}"))
 
         st.markdown(f"**{t('concept_lab.gold_examples')}**")
         manual_text = st.text_area(
