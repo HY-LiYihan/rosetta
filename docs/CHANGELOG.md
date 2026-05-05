@@ -2,6 +2,16 @@
 
 ## 2026-05-05
 
+### UX / Clean definition and gold input panel v4.5.13
+
+1. “定义与规范”的自定义定义面板重命名为 `当前定义与金样例`，不再展示边界说明、负例规则、单条样例原文和单条样例标注等分散输入。
+2. 面板只保留核心输入：`当前定义名称`、`当前概念阐释`、`金样例格式`、`标注输出协议`、金样例上传和可选 JSONL 粘贴。
+3. 新增金样例格式选择：`自动识别`、`JSONL: text + annotation`、`JSONL: Prodigy / Rosetta spans`、`CSV: 文本列`。默认自动识别会根据文件扩展名和首条记录判断 JSONL markup、Prodigy/Rosetta JSONL 或 CSV。
+4. 项目选择区改为 `选择项目 + 新建项目` 按钮，不再把新建项目藏在“高级”折叠区。
+5. `选择概念` 合并进 `当前定义与金样例` 面板：用户可选已有定义直接编辑，也可选择 `新建定义` 创建新定义；已有定义保存时会写回当前 guideline 并记录新的 ConceptVersion。
+6. 保存时标签继续从 gold span 推断，输出协议仍是冻结 harness 的一部分；用户不需要手填标签集合，也不需要在定义面板里维护负例规则。
+7. 更新 [README.md](../README.md)、[docs/README.md](./README.md) 和 [用户教程](./user/TUTORIAL.md)，并将首页版本更新为 `v4.5.13`。
+
 ### Feature / Prompt optimizer canonical methods and progress v4.5.12
 
 1. Prompt training 三种自动优化器正式命名为 `sgd_candidate_search`（候选搜索优化 / SGD-like Candidate Search）、`critic_adamw_optimizer`（批判器 AdamW 优化 / AdamW-like Critic Optimizer）和 `mask_guided_optimization`（遮挡梯度优化 / Mask-guided Prompt Optimization）；旧 `llm_optimize_only / llm_reflection / text_gradient_adamw` 保留为 legacy alias。

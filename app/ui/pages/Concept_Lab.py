@@ -9,7 +9,7 @@ from typing import Any
 
 import streamlit as st
 
-from app.core.models import AnnotationTask, ConceptGuideline, ConceptVersion, Project
+from app.core.models import AnnotationTask, ConceptGuideline, ConceptVersion, GoldExampleSet, Project
 from app.data.text_ingestion import tasks_from_csv, tasks_from_jsonl
 from app.infrastructure.llm.providers import PLATFORM_CONFIGS
 from app.infrastructure.llm.runtime import LLMServiceRuntime
@@ -44,6 +44,12 @@ ANNOTATION_FORMAT_OPTIONS = {
     "span_markup": "concept_lab.format_span_markup",
     "full_json": "concept_lab.format_full_json",
 }
+GOLD_FORMAT_OPTIONS = {
+    "auto": "concept_lab.gold_format_auto",
+    "jsonl_markup": "concept_lab.gold_format_jsonl_markup",
+    "prodigy_jsonl": "concept_lab.gold_format_prodigy_jsonl",
+    "csv": "concept_lab.gold_format_csv",
+}
 
 
 def _set_flash(kind: str, message: str) -> None:
@@ -72,13 +78,41 @@ def _project_options() -> list[dict[str, Any]]:
     return store.list_projects(limit=200)
 
 
-def _parse_uploaded_gold(file, text_column: str) -> list[AnnotationTask]:
+def _parse_uploaded_gold(file, text_column: str, gold_format: str = "auto") -> list[AnnotationTask]:
     if file is None:
         return []
     content = file.getvalue().decode("utf-8")
-    if file.name.endswith(".csv"):
-        return tasks_from_csv(content, text_column=text_column, source_name=file.name, prefix="gold-csv")
-    return _parse_gold_jsonl(content, source_name=file.name)
+    return _parse_gold_content(content, source_name=file.name, gold_format=gold_format, text_column=text_column)
+
+
+def _parse_gold_content(
+    content: str,
+    source_name: str = "pasted.jsonl",
+    gold_format: str = "auto",
+    text_column: str = "text",
+) -> list[AnnotationTask]:
+    normalized_format = _infer_gold_format(content, source_name, gold_format)
+    if normalized_format == "csv":
+        return tasks_from_csv(content, text_column=text_column, source_name=source_name, prefix="gold-csv")
+    return _parse_gold_jsonl(content, source_name=source_name)
+
+
+def _infer_gold_format(content: str, source_name: str, gold_format: str) -> str:
+    if gold_format != "auto":
+        return gold_format
+    if source_name.lower().endswith(".csv"):
+        return "csv"
+    for line in content.splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            return "csv" if "," in line else "jsonl_markup"
+        if "annotation" in row:
+            return "jsonl_markup"
+        return "prodigy_jsonl"
+    return "jsonl_markup"
 
 
 def _parse_gold_jsonl(content: str, source_name: str = "pasted.jsonl") -> list[AnnotationTask]:
@@ -411,10 +445,8 @@ for key, value in {
     "concept_lab_project_description": "用于本次会话内测试自定义概念、金样例和批量标注。",
     "concept_lab_name": "专业命名实体",
     "concept_lab_brief": "标出英文科学与技术文本中具有明确领域含义、可命名且边界清楚的专业实体。",
-    "concept_lab_boundary": "优先标注最小完整实体名称\n包含形成实体名称所必需的修饰成分，但不要扩大到整个句子",
     "concept_lab_format_option": "span_markup",
-    "concept_lab_manual_text": "",
-    "concept_lab_manual_markup": "",
+    "concept_lab_gold_format_option": "auto",
     "concept_lab_pasted_jsonl": "",
     "concept_lab_csv_text_column": "text",
 }.items():
@@ -435,19 +467,26 @@ if projects:
         (index for index, row in enumerate(projects) if row["payload"].get("metadata", {}).get("official_sample")),
         0,
     )
-    selected_project_id = st.selectbox(
-        t("concept_lab.select_project"),
-        [row["id"] for row in projects],
-        index=official_index,
-        format_func=lambda project_id: next(row["payload"]["name"] for row in projects if row["id"] == project_id),
-    )
+    project_select_col, project_new_col = st.columns([4, 1])
+    with project_select_col:
+        selected_project_id = st.selectbox(
+            t("concept_lab.select_project"),
+            [row["id"] for row in projects],
+            index=official_index,
+            format_func=lambda project_id: next(row["payload"]["name"] for row in projects if row["id"] == project_id),
+        )
+    with project_new_col:
+        if st.button(t("concept_lab.project_new"), use_container_width=True):
+            st.session_state["concept_lab_show_project_form"] = True
     selected_project_payload = next(row["payload"] for row in projects if row["id"] == selected_project_id)
     if selected_project_payload.get("metadata", {}).get("official_sample"):
         st.success(t("concept_lab.official_sample_ready"))
 else:
     st.info(t("concept_lab.no_project_seed"))
+    st.session_state["concept_lab_show_project_form"] = True
 
-with st.expander(t("concept_lab.advanced_project_expander"), expanded=not projects):
+if st.session_state.get("concept_lab_show_project_form", False):
+    st.markdown(f"**{t('concept_lab.project_new')}**")
     st.caption(t("concept_lab.temporary_project_notice"))
     with st.form("create_project_form"):
         project_name = st.text_input(t("concept_lab.project_name"), key="concept_lab_project_name")
@@ -462,89 +501,155 @@ with st.expander(t("concept_lab.advanced_project_expander"), expanded=not projec
         )
         store.upsert_project(project)
         st.success(t("concept_lab.project_saved"))
+        st.session_state["concept_lab_show_project_form"] = False
         st.rerun()
 
 st.divider()
-with st.expander(t("concept_lab.advanced_guideline_expander"), expanded=False):
-    st.caption(t("concept_lab.temporary_guideline_notice"))
-    format_option = st.selectbox(
-        t("concept_lab.annotation_format"),
-        list(ANNOTATION_FORMAT_OPTIONS.keys()),
-        key="concept_lab_format_option",
-        format_func=lambda value: t(ANNOTATION_FORMAT_OPTIONS[value]),
+guidelines = store.list_guidelines(project_id=selected_project_id or None, limit=100)
+st.markdown(f"**{t('concept_lab.advanced_guideline_expander')}**")
+st.caption(t("concept_lab.temporary_guideline_notice"))
+definition_options = ["__new__", *[row["id"] for row in guidelines]]
+selected_guideline = st.selectbox(
+    t("concept_lab.select_concept"),
+    definition_options,
+    index=1 if len(definition_options) > 1 else 0,
+    format_func=lambda guideline_id: t("concept_lab.new_definition")
+    if guideline_id == "__new__"
+    else next(row["payload"]["name"] for row in guidelines if row["id"] == guideline_id),
+    key="concept_lab_guideline_selector",
+)
+guideline_payload = (
+    next(row["payload"] for row in guidelines if row["id"] == selected_guideline)
+    if selected_guideline != "__new__"
+    else {}
+)
+with st.form("guideline_form"):
+    concept_name = st.text_input(
+        t("concept_lab.current_definition_name"),
+        value=str(guideline_payload.get("name") or st.session_state.get("concept_lab_name", "")),
     )
-    st.caption(t(f"concept_lab.format_help_{format_option}"))
-    with st.form("guideline_form"):
-        concept_name = st.text_input(t("concept_lab.concept_name"), key="concept_lab_name")
-        brief = st.text_area(t("concept_lab.brief"), height=100, key="concept_lab_brief")
-        boundary_text = st.text_area(t("concept_lab.boundary"), height=90, key="concept_lab_boundary")
-
-        st.markdown(f"**{t('concept_lab.gold_examples')}**")
-        manual_text = st.text_area(
-            t("concept_lab.manual_text"),
-            height=90,
-            placeholder=t("concept_lab.manual_text_placeholder"),
-            key="concept_lab_manual_text",
+    brief = st.text_area(
+        t("concept_lab.current_concept_interpretation"),
+        value=str(guideline_payload.get("stable_description") or guideline_payload.get("brief") or st.session_state.get("concept_lab_brief", "")),
+        height=170,
+    )
+    st.markdown(f"**{t('concept_lab.gold_examples')}**")
+    format_col, protocol_col = st.columns([1, 1])
+    with format_col:
+        gold_format_option = st.selectbox(
+            t("concept_lab.gold_format"),
+            list(GOLD_FORMAT_OPTIONS.keys()),
+            key="concept_lab_gold_format_option",
+            format_func=lambda value: t(GOLD_FORMAT_OPTIONS[value]),
         )
-        manual_markup = st.text_area(
-            t("concept_lab.manual_markup"),
-            height=90,
-            placeholder=t("concept_lab.manual_markup_placeholder"),
-            key="concept_lab_manual_markup",
+        st.caption(t(f"concept_lab.gold_format_help_{gold_format_option}"))
+    with protocol_col:
+        current_output_format = str(guideline_payload.get("output_format", ""))
+        default_format_index = 1 if current_output_format == FULL_JSON_OUTPUT_FORMAT else 0
+        format_option = st.selectbox(
+            t("concept_lab.annotation_format"),
+            list(ANNOTATION_FORMAT_OPTIONS.keys()),
+            index=default_format_index,
+            key="concept_lab_format_option",
+            format_func=lambda value: t(ANNOTATION_FORMAT_OPTIONS[value]),
         )
-        pasted_jsonl = st.text_area(t("concept_lab.paste_jsonl"), height=160, key="concept_lab_pasted_jsonl")
-        upload = st.file_uploader(t("concept_lab.upload_gold"), type=["jsonl", "csv"])
-        csv_text_column = st.text_input(t("concept_lab.csv_text_column"), key="concept_lab_csv_text_column")
-        save_clicked = st.form_submit_button(t("concept_lab.save_guideline"), type="primary", use_container_width=True)
+        st.caption(t(f"concept_lab.format_help_{format_option}"))
+    upload = st.file_uploader(t("concept_lab.upload_gold"), type=["jsonl", "csv"])
+    pasted_jsonl = st.text_area(
+        t("concept_lab.paste_gold_jsonl"),
+        height=140,
+        placeholder=t("concept_lab.paste_gold_jsonl_placeholder"),
+        key="concept_lab_pasted_jsonl",
+    )
+    csv_text_column = st.text_input(
+        t("concept_lab.csv_text_column"),
+        key="concept_lab_csv_text_column",
+        disabled=gold_format_option not in {"auto", "csv"},
+    )
+    save_clicked = st.form_submit_button(t("concept_lab.save_guideline"), type="primary", use_container_width=True)
 
-    if save_clicked:
-        if not selected_project_id:
-            st.error(t("concept_lab.need_project"))
-            st.stop()
-        gold_tasks: list[AnnotationTask] = []
-        if manual_text.strip() and manual_markup.strip():
-            gold_tasks.append(
-                gold_task_from_markup(
-                    task_id=f"gold-manual-{len(store.list_tasks(limit=10000)) + 1:05d}",
-                    text=manual_text.strip(),
-                    annotation_markup=manual_markup.strip(),
-                    label_hint="Term",
-                )
+if save_clicked:
+    if not selected_project_id:
+        st.error(t("concept_lab.need_project"))
+        st.stop()
+    gold_tasks: list[AnnotationTask] = []
+    if pasted_jsonl.strip():
+        gold_tasks.extend(
+            _parse_gold_content(
+                pasted_jsonl,
+                source_name="pasted-gold.jsonl",
+                gold_format=gold_format_option,
+                text_column=csv_text_column,
             )
-        if pasted_jsonl.strip():
-            gold_tasks.extend(_parse_gold_jsonl(pasted_jsonl, source_name="pasted.jsonl"))
-        gold_tasks.extend(_parse_uploaded_gold(upload, csv_text_column))
+        )
+    gold_tasks.extend(_parse_uploaded_gold(upload, csv_text_column, gold_format_option))
 
+    if selected_guideline == "__new__":
         if not gold_tasks:
             st.error(t("concept_lab.need_gold"))
             st.stop()
-
         package = save_guideline_package(
             store=store,
             project_id=selected_project_id,
             name=concept_name,
             brief=brief,
             labels=None,
-            boundary_rules=_lines(boundary_text),
+            boundary_rules=[],
             negative_rules=None,
             gold_tasks=gold_tasks,
             output_format=_format_value_from_option(format_option),
         )
         st.success(t("concept_lab.saved_package", count=len(gold_tasks)))
         st.session_state["selected_guideline_id"] = package["guideline"].id
+        st.rerun()
+    else:
+        if gold_tasks:
+            for task in gold_tasks:
+                store.upsert_task(task, project_id=selected_project_id)
+            gold_set = GoldExampleSet(
+                id=f"gold-{uuid.uuid4().hex[:10]}",
+                project_id=selected_project_id,
+                guideline_id=selected_guideline,
+                task_ids=tuple(task.id for task in gold_tasks),
+                status="draft" if len(gold_tasks) < 15 else "validating",
+                metadata={"source": "definition_editor"},
+            )
+            store.upsert_gold_example_set(gold_set)
+        updated = ConceptGuideline(
+            id=guideline_payload["id"],
+            project_id=guideline_payload["project_id"],
+            name=concept_name,
+            brief=brief,
+            labels=tuple(guideline_payload.get("labels", [])),
+            boundary_rules=tuple(guideline_payload.get("boundary_rules", [])),
+            negative_rules=tuple(guideline_payload.get("negative_rules", [])),
+            output_format=_format_value_from_option(format_option),
+            stable_description=brief,
+            status=guideline_payload.get("status", "draft"),
+            metadata=dict(guideline_payload.get("metadata", {})),
+            created_at=guideline_payload.get("created_at", ""),
+        )
+        store.upsert_guideline(updated)
+        next_version = _next_concept_version_number(store.list_concept_versions(guideline_id=selected_guideline, limit=1000))
+        store.upsert_concept_version(
+            ConceptVersion(
+                id=f"concept-version-{uuid.uuid4().hex[:10]}",
+                guideline_id=selected_guideline,
+                version=next_version,
+                description=brief,
+                notes="定义编辑器保存。",
+                metadata={"revision_source": "definition_editor", "prompt_version_label": f"v{max(0, next_version - 1)}"},
+            )
+        )
+        existing_gold_sets = store.list_gold_example_sets(guideline_id=selected_guideline, limit=1)
+        existing_gold_count = len(existing_gold_sets[0]["payload"].get("task_ids", [])) if existing_gold_sets else 0
+        st.success(t("concept_lab.saved_package", count=len(gold_tasks) if gold_tasks else existing_gold_count))
+        st.rerun()
 
 st.divider()
-guidelines = store.list_guidelines(project_id=selected_project_id or None, limit=100)
-if not guidelines:
+if not guidelines or selected_guideline == "__new__":
     st.info(t("concept_lab.no_guideline"))
 else:
-    selected_guideline = st.selectbox(
-        t("concept_lab.select_concept"),
-        [row["id"] for row in guidelines],
-        index=0,
-        format_func=lambda guideline_id: next(row["payload"]["name"] for row in guidelines if row["id"] == guideline_id),
-        key="concept_lab_guideline_selector",
-    )
     guideline_payload = next(row["payload"] for row in guidelines if row["id"] == selected_guideline)
     _render_guideline_contract(guideline_payload)
     gold_sets = store.list_gold_example_sets(guideline_id=selected_guideline, limit=1)
@@ -575,6 +680,8 @@ else:
             format_func=lambda mode: t(f"concept_lab.validation_{mode}"),
             horizontal=True,
         )
+        if validation_mode == "llm_with_examples":
+            st.info(t("concept_lab.reference_embedding_notice"))
         validation_cols = st.columns([1, 1, 1])
         with validation_cols[0]:
             validation_platform_id = st.selectbox(
@@ -793,6 +900,10 @@ else:
             format_func=_training_method_label,
             key="concept_lab_selected_prompt_optimizers",
         )
+        optimizer_cols = st.columns(3)
+        for column, method in zip(optimizer_cols, PROMPT_OPTIMIZER_METHODS, strict=False):
+            with column:
+                st.info(t(f"concept_lab.training_method_help_{method}"))
         if selected_methods:
             train_col1, train_col2, train_col3, train_col4, train_col5 = st.columns([1, 1, 1, 1, 1])
             training_max_rounds = int(
