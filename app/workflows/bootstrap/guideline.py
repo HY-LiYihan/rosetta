@@ -23,6 +23,12 @@ from app.workflows.bootstrap.prompt_optimizer import (
     finalize_candidate_trace,
     length_penalized_loss,
 )
+from app.workflows.bootstrap.prompt_spec import (
+    concept_prompt_spec_from_guideline,
+    ensure_concept_only_description,
+    frozen_output_protocol_from_guideline,
+    strip_frozen_protocol_sections,
+)
 
 Predictor = Callable[[str, list[dict], float], str]
 ProgressCallback = Callable[[dict[str, Any]], None]
@@ -93,8 +99,9 @@ def save_guideline_package(
     boundary_rules: list[str],
     negative_rules: list[str],
     gold_tasks: list[AnnotationTask],
+    output_format: str = "[原文]{标签}",
 ) -> dict:
-    guideline = build_guideline(project_id, name, brief, labels, boundary_rules, negative_rules)
+    guideline = build_guideline(project_id, name, brief, labels, boundary_rules, negative_rules, output_format=output_format)
     store.upsert_guideline(guideline)
     for task in gold_tasks:
         store.upsert_task(task, project_id=project_id)
@@ -212,6 +219,11 @@ def run_concept_refinement_loop(
         str(guideline.get("stable_description") or guideline.get("brief", "")),
         fallback=_compose_description_from_payload(guideline),
     )
+    current_description, concept_only_warnings = ensure_concept_only_description(
+        current_description,
+        fallback=concept_prompt_spec_from_guideline(guideline).text,
+    )
+    initial_warnings.extend(concept_only_warnings)
     initial_clean_description = current_description
     rounds: list[dict] = []
     final_status = "needs_revision"
@@ -427,8 +439,9 @@ def generate_revision_candidates(
     fallback = _fallback_revised_description(guideline, validation_result)
     candidates: list[dict] = []
     if predictor is None:
+        trace_description = concept_prompt_spec_from_guideline(guideline).text
         optimizer_context = build_llm_adamw_trace(
-            str(guideline.get("stable_description") or guideline.get("brief", "")),
+            trace_description,
             validation_result,
             failure_summary,
             current_loss or {"loss": 0.0},
@@ -437,6 +450,8 @@ def generate_revision_candidates(
             fallback,
             fallback=str(guideline.get("stable_description") or guideline.get("brief", "")),
         )
+        cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=trace_description)
+        warnings.extend(concept_only_warnings)
         return [
             {
                 "candidate_id": "candidate-local-fallback",
@@ -453,6 +468,11 @@ def generate_revision_candidates(
         str(guideline.get("stable_description") or guideline.get("brief", "")),
         fallback=_compose_description_from_payload(guideline),
     )
+    current_description, concept_only_warnings = ensure_concept_only_description(
+        current_description,
+        fallback=concept_prompt_spec_from_guideline(guideline).text,
+    )
+    input_warnings.extend(concept_only_warnings)
     directions = _candidate_directions(validation_result)[:target_count]
     optimizer_context = build_llm_adamw_trace(
         current_description,
@@ -470,6 +490,8 @@ def generate_revision_candidates(
         )
         raw = predictor("你是概念阐释改写助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, output_warnings = sanitize_concept_description(raw, fallback=fallback)
+        cleaned, output_concept_warnings = ensure_concept_only_description(cleaned, fallback=fallback)
+        output_warnings.extend(output_concept_warnings)
         candidates.append(
             {
                 "candidate_id": f"candidate-{index:02d}-{direction['id']}",
@@ -485,6 +507,11 @@ def generate_revision_candidates(
         fallback,
         fallback=str(guideline.get("stable_description") or guideline.get("brief", "")),
     )
+    fallback_cleaned, fallback_concept_warnings = ensure_concept_only_description(
+        fallback_cleaned,
+        fallback=concept_prompt_spec_from_guideline(guideline).text,
+    )
+    fallback_warnings.extend(fallback_concept_warnings)
     candidates.append(
         {
             "candidate_id": "candidate-fallback",
@@ -825,12 +852,13 @@ def _build_revision_prompt(
     extra_line = "；".join(extra_terms[:8]) or "无"
     case_context = _failure_case_prompt_context(validation_result.get("details", []))
     gradient_context = _gradient_prompt_context(optimizer_context)
+    concept_description = strip_frozen_protocol_sections(current_description)
     return f"""请根据金样例校准结果，优化下面的概念阐释。
 
 你的任务很简单：只返回优化后的概念阐释正文，不要返回解释、分析过程或列表化日志。
 
-当前概念阐释：
-{current_description}
+当前可优化定义：
+{concept_description}
 
 本次探索方向：
 {direction['title']}：{direction['instruction']}
@@ -848,9 +876,10 @@ def _build_revision_prompt(
 
 输出要求：
 1. 只输出可以直接用于下一轮标注的概念阐释正文。
-2. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”这类清晰字段。
-3. 不要输出解释、失败样例编号、失败摘要或修订日志。
-4. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
+2. 只允许包含任务定义、概念定义、边界规则和排除规则。
+3. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。
+4. 不要输出解释、失败样例编号、失败摘要或修订日志。
+5. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
 
 
 def _gradient_prompt_context(optimizer_context: dict) -> str:
@@ -993,10 +1022,8 @@ def _compose_description(
     return "\n".join(
         [
             f"概念描述：{brief.strip()}",
-            f"标签集合：{', '.join(labels) if labels else 'Concept'}",
             "边界规则：" + ("；".join(rule for rule in boundary_rules if rule) or "按最小完整语义片段标注。"),
             "排除规则：" + ("；".join(rule for rule in negative_rules if rule) or "不标注泛化、比喻或证据不足的片段。"),
-            f"输出格式：{output_format}",
         ]
     )
 
@@ -1015,10 +1042,21 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
             "predicted_spans": predicted_spans,
         }
 
-    prompt = f"""请只根据以下概念阐释标注文本，不要参考金答案。
+    concept_spec = concept_prompt_spec_from_guideline(guideline).text
+    output_protocol = frozen_output_protocol_from_guideline(guideline)
+    labels = ", ".join(output_protocol.labels)
+    json_fields = ", ".join(output_protocol.json_fields)
+    prompt = f"""请只根据以下概念定义标注文本，不要参考金答案。
 
-概念阐释：
-{guideline.get('stable_description') or guideline.get('brief')}
+可优化定义：
+{concept_spec}
+
+冻结输出协议（必须遵守，不要改写）：
+- 标签集合：{labels}
+- JSON 字段：{json_fields}
+- annotation 格式：{output_protocol.annotation_markup}
+- 只能返回一个 JSON object，不能有 markdown fence 或额外说明。
+- text 必须与输入文本完全一致；annotation 中的 span 必须能在 text 中定位。
 
 文本：
 {task_payload['text']}

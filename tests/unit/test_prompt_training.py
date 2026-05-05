@@ -19,6 +19,7 @@ from app.workflows.bootstrap import (
     run_prompt_training_experiment,
     save_guideline_package,
     start_prompt_training_background_run,
+    strip_frozen_protocol_sections,
     write_prompt_training_comparison_outputs,
 )
 
@@ -61,13 +62,35 @@ def _correct_annotation(prompt: str) -> str:
 
 
 class TestPromptTraining(unittest.TestCase):
-    def test_llm_optimize_only_prompt_has_no_failure_or_gradient_details(self):
-        prompt = build_llm_optimize_only_prompt("概念描述：标出科学术语。\n标签集合：Term")
+    def test_llm_optimize_only_prompt_has_no_failure_gradient_or_protocol_values(self):
+        prompt = build_llm_optimize_only_prompt("概念描述：标出科学术语。\n标签集合：Term\n输出格式：[原文]{标签}")
 
         forbidden = ["失败摘要", "gold-", "漏标", "多标", "loss", "文本梯度"]
         for marker in forbidden:
             with self.subTest(marker=marker):
                 self.assertNotIn(marker, prompt)
+        self.assertNotIn("标签集合：Term", prompt)
+        self.assertNotIn("[原文]{标签}", prompt)
+        self.assertIn("不要输出标签集合", prompt)
+
+    def test_strip_frozen_protocol_sections_keeps_only_concept_semantics(self):
+        cleaned = strip_frozen_protocol_sections(
+            "\n".join(
+                [
+                    "概念描述：标出科学术语。",
+                    "标签集合：Term",
+                    "边界规则：标最小完整术语。",
+                    "输出格式：[原文]{标签}",
+                    "排除规则：不标普通词。",
+                ]
+            )
+        )
+
+        self.assertIn("概念描述：标出科学术语。", cleaned)
+        self.assertIn("边界规则：标最小完整术语。", cleaned)
+        self.assertIn("排除规则：不标普通词。", cleaned)
+        self.assertNotIn("标签集合：Term", cleaned)
+        self.assertNotIn("输出格式", cleaned)
 
     def test_training_selects_method_that_reaches_all_gold_examples(self):
         tmp, store, guideline_id = _store_with_guideline()
@@ -114,6 +137,8 @@ class TestPromptTraining(unittest.TestCase):
         self.assertEqual(result["best_pass_count"], 15)
         self.assertEqual(result["method_results"][2]["stop_reason"], "reached_target")
         self.assertIn("带编号或专名结构", result["best_description"])
+        self.assertNotIn("标签集合：Term", result["best_description"])
+        self.assertNotIn("输出格式", result["best_description"])
         self.assertTrue(result["leakage_report"]["final_prompt_clean"])
         winning_method = next(row for row in result["method_results"] if row["method"] == TEXT_GRADIENT_ADAMW)
         self.assertGreater(winning_method["llm_call_count"], 0)
@@ -365,10 +390,16 @@ class TestPromptTraining(unittest.TestCase):
             ]
         }
 
-        prompt = build_training_feedback_prompt("概念描述：标出科学术语。", result, "gold-00001 漏标 Quantum term 1")
+        prompt = build_training_feedback_prompt(
+            "概念描述：标出科学术语。\n标签集合：Term\n输出格式：[原文]{标签}",
+            result,
+            "gold-00001 漏标 Quantum term 1",
+        )
 
         self.assertIn("training_feedback_only=true", prompt)
         self.assertIn("Quantum term 1", prompt)
+        self.assertNotIn("标签集合：Term", prompt)
+        self.assertNotIn("[原文]{标签}", prompt)
 
     def test_candidate_copying_gold_answer_is_repaired_before_evaluation(self):
         tmp, store, guideline_id = _store_with_guideline()
@@ -460,7 +491,8 @@ class TestPromptTraining(unittest.TestCase):
         )
 
         self.assertIn("带编号或专名结构", repaired)
-        self.assertEqual(warnings, [])
+        self.assertNotIn("标签集合：Term", repaired)
+        self.assertIn("removed_frozen_output_protocol", warnings)
 
     def test_progress_recorder_receives_training_stage_events(self):
         tmp, store, guideline_id = _store_with_guideline()

@@ -19,6 +19,8 @@ from app.ui.i18n import t
 from app.workflows.bootstrap import (
     PROMPT_TRAINING_METHODS,
     PromptTrainingConfig,
+    concept_prompt_spec_from_guideline,
+    frozen_output_protocol_from_guideline,
     gold_task_from_markup,
     revise_guideline,
     run_concept_refinement_loop,
@@ -129,6 +131,48 @@ def _format_seconds(value: Any) -> str:
     if seconds < 60:
         return f"{seconds:.0f}s"
     return f"{int(seconds // 60)}m {int(seconds % 60)}s"
+
+
+def _render_guideline_contract(guideline_payload: dict[str, Any]) -> None:
+    concept_spec = concept_prompt_spec_from_guideline(guideline_payload)
+    output_protocol = frozen_output_protocol_from_guideline(guideline_payload)
+    st.markdown(f"**{t('concept_lab.spec_contract_title')}**")
+    st.caption(t("concept_lab.spec_contract_help"))
+    left, right = st.columns([1.2, 0.8])
+    with left:
+        st.markdown(f"**{t('concept_lab.optimizable_spec_title')}**")
+        st.caption(t("concept_lab.optimizable_spec_caption"))
+        st.text_area(
+            t("concept_lab.optimizable_spec_text"),
+            value=concept_spec.text,
+            height=210,
+            disabled=True,
+            key=f"concept_prompt_spec_{guideline_payload['id']}",
+        )
+    with right:
+        st.markdown(f"**{t('concept_lab.frozen_protocol_title')}**")
+        st.caption(t("concept_lab.frozen_protocol_caption"))
+        st.markdown(
+            "\n".join(
+                [
+                    f"- **{t('concept_lab.frozen_labels')}**: {', '.join(output_protocol.labels)}",
+                    f"- **{t('concept_lab.frozen_json_fields')}**: {', '.join(output_protocol.json_fields)}",
+                    f"- **{t('concept_lab.frozen_markup')}**: `{output_protocol.annotation_markup}`",
+                    f"- **{t('concept_lab.frozen_parser')}**: {t('concept_lab.frozen_parser_value')}",
+                    f"- **{t('concept_lab.frozen_repair')}**: {t('concept_lab.frozen_repair_value', count=output_protocol.max_repair_attempts)}",
+                ]
+            )
+        )
+        st.info(t("concept_lab.frozen_protocol_lock"))
+
+    with st.expander(t("concept_lab.compat_description_expander"), expanded=False):
+        st.text_area(
+            t("concept_lab.current_description"),
+            value=guideline_payload.get("stable_description", ""),
+            height=180,
+            disabled=True,
+            key=f"stable_description_compat_{guideline_payload['id']}",
+        )
 
 
 def _load_training_result_from_run(run_row: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -435,6 +479,7 @@ with st.expander(t("concept_lab.advanced_guideline_expander"), expanded=False):
             boundary_rules=_lines(boundary_text),
             negative_rules=_lines(negative_text),
             gold_tasks=gold_tasks,
+            output_format=output_format,
         )
         st.success(t("concept_lab.saved_package", count=len(gold_tasks)))
         st.session_state["selected_guideline_id"] = package["guideline"].id
@@ -453,7 +498,7 @@ else:
         key="concept_lab_guideline_selector",
     )
     guideline_payload = next(row["payload"] for row in guidelines if row["id"] == selected_guideline)
-    st.text_area(t("concept_lab.current_description"), value=guideline_payload.get("stable_description", ""), height=180)
+    _render_guideline_contract(guideline_payload)
     gold_sets = store.list_gold_example_sets(guideline_id=selected_guideline, limit=1)
     gold_count = len(gold_sets[0]["payload"].get("task_ids", [])) if gold_sets else 0
     target_count = int(gold_sets[0]["payload"].get("target_count", 15)) if gold_sets else 15

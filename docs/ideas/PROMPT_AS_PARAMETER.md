@@ -28,7 +28,7 @@ Prompt-as-Parameter 是 Rosetta 最核心的方法假设之一：把概念定义
 3. `Text Gradient`：通过扰动、替换、消融或 LLM 诊断估算出的文本改写方向。
 4. `Prompt Optimizer`：根据文本梯度生成候选 prompt，并用 gold loss 验证是否接受。
 
-当前代码已经从 `loss-guided candidate search` 推进到可运行的 Prompt-as-Parameter 最小训练电路。`v4.3.0` 实现了 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚；`v4.4.0` 加入提示词优化训练实验，可以在同一批 15 条金样例上比较 `llm_optimize_only`、`llm_reflection` 和 `text_gradient_adamw`；`v4.4.1` 增加防背答案检查，允许优化模型看批改对照，但禁止候选 prompt 和最终 prompt 复制语料词、gold span、model span 或可识别答案片段；`v4.5.0` 接入 LLM service runtime，默认真实模型为 DeepSeek `deepseek-v4-pro`，provider 并发上限为 20，并把泄露候选从“一票否决”改为“先去语料化修复，再回测 gold loss”；`v4.5.1` 将完整三方法实验改为连续 5 轮 loss 无下降才停止，并输出 Markdown/JSON/JSONL 对比产物；`v4.5.5` 文档化冻结输出协议与强格式 harness，规定后续代码必须把 output protocol 从 optimizer 的可编辑空间中拿出来。完整优化器仍不是终局：对比替换、真实消融链路、跨轮 optimizer state 和统一 format repair harness 是下一阶段工作。
+当前代码已经从 `loss-guided candidate search` 推进到可运行的 Prompt-as-Parameter 最小训练电路。`v4.3.0` 实现了 prompt 分段、启发式 Mask 文本梯度、`LLM-AdamW` trace 和长度惩罚；`v4.4.0` 加入提示词优化训练实验，可以在同一批 15 条金样例上比较 `llm_optimize_only`、`llm_reflection` 和 `text_gradient_adamw`；`v4.4.1` 增加防背答案检查，允许优化模型看批改对照，但禁止候选 prompt 和最终 prompt 复制语料词、gold span、model span 或可识别答案片段；`v4.5.0` 接入 LLM service runtime，默认真实模型为 DeepSeek `deepseek-v4-pro`，provider 并发上限为 20，并把泄露候选从“一票否决”改为“先去语料化修复，再回测 gold loss”；`v4.5.1` 将完整三方法实验改为连续 5 轮 loss 无下降才停止，并输出 Markdown/JSON/JSONL 对比产物；`v4.5.5` 文档化冻结输出协议与强格式 harness，规定后续代码必须把 output protocol 从 optimizer 的可编辑空间中拿出来；`v4.5.7` 先在页面和候选生成层落地这个契约，展示 `ConceptPromptSpec / Frozen OutputProtocolSpec` 分栏，并剥离候选中的标签、输出格式和 JSON schema。完整优化器仍不是终局：对比替换、真实消融链路、跨轮 optimizer state 和统一 format repair harness 是下一阶段工作。
 
 ## 2. 参数空间
 
@@ -198,6 +198,7 @@ for step in range(max_steps):
 4. 训练反馈可以包含原文、标准答案和模型答案，但这些内容必须标记为 `training_feedback_only=true`，只供优化模型学习错误类型。
 5. learned operational prompt 不能复制语料中的具体词、答案片段或模型错答片段；Rosetta 用 `MemorizationGuard` 对候选和最终版本做 hash 指纹检查，泄露候选先进入 `repair_leaked_prompt()` 去语料化修复，修复失败才拒绝。
 6. 输出格式不是训练目标。格式稳定性由 `Frozen OutputProtocolSpec`、strict parser 和 format repair loop 保证，不能靠 optimizer 在概念提示词中反复堆格式说明。
+7. 如果候选提示词带回标签集合、JSON schema、annotation 格式或输出格式，系统应剥离这些冻结协议字段并记录 warning；后续报告还需要聚合 `protocol_tampering_count`。
 
 ## 6. 实验可证伪点
 

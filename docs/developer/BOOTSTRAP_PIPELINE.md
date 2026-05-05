@@ -334,10 +334,15 @@ ConceptPromptSpec
 
 实现边界：
 
-1. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-2. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
-3. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
-4. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
+1. `v4.5.7` 已先完成页面与候选生成层的对齐：`Definition & Guideline` 页面分栏展示 `ConceptPromptSpec` 和 `Frozen OutputProtocolSpec`；`llm_optimize_only / llm_reflection / text_gradient_adamw` 的候选生成 prompt 只要求输出任务定义、概念定义、边界规则和排除规则。
+2. `v4.5.7` 已加入轻量 concept-only 清理：候选提示词如果带回标签集合、输出格式、JSON schema 或 annotation markup，会从候选 description 中剥离，并记录 `removed_frozen_output_protocol` warning。
+3. `v4.5.7` 的评估调用会把冻结标签、JSON 字段和 annotation 格式重新注入给标注模型，因此候选生成阶段不需要也不允许学习输出协议。
+4. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
+
+5. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+6. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+7. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+8. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 

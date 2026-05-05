@@ -31,6 +31,11 @@ from app.workflows.bootstrap.prompt_optimizer import (
     finalize_candidate_trace,
     length_penalized_loss,
 )
+from app.workflows.bootstrap.prompt_spec import (
+    concept_prompt_spec_from_guideline,
+    ensure_concept_only_description,
+    strip_frozen_protocol_sections,
+)
 
 LLM_OPTIMIZE_ONLY = "llm_optimize_only"
 LLM_REFLECTION = "llm_reflection"
@@ -181,15 +186,17 @@ class PromptTrainingResult:
 
 
 def build_llm_optimize_only_prompt(current_description: str) -> str:
+    concept_description = strip_frozen_protocol_sections(current_description)
     return f"""请优化下面的概念提示词，使它更清晰、更稳定、更适合执行标注任务。
 
-当前提示词：
-{current_description}
+当前可优化定义：
+{concept_description}
 
 输出要求：
 1. 只返回优化后的概念阐释正文。
-2. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”这类清晰字段。
-3. 不要解释你的修改，不要输出日志，不要输出分析过程。"""
+2. 只允许包含任务定义、概念定义、边界规则和排除规则。
+3. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。
+4. 不要解释你的修改，不要输出日志，不要输出分析过程。"""
 
 
 def _estimate_tokens(system_prompt: str, messages: list[dict], raw_response: str) -> int:
@@ -252,6 +259,11 @@ def run_prompt_training_experiment(
         str(guideline.get("stable_description") or guideline.get("brief", "")),
         fallback=str(guideline.get("brief", "")),
     )
+    initial_description, concept_only_warnings = ensure_concept_only_description(
+        initial_description,
+        fallback=concept_prompt_spec_from_guideline(guideline).text,
+    )
+    initial_warnings.extend(concept_only_warnings)
     memorization_guard = MemorizationGuard.from_store(
         store,
         task_ids,
@@ -1203,6 +1215,8 @@ def _generate_optimize_only_candidates(
         prompt = build_llm_optimize_only_prompt(current_description)
         raw = predictor("你是概念提示词优化助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, warnings = sanitize_concept_description(raw, fallback=current_description)
+        cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=current_description)
+        warnings.extend(concept_only_warnings)
         candidates.append(
             {
                 "candidate_id": f"llm-optimize-only-{index:02d}",
@@ -1246,6 +1260,8 @@ def _generate_text_gradient_candidates(
         prompt = _build_text_gradient_prompt(current_description, validation_result, failure_summary, current_loss, direction, optimizer_context)
         raw = predictor("你是概念阐释改写助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, warnings = sanitize_concept_description(raw, fallback=fallback)
+        cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=fallback)
+        warnings.extend(concept_only_warnings)
         candidates.append(
             {
                 "candidate_id": f"candidate-{index:02d}-{direction['id']}",
@@ -1286,6 +1302,8 @@ def _generate_reflection_candidates(
         prompt = _build_reflection_prompt(current_description, validation_result, failure_summary)
         raw = predictor("你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, warnings = sanitize_concept_description(raw, fallback=fallback)
+        cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=fallback)
+        warnings.extend(concept_only_warnings)
         candidates.append(
             {
                 "candidate_id": f"llm-reflection-{index:02d}",
@@ -1303,12 +1321,13 @@ def _build_reflection_prompt(current_description: str, validation_result: dict, 
     missing_terms, extra_terms = _revision_terms(validation_result.get("details", []))
     missing_line = "；".join(missing_terms[:12]) or "无"
     extra_line = "；".join(extra_terms[:8]) or "无"
+    concept_description = strip_frozen_protocol_sections(current_description)
     return f"""请根据金样例校准中的失败点，优化下面的概念阐释。
 
 training_feedback_only=true
 
-当前概念阐释：
-{current_description}
+当前可优化定义：
+{concept_description}
 
 失败摘要（只供你理解，不要原样写进最终提示词）：
 {failure_summary}
@@ -1318,9 +1337,10 @@ training_feedback_only=true
 
 输出要求：
 1. 只输出可以直接用于下一轮标注的概念阐释正文。
-2. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”这类清晰字段。
-3. 不要输出解释、失败样例编号、失败摘要或修订日志。
-4. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
+2. 只允许包含任务定义、概念定义、边界规则和排除规则。
+3. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。
+4. 不要输出解释、失败样例编号、失败摘要或修订日志。
+5. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
 
 
 def build_training_feedback_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
@@ -1336,7 +1356,10 @@ def repair_leaked_prompt(
 ) -> tuple[str, list[str]]:
     prompt = _build_leak_repair_prompt(candidate_description, leaked_terms)
     raw = predictor("你是提示词去语料化修复助手。只返回修复后的最终提示词。", [{"role": "user", "content": prompt}], temperature)
-    return sanitize_concept_description(raw, fallback=fallback or candidate_description)
+    cleaned, warnings = sanitize_concept_description(raw, fallback=fallback or candidate_description)
+    cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=fallback or candidate_description)
+    warnings.extend(concept_only_warnings)
+    return cleaned, warnings
 
 
 def _repair_leaked_candidate(
@@ -1391,8 +1414,9 @@ def _build_leak_repair_prompt(candidate_description: str, leaked_terms: list[str
 修复要求：
 1. 只输出修复后的最终概念阐释正文。
 2. 不要出现上面列出的具体词、短语、原句、答案片段或样例编号。
-3. 把具体例子抽象成边界规则、排除规则或输出格式要求。
-4. 保持“概念描述 / 标签集合 / 边界规则 / 排除规则 / 输出格式”结构。"""
+3. 把具体例子抽象成概念定义、边界规则或排除规则。
+4. 只保留任务定义、概念定义、边界规则和排除规则。
+5. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。"""
 
 
 def _build_text_gradient_prompt(
@@ -1403,12 +1427,13 @@ def _build_text_gradient_prompt(
     direction: dict,
     optimizer_context: dict,
 ) -> str:
+    concept_description = strip_frozen_protocol_sections(current_description)
     return f"""请根据批改对照和文本梯度，优化下面的概念阐释。
 
 training_feedback_only=true
 
-当前概念阐释：
-{current_description}
+当前可优化定义：
+{concept_description}
 
 本次探索方向：
 {direction['title']}：{direction['instruction']}
@@ -1424,9 +1449,10 @@ training_feedback_only=true
 
 输出要求：
 1. 只输出可以直接用于下一轮标注的概念阐释正文。
-2. 可以把具体错误抽象成边界规则、排除规则或输出格式要求。
-3. 不要复制原文、标准答案、模型答案、样例编号、失败摘要或修订日志。
-4. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
+2. 可以把具体错误抽象成概念定义、边界规则或排除规则。
+3. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。
+4. 不要复制原文、标准答案、模型答案、样例编号、失败摘要或修订日志。
+5. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
 
 
 def _raw_feedback_context(validation_result: dict, failure_summary: str) -> str:

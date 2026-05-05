@@ -20,6 +20,14 @@ from app.workflows.bootstrap.prompt_optimizer import (
     length_penalized_loss,
     segment_prompt,
 )
+from app.workflows.bootstrap.prompt_spec import (
+    ConceptPromptSpec,
+    FrozenOutputProtocolSpec,
+    concept_prompt_spec_from_guideline,
+    ensure_concept_only_description,
+    frozen_output_protocol_from_guideline,
+    strip_frozen_protocol_sections,
+)
 from app.workflows.bootstrap.memorization import (
     CorpusFingerprint,
     LeakageCheckResult,
@@ -54,6 +62,8 @@ __all__ = [
     "LLM_OPTIMIZE_ONLY",
     "LLM_REFLECTION",
     "CorpusFingerprint",
+    "ConceptPromptSpec",
+    "FrozenOutputProtocolSpec",
     "LeakageCheckResult",
     "MemorizationGuard",
     "PromptOptimizationTrace",
@@ -71,6 +81,10 @@ __all__ = [
     "save_guideline_package",
     "segment_prompt",
     "build_training_feedback_prompt",
+    "concept_prompt_spec_from_guideline",
+    "ensure_concept_only_description",
+    "frozen_output_protocol_from_guideline",
+    "strip_frozen_protocol_sections",
     "TEXT_GRADIENT_ADAMW",
     "TextGradient",
     "validate_gold_examples",

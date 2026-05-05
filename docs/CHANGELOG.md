@@ -2,6 +2,15 @@
 
 ## 2026-05-05
 
+### UX / Definition guideline harness view v4.5.7
+
+1. “定义与规范”页面新增强 harness 视图，将当前规范分为 `可优化定义 / ConceptPromptSpec` 和 `冻结输出协议 / FrozenOutputProtocolSpec` 两栏展示。
+2. 新增 `app/workflows/bootstrap/prompt_spec.py`，提供 `ConceptPromptSpec`、`FrozenOutputProtocolSpec`、`strip_frozen_protocol_sections()` 和 guideline 转换 helper。
+3. 提示词优化训练候选生成收紧为 concept-only：`llm_optimize_only / llm_reflection / text_gradient_adamw` 只要求输出任务定义、概念定义、边界规则和排除规则。
+4. 候选提示词若带回标签集合、输出格式、JSON schema 或 annotation markup，会被剥离并记录 `removed_frozen_output_protocol` warning，避免三方法比较时把冻结协议当作可训练参数。
+5. 概念验证和候选回测时由系统重新注入冻结标签、JSON 字段和 annotation 格式，使输出协议保持一致。
+6. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md) 和 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，并将首页版本更新为 `v4.5.7`。
+
 ### UX / Main navigation naming v4.5.6
 
 1. 主导航中文命名更新为 `项目总览 / 定义与规范 / 批量标注 / 审核与修正 / 结果与导出`，替换原先偏后台或研究感的入口名称。
