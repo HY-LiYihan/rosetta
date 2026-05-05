@@ -9,7 +9,13 @@ from app.data.prodigy_jsonl import read_tasks_jsonl
 from app.data.text_ingestion import split_sentences, tasks_from_csv, tasks_from_jsonl, tasks_from_txt, tokenize_text
 from app.runtime.store import RuntimeStore
 from app.workflows.annotation import run_batch_worker, submit_batch_annotation
-from app.workflows.bootstrap import gold_task_from_markup, revise_guideline, save_guideline_package, validate_gold_examples
+from app.workflows.bootstrap import (
+    FULL_JSON_OUTPUT_FORMAT,
+    gold_task_from_markup,
+    revise_guideline,
+    save_guideline_package,
+    validate_gold_examples,
+)
 from app.workflows.review import apply_review_decision, get_next_review_task, list_review_queue
 
 
@@ -51,6 +57,29 @@ class TestBatchAnnotationTool(unittest.TestCase):
             self.assertIn("边界补充", revised)
             self.assertNotIn("失败样例范围", revised)
             self.assertNotIn("g2", revised)
+
+    def test_guideline_infers_label_and_stores_format_protocol(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = RuntimeStore(Path(tmp) / "rosetta.sqlite3")
+            store.upsert_project(Project(id="p1", name="Project"))
+            gold = gold_task_from_markup("g1", "heart failure is common", "[heart failure]{DiseaseTerm}", "")
+            package = save_guideline_package(
+                store,
+                project_id="p1",
+                name="Term",
+                brief="标出医学术语",
+                labels=None,
+                boundary_rules=["最小完整术语"],
+                negative_rules=None,
+                gold_tasks=[gold],
+                output_format=FULL_JSON_OUTPUT_FORMAT,
+            )
+
+            guideline = store.get_guideline(package["guideline"].id)["payload"]
+            self.assertEqual(guideline["labels"], ["DiseaseTerm"])
+            self.assertEqual(guideline["output_format"], FULL_JSON_OUTPUT_FORMAT)
+            self.assertNotIn("标签集合", guideline["stable_description"])
+            self.assertNotIn("输出格式", guideline["stable_description"])
 
     def test_batch_worker_review_and_export_roundtrip(self):
         with tempfile.TemporaryDirectory() as tmp:

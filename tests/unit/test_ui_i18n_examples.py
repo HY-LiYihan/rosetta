@@ -22,6 +22,7 @@ class TestUiI18nExamples(unittest.TestCase):
         self.assertEqual(len(rows), 15)
         self.assertEqual(PROFESSIONAL_NER_EXAMPLE["labels"], "Term")
         self.assertEqual(PROFESSIONAL_NER_EXAMPLE["project_name"], "专业命名实体标注")
+        self.assertNotIn("标签集合", PROFESSIONAL_NER_EXAMPLE["brief"])
         tasks = [
             gold_task_from_markup(f"gold-{index:05d}", row["text"], row["annotation"], "Term")
             for index, row in enumerate(rows, start=1)

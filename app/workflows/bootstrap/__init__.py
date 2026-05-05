@@ -22,10 +22,16 @@ from app.workflows.bootstrap.prompt_optimizer import (
 )
 from app.workflows.bootstrap.prompt_spec import (
     ConceptPromptSpec,
+    DEFAULT_SPAN_LABEL,
+    FULL_JSON_OUTPUT_FORMAT,
+    FULL_JSON_PROTOCOL,
     FrozenOutputProtocolSpec,
+    SPAN_MARKUP_PROTOCOL,
     concept_prompt_spec_from_guideline,
     ensure_concept_only_description,
     frozen_output_protocol_from_guideline,
+    is_full_json_output_format,
+    span_markup_output_format,
     strip_frozen_protocol_sections,
 )
 from app.workflows.bootstrap.memorization import (
@@ -63,6 +69,9 @@ __all__ = [
     "LLM_REFLECTION",
     "CorpusFingerprint",
     "ConceptPromptSpec",
+    "DEFAULT_SPAN_LABEL",
+    "FULL_JSON_OUTPUT_FORMAT",
+    "FULL_JSON_PROTOCOL",
     "FrozenOutputProtocolSpec",
     "LeakageCheckResult",
     "MemorizationGuard",
@@ -84,6 +93,9 @@ __all__ = [
     "concept_prompt_spec_from_guideline",
     "ensure_concept_only_description",
     "frozen_output_protocol_from_guideline",
+    "is_full_json_output_format",
+    "span_markup_output_format",
+    "SPAN_MARKUP_PROTOCOL",
     "strip_frozen_protocol_sections",
     "TEXT_GRADIENT_ADAMW",
     "TextGradient",

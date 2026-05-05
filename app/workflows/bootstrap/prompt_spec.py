@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+SPAN_MARKUP_PROTOCOL = "span_markup"
+FULL_JSON_PROTOCOL = "full_json"
+FULL_JSON_OUTPUT_FORMAT = "rosetta.annotation_doc.v3.1.full_json"
+DEFAULT_SPAN_LABEL = "Term"
+
 
 FROZEN_PROTOCOL_PREFIXES = (
     "标签集合",
@@ -32,11 +37,13 @@ class ConceptPromptSpec:
 class FrozenOutputProtocolSpec:
     labels: tuple[str, ...]
     annotation_markup: str
+    protocol: str = SPAN_MARKUP_PROTOCOL
     json_fields: tuple[str, ...] = ("text", "annotation", "explanation")
     max_repair_attempts: int = 2
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "protocol": self.protocol,
             "labels": list(self.labels),
             "json_fields": list(self.json_fields),
             "annotation_markup": self.annotation_markup,
@@ -75,16 +82,34 @@ def concept_prompt_spec_from_guideline(guideline: dict[str, Any]) -> ConceptProm
             [
                 f"概念定义：{str(guideline.get('brief') or '').strip()}",
                 "边界规则：" + _join_rules(guideline.get("boundary_rules", []), "按最小完整语义片段标注。"),
-                "排除规则：" + _join_rules(guideline.get("negative_rules", []), "不标注泛化、比喻或证据不足的片段。"),
             ]
         ).strip()
     return ConceptPromptSpec(text=description)
 
 
 def frozen_output_protocol_from_guideline(guideline: dict[str, Any]) -> FrozenOutputProtocolSpec:
-    labels = tuple(str(label) for label in guideline.get("labels", []) if str(label).strip()) or ("Term",)
-    output_format = str(guideline.get("output_format") or "").strip() or f"[span]{{{labels[0]}}}"
-    return FrozenOutputProtocolSpec(labels=labels, annotation_markup=output_format)
+    labels = tuple(str(label) for label in guideline.get("labels", []) if str(label).strip()) or (DEFAULT_SPAN_LABEL,)
+    output_format = str(guideline.get("output_format") or "").strip()
+    if is_full_json_output_format(output_format):
+        return FrozenOutputProtocolSpec(
+            labels=labels,
+            protocol=FULL_JSON_PROTOCOL,
+            annotation_markup="完整 AnnotationDoc JSON（spans / relations / attributes / comments / document_labels）",
+        )
+    return FrozenOutputProtocolSpec(
+        labels=labels,
+        protocol=SPAN_MARKUP_PROTOCOL,
+        annotation_markup=output_format or span_markup_output_format(labels[0]),
+    )
+
+
+def span_markup_output_format(label: str = DEFAULT_SPAN_LABEL) -> str:
+    return f"[span]{{{str(label or DEFAULT_SPAN_LABEL).strip() or DEFAULT_SPAN_LABEL}}}"
+
+
+def is_full_json_output_format(output_format: str) -> bool:
+    normalized = str(output_format or "").strip().lower()
+    return normalized in {FULL_JSON_OUTPUT_FORMAT, FULL_JSON_PROTOCOL, "annotationdoc", "annotation_doc", "full annotationdoc json"}
 
 
 def ensure_concept_only_description(description: str, fallback: str = "") -> tuple[str, list[str]]:

@@ -96,7 +96,7 @@ ConceptVersion
 
 未来实现应包含以下组件：
 
-1. `PromptSegmenter`: 将概念阐释切成任务定义、概念定义、边界规则、负例规则和失败模式抽象。
+1. `PromptSegmenter`: 将概念阐释切成任务定义、概念定义、边界规则和失败模式抽象；负例约束如需使用，应作为高级概念语义片段处理，而不是默认用户必填项。
 2. `TextGradientEstimator`: 用 Mask 遮挡、对比替换、消融链路和 LLM 自我诊断估算文本梯度。
 3. `PromptOptimizer`: 根据梯度方向、历史状态和长度惩罚生成更新策略。
 4. `CandidateGenerator`: 调用 LLM 生成干净候选 prompt，不把失败日志拼进最终文本。
@@ -164,7 +164,7 @@ PromptTrainingConfig(
 
 | 方法 | 训练反馈材料 | 候选生成信息 | 防背答案约束 | 用途 |
 | --- | --- | --- | --- | --- |
-| `llm_optimize_only` | 不提供原文、标准答案、模型答案、失败详情、loss 或文本梯度 | 只告诉大模型“请优化当前概念语义提示词” | 候选只允许包含概念定义、边界规则和排除规则 | 最简单 baseline |
+| `llm_optimize_only` | 不提供原文、标准答案、模型答案、失败详情、loss 或文本梯度 | 只告诉大模型“请优化当前概念语义提示词” | 候选只允许包含概念定义和边界规则；如有负例约束，只能作为抽象边界条件 | 最简单 baseline |
 | `llm_reflection` | 提供原文、gold answer、model answer、错误类型和失败摘要，标记 `training_feedback_only=true` | 要求 LLM 把具体错误抽象成整体概念阐释 | 候选不能复制原文、gold span、model span 或可识别答案片段，也不能改输出协议 | 普通 LLM 反思 baseline |
 | `text_gradient_adamw` | 提供原始批改对照、系统计算的文本梯度方向、loss 和长度变化 | 使用 Text Gradient / `LLM-AdamW` 方向生成概念候选 | 梯度可来自具体错误，但最终候选只能保留抽象规则；格式协议由 harness 注入 | Rosetta 默认方法 |
 
@@ -281,7 +281,7 @@ Definition & Guideline click
 ConceptPromptSpec
   -> concept_definition
   -> boundary_rules
-  -> negative_rules
+  -> optional negative constraints as advanced concept semantics
 
 Frozen OutputProtocolSpec
   -> labels
@@ -303,7 +303,7 @@ ConceptPromptSpec
   -> semantic loss only after format is valid
 ```
 
-冻结输出协议默认采用 `JSON+markup`：
+冻结输出协议默认采用 `JSON+markup`，也可以选择完整 `AnnotationDoc` JSON：
 
 ```json
 {
@@ -313,10 +313,12 @@ ConceptPromptSpec
 }
 ```
 
+完整 `AnnotationDoc` JSON 用于 relation、attributes 或多层标注任务，`annotation` 字段必须是 object，包含 `version / text / layers`，其中 `layers` 至少包含 `spans / relations / attributes / comments / document_labels`。
+
 约束：
 
 1. JSON 外不能有 markdown fence、解释性 prose 或额外包装。
-2. `annotation` 必须使用 `[span]{Term}` 行内 markup；`Term` 来自 harness 注入的标签集合，不由 optimizer 学习。
+2. span-markup 协议下，`annotation` 必须使用 `[span]{Term}` 行内 markup；完整 JSON 协议下，`annotation` 必须是合法 AnnotationDoc object。`Term` 或其他标签来自 gold 推断和 harness 注入，不由 optimizer 学习。
 3. `text` 必须与当前任务原文一致；不能改写、翻译或摘要。
 4. 每个 span 必须能在 `text` 中定位，label 必须属于冻结标签集合。
 5. schema、标签、markup 格式、repair 指令和 parser 行为不能被候选提示词修改。
@@ -325,7 +327,7 @@ ConceptPromptSpec
 
 1. 先做 strict parse 与 schema validation。
 2. 如果 JSON、字段、markup、label 或 span 定位失败，进入最多 2 次 format repair。
-3. format repair prompt 只能强调冻结输出协议，不能改写概念定义、边界规则或负例规则。
+3. format repair prompt 只能强调冻结输出协议，不能改写概念定义、边界规则或高级负例约束。
 4. repair 成功后才计算 semantic loss。
 5. repair 失败记录为 `format_failed`，不混入漏标、多标或边界错误。
 6. 实验报告必须单独展示 `format_failure_rate`、`format_repair_success_rate`、`semantic_loss` 和 `pass_count`。
@@ -337,12 +339,13 @@ ConceptPromptSpec
 1. `v4.5.7` 已先完成页面与候选生成层的对齐：`Definition & Guideline` 页面分栏展示 `ConceptPromptSpec` 和 `Frozen OutputProtocolSpec`；`llm_optimize_only / llm_reflection / text_gradient_adamw` 的候选生成 prompt 只要求输出任务定义、概念定义、边界规则和排除规则。
 2. `v4.5.7` 已加入轻量 concept-only 清理：候选提示词如果带回标签集合、输出格式、JSON schema 或 annotation markup，会从候选 description 中剥离，并记录 `removed_frozen_output_protocol` warning。
 3. `v4.5.7` 的评估调用会把冻结标签、JSON 字段和 annotation 格式重新注入给标注模型，因此候选生成阶段不需要也不允许学习输出协议。
-4. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
+4. `v4.5.8` 已把新概念表单收紧为概念名称、概念定义、边界说明和协议选项；标签从 gold span label 推断，缺省为 `Term`。解析器已能接受 `[span]{Term}` 字符串和完整 AnnotationDoc dict。
+5. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
 
-5. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-6. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
-7. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
-8. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
+6. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+7. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+8. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+9. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 

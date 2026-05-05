@@ -39,6 +39,8 @@ class TestOfficialSeed(unittest.TestCase):
             self.assertEqual(guideline["payload"]["name"], "专业命名实体")
             self.assertEqual(guideline["payload"]["labels"], ["Term"])
             self.assertEqual(guideline["payload"]["stable_description"], professional_ner_description())
+            self.assertNotIn("标签集合", guideline["payload"]["stable_description"])
+            self.assertNotIn("输出格式", guideline["payload"]["stable_description"])
 
     def test_reset_clears_dirty_runtime_rows_without_touching_files(self):
         with tempfile.TemporaryDirectory() as tmp:

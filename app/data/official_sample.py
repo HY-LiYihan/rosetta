@@ -113,12 +113,8 @@ def professional_ner_description() -> str:
     return "\n".join(
         [
             f"概念描述：{PROFESSIONAL_NER_EXAMPLE['brief']}",
-            f"标签集合：{PROFESSIONAL_NER_EXAMPLE['labels']}",
             "边界规则：",
             *[f"- {line}" for line in PROFESSIONAL_NER_EXAMPLE["boundary_rules"].splitlines()],
-            "排除规则：",
-            *[f"- {line}" for line in PROFESSIONAL_NER_EXAMPLE["negative_rules"].splitlines()],
-            f"输出格式：{PROFESSIONAL_NER_EXAMPLE['output_format']}",
         ]
     )
 

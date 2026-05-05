@@ -2,6 +2,15 @@
 
 ## 2026-05-05
 
+### UX / Concept form and output protocol selector v4.5.8
+
+1. “定义与规范”临时概念表单收敛为 `概念名称 / 概念描述或定义 / 边界说明 / 标注输出协议 / 金样例`，不再要求用户手填标签集合和负例规则。
+2. 标签集合从金样例 span label 自动推断；如果 gold 中没有标签，则默认使用冻结 span 标签 `Term`，继续作为输出协议的一部分，而不是概念优化参数。
+3. 标注格式从自由文本框改为选项：`Span 标注：JSON + [span]{Term}` 和 `全量 JSON：AnnotationDoc`。前者是当前默认 span 标注路径，后者为 relation / attributes / 多层标注任务提供完整 JSON 协议入口。
+4. `parse_annotation_response()` 现在同时接受 `annotation` 为 `[span]{Term}` 字符串和完整 AnnotationDoc dict；完整 JSON 会校验 `version / text / layers / spans` 基础结构。
+5. 官方样例初始 operational prompt 只保留概念描述和边界规则，标签与输出格式留在冻结协议中注入。
+6. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md) 和 [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)，并将首页版本更新为 `v4.5.8`。
+
 ### UX / Definition guideline harness view v4.5.7
 
 1. “定义与规范”页面新增强 harness 视图，将当前规范分为 `可优化定义 / ConceptPromptSpec` 和 `冻结输出协议 / FrozenOutputProtocolSpec` 两栏展示。

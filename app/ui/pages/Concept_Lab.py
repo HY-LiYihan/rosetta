@@ -17,6 +17,7 @@ from app.runtime.store import RuntimeStore
 from app.ui.components.busy import busy_button, clear_busy
 from app.ui.i18n import t
 from app.workflows.bootstrap import (
+    FULL_JSON_OUTPUT_FORMAT,
     PROMPT_TRAINING_METHODS,
     PromptTrainingConfig,
     concept_prompt_spec_from_guideline,
@@ -26,6 +27,7 @@ from app.workflows.bootstrap import (
     run_concept_refinement_loop,
     sanitize_concept_description,
     save_guideline_package,
+    span_markup_output_format,
     start_prompt_training_background_run,
     validate_gold_examples,
 )
@@ -35,6 +37,10 @@ st.caption(t("concept_lab.caption"))
 st.info(t("concept_lab.workflow_summary"))
 
 store = RuntimeStore()
+ANNOTATION_FORMAT_OPTIONS = {
+    "span_markup": "concept_lab.format_span_markup",
+    "full_json": "concept_lab.format_full_json",
+}
 
 
 def _set_flash(kind: str, message: str) -> None:
@@ -51,6 +57,12 @@ def _render_flash() -> None:
 
 def _lines(value: str) -> list[str]:
     return [line.strip() for line in value.splitlines() if line.strip()]
+
+
+def _format_value_from_option(option: str) -> str:
+    if option == "full_json":
+        return FULL_JSON_OUTPUT_FORMAT
+    return span_markup_output_format("Term")
 
 
 def _project_options() -> list[dict[str, Any]]:
@@ -155,6 +167,7 @@ def _render_guideline_contract(guideline_payload: dict[str, Any]) -> None:
         st.markdown(
             "\n".join(
                 [
+                    f"- **{t('concept_lab.frozen_protocol_type')}**: {t(f'concept_lab.format_{output_protocol.protocol}')}",
                     f"- **{t('concept_lab.frozen_labels')}**: {', '.join(output_protocol.labels)}",
                     f"- **{t('concept_lab.frozen_json_fields')}**: {', '.join(output_protocol.json_fields)}",
                     f"- **{t('concept_lab.frozen_markup')}**: `{output_protocol.annotation_markup}`",
@@ -364,10 +377,8 @@ for key, value in {
     "concept_lab_project_description": "用于本次会话内测试自定义概念、金样例和批量标注。",
     "concept_lab_name": "专业命名实体",
     "concept_lab_brief": "标出英文科学与技术文本中具有明确领域含义、可命名且边界清楚的专业实体。",
-    "concept_lab_labels": "Term",
     "concept_lab_boundary": "优先标注最小完整实体名称\n包含形成实体名称所必需的修饰成分，但不要扩大到整个句子",
-    "concept_lab_negative": "不标注泛泛的普通名词\n不标注没有专业概念指向的修辞表达",
-    "concept_lab_output_format": "[原文]{标签}",
+    "concept_lab_format_option": "span_markup",
     "concept_lab_manual_text": "",
     "concept_lab_manual_markup": "",
     "concept_lab_pasted_jsonl": "",
@@ -425,10 +436,14 @@ with st.expander(t("concept_lab.advanced_guideline_expander"), expanded=False):
     with st.form("guideline_form"):
         concept_name = st.text_input(t("concept_lab.concept_name"), key="concept_lab_name")
         brief = st.text_area(t("concept_lab.brief"), height=100, key="concept_lab_brief")
-        labels_text = st.text_input(t("concept_lab.labels"), key="concept_lab_labels")
         boundary_text = st.text_area(t("concept_lab.boundary"), height=90, key="concept_lab_boundary")
-        negative_text = st.text_area(t("concept_lab.negative"), height=90, key="concept_lab_negative")
-        output_format = st.text_input(t("concept_lab.output_format"), key="concept_lab_output_format")
+        format_option = st.selectbox(
+            t("concept_lab.annotation_format"),
+            list(ANNOTATION_FORMAT_OPTIONS.keys()),
+            key="concept_lab_format_option",
+            format_func=lambda value: t(ANNOTATION_FORMAT_OPTIONS[value]),
+        )
+        st.caption(t(f"concept_lab.format_help_{format_option}"))
 
         st.markdown(f"**{t('concept_lab.gold_examples')}**")
         manual_text = st.text_area(
@@ -459,7 +474,7 @@ with st.expander(t("concept_lab.advanced_guideline_expander"), expanded=False):
                     task_id=f"gold-manual-{len(store.list_tasks(limit=10000)) + 1:05d}",
                     text=manual_text.strip(),
                     annotation_markup=manual_markup.strip(),
-                    label_hint=labels_text.split(",")[0].strip() or "Concept",
+                    label_hint="Term",
                 )
             )
         if pasted_jsonl.strip():
@@ -475,11 +490,11 @@ with st.expander(t("concept_lab.advanced_guideline_expander"), expanded=False):
             project_id=selected_project_id,
             name=concept_name,
             brief=brief,
-            labels=[item.strip() for item in labels_text.split(",") if item.strip()],
+            labels=None,
             boundary_rules=_lines(boundary_text),
-            negative_rules=_lines(negative_text),
+            negative_rules=None,
             gold_tasks=gold_tasks,
-            output_format=output_format,
+            output_format=_format_value_from_option(format_option),
         )
         st.success(t("concept_lab.saved_package", count=len(gold_tasks)))
         st.session_state["selected_guideline_id"] = package["guideline"].id

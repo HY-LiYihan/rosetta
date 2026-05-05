@@ -1,12 +1,41 @@
 import json
 from datetime import datetime
 
-from app.domain.annotation_doc import make_annotation_doc, spans_to_legacy_string
+from app.domain.annotation_doc import make_annotation_doc, spans_to_legacy_string, validate_annotation_doc
 from app.domain.annotation_format import validate_annotation_markup
+
+FULL_JSON_OUTPUT_FORMAT = "rosetta.annotation_doc.v3.1.full_json"
 
 
 def build_annotation_prompt(concept: dict, input_text: str) -> str:
     """Build the user prompt for annotation request."""
+    output_format = str(concept.get("output_format") or "").strip()
+    use_full_json = output_format == FULL_JSON_OUTPUT_FORMAT
+    annotation_rule = (
+        """- annotation: 完整 AnnotationDoc JSON object，必须包含 version、text、layers；layers 至少包含 spans、relations、attributes、comments、document_labels。"""
+        if use_full_json
+        else "- annotation: 标注结果，必须使用 [原文]{概念标签} 格式；隐含义使用 [!隐含义]{概念标签}"
+    )
+    annotation_example = {
+        "version": "3.1",
+        "text": input_text,
+        "layers": {
+            "spans": [
+                {
+                    "id": "s1",
+                    "start": 0,
+                    "end": 3,
+                    "text": "示例词",
+                    "label": "Term",
+                    "implicit": False,
+                }
+            ],
+            "relations": [],
+            "attributes": [],
+            "comments": [],
+            "document_labels": [],
+        },
+    } if use_full_json else "[示例词]{标签} ... [!隐含义]{标签}"
     prompt = f"""你是一个语言学标注助手。请根据以下概念进行文本标注：
 
 概念：{concept['name']}
@@ -37,13 +66,13 @@ def build_annotation_prompt(concept: dict, input_text: str) -> str:
 
 请以JSON格式返回标注结果，只包含JSON，不要有其他文本。JSON应包含以下字段：
 - text: 原始文本
-- annotation: 标注结果，必须使用 [原文]{{概念标签}} 格式；隐含义使用 [!隐含义]{{概念标签}}
+{annotation_rule}
 - explanation: 解释说明
 
 返回格式示例：
 {{
   "text": "{input_text}",
-  "annotation": "[示例词]{{标签}} ... [!隐含义]{{标签}}",
+  "annotation": {json.dumps(annotation_example, ensure_ascii=False)},
   "explanation": "解释说明..."
 }}"""
 
@@ -75,11 +104,19 @@ def parse_annotation_response(raw_response: str) -> tuple[dict | None, str | Non
     if not isinstance(parsed.get("explanation"), str) or not parsed["explanation"].strip():
         return None, "JSON响应 explanation 为空，显示原始响应"
 
-    ok, reason = validate_annotation_markup(parsed.get("annotation", ""))
-    if not ok:
-        return None, f"标注格式不符合规范：{reason}，显示原始响应"
-
-    parsed["annotation"] = make_annotation_doc(parsed["text"], parsed["annotation"])
+    annotation = parsed.get("annotation")
+    if isinstance(annotation, dict):
+        ok, reason = validate_annotation_doc(annotation)
+        if not ok:
+            return None, f"完整 annotation JSON 不符合规范：{reason}，显示原始响应"
+        if annotation.get("text") != parsed["text"]:
+            return None, "完整 annotation JSON 的 text 与顶层 text 不一致，显示原始响应"
+        parsed["annotation"] = annotation
+    else:
+        ok, reason = validate_annotation_markup(str(annotation or ""))
+        if not ok:
+            return None, f"标注格式不符合规范：{reason}，显示原始响应"
+        parsed["annotation"] = make_annotation_doc(parsed["text"], str(annotation))
     return parsed, None
 
 

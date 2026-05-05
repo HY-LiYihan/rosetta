@@ -24,9 +24,12 @@ from app.workflows.bootstrap.prompt_optimizer import (
     length_penalized_loss,
 )
 from app.workflows.bootstrap.prompt_spec import (
+    DEFAULT_SPAN_LABEL,
+    FULL_JSON_OUTPUT_FORMAT,
     concept_prompt_spec_from_guideline,
     ensure_concept_only_description,
     frozen_output_protocol_from_guideline,
+    span_markup_output_format,
     strip_frozen_protocol_sections,
 )
 
@@ -37,28 +40,32 @@ DIAGNOSTIC_PATTERNS = (
     re.compile(r"\bgold-\d+\b", re.IGNORECASE),
     re.compile(r"失败摘要|失败样例|本轮失败|修订建议|漏标|多标|边界不稳定样例|失败/不稳定样例"),
 )
+DEFAULT_NEGATIVE_RULES: tuple[str, ...] = ()
 
 
 def build_guideline(
     project_id: str,
     name: str,
     brief: str,
-    labels: list[str],
+    labels: list[str] | None,
     boundary_rules: list[str],
-    negative_rules: list[str],
-    output_format: str = "[原文]{标签}",
+    negative_rules: list[str] | None,
+    output_format: str = "",
 ) -> ConceptGuideline:
     guideline_id = f"guide-{uuid.uuid4().hex[:10]}"
-    stable_description = _compose_description(brief, labels, boundary_rules, negative_rules, output_format)
+    clean_labels = _normalize_labels(labels)
+    clean_negative_rules = list(negative_rules or DEFAULT_NEGATIVE_RULES)
+    clean_output_format = _normalize_output_format(output_format, clean_labels)
+    stable_description = _compose_description(brief, boundary_rules)
     return ConceptGuideline(
         id=guideline_id,
         project_id=project_id,
         name=name,
         brief=brief,
-        labels=tuple(labels),
+        labels=tuple(clean_labels),
         boundary_rules=tuple(boundary_rules),
-        negative_rules=tuple(negative_rules),
-        output_format=output_format,
+        negative_rules=tuple(clean_negative_rules),
+        output_format=clean_output_format,
         stable_description=stable_description,
     )
 
@@ -95,13 +102,23 @@ def save_guideline_package(
     project_id: str,
     name: str,
     brief: str,
-    labels: list[str],
+    labels: list[str] | None,
     boundary_rules: list[str],
-    negative_rules: list[str],
+    negative_rules: list[str] | None,
     gold_tasks: list[AnnotationTask],
-    output_format: str = "[原文]{标签}",
+    output_format: str = "",
 ) -> dict:
-    guideline = build_guideline(project_id, name, brief, labels, boundary_rules, negative_rules, output_format=output_format)
+    inferred_labels = _infer_labels_from_gold(gold_tasks)
+    effective_labels = _normalize_labels(labels or inferred_labels)
+    guideline = build_guideline(
+        project_id,
+        name,
+        brief,
+        effective_labels,
+        boundary_rules,
+        negative_rules,
+        output_format=output_format,
+    )
     store.upsert_guideline(guideline)
     for task in gold_tasks:
         store.upsert_task(task, project_id=project_id)
@@ -1005,27 +1022,44 @@ def _has_minimum_guideline_shape(text: str) -> bool:
 def _compose_description_from_payload(payload: dict) -> str:
     return _compose_description(
         brief=str(payload.get("brief", "")),
-        labels=[str(label) for label in payload.get("labels", [])],
         boundary_rules=[str(rule) for rule in payload.get("boundary_rules", [])],
-        negative_rules=[str(rule) for rule in payload.get("negative_rules", [])],
-        output_format=str(payload.get("output_format", "[原文]{标签}")),
     )
 
 
 def _compose_description(
     brief: str,
-    labels: list[str],
     boundary_rules: list[str],
-    negative_rules: list[str],
-    output_format: str,
 ) -> str:
     return "\n".join(
         [
             f"概念描述：{brief.strip()}",
             "边界规则：" + ("；".join(rule for rule in boundary_rules if rule) or "按最小完整语义片段标注。"),
-            "排除规则：" + ("；".join(rule for rule in negative_rules if rule) or "不标注泛化、比喻或证据不足的片段。"),
         ]
     )
+
+
+def _infer_labels_from_gold(gold_tasks: list[AnnotationTask]) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for task in gold_tasks:
+        for span in task.spans:
+            label = str(span.label or "").strip()
+            if label and label not in seen:
+                seen.add(label)
+                labels.append(label)
+    return labels
+
+
+def _normalize_labels(labels: list[str] | None) -> list[str]:
+    normalized = [str(label).strip() for label in labels or [] if str(label).strip()]
+    return normalized or [DEFAULT_SPAN_LABEL]
+
+
+def _normalize_output_format(output_format: str, labels: list[str]) -> str:
+    value = str(output_format or "").strip()
+    if value == FULL_JSON_OUTPUT_FORMAT:
+        return value
+    return value or span_markup_output_format(labels[0] if labels else DEFAULT_SPAN_LABEL)
 
 
 def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor | None, temperature: float) -> dict:
@@ -1046,6 +1080,12 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
     output_protocol = frozen_output_protocol_from_guideline(guideline)
     labels = ", ".join(output_protocol.labels)
     json_fields = ", ".join(output_protocol.json_fields)
+    if output_protocol.protocol == "full_json":
+        annotation_instruction = """- annotation 必须是完整 AnnotationDoc JSON object，包含 version、text、layers。
+- layers 至少包含 spans、relations、attributes、comments、document_labels。
+- span 字段必须包含 id、start、end、text、label、implicit；relation 任务可在 layers.relations 中填写。"""
+    else:
+        annotation_instruction = f"- annotation 格式：{output_protocol.annotation_markup}"
     prompt = f"""请只根据以下概念定义标注文本，不要参考金答案。
 
 可优化定义：
@@ -1054,7 +1094,7 @@ def _predict_guideline(guideline: dict, task_payload: dict, predictor: Predictor
 冻结输出协议（必须遵守，不要改写）：
 - 标签集合：{labels}
 - JSON 字段：{json_fields}
-- annotation 格式：{output_protocol.annotation_markup}
+{annotation_instruction}
 - 只能返回一个 JSON object，不能有 markdown fence 或额外说明。
 - text 必须与输入文本完全一致；annotation 中的 span 必须能在 text 中定位。
 
