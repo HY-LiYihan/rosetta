@@ -18,6 +18,7 @@ Rosetta 是一个基于 Streamlit 的本地优先 Agentic Annotation Tool。
 4. LLM 标注、检索、judge、JSON repair、批量任务和导出通过 workflow / agent tools 编排。
 5. 长期标注格式保持 Prodigy-compatible JSONL。
 6. Docker 部署稳定，运行数据统一挂载到 `/opt/rosetta/runtime`。
+7. top-k 参考样例与批量上下文检索默认使用本地轻量 embedding，避免小样本验证依赖 token overlap 或在线 embedding API。
 
 ## 2. 代码结构
 
@@ -137,12 +138,29 @@ workflow
 核心约束：
 
 1. 每个平台都有 `LLMProviderProfile`，记录默认模型、最大并发、超时、重试、token 统计和价格表。
-2. 全局默认并发上限为 `20`，真实 API 的 workflow 不应绕过 provider profile 擅自提高并发；如果某个平台限流更低，则由 provider profile 下调。
+2. 全局默认并发上限为 `50`，真实 API 的 workflow 不应绕过 provider profile 擅自提高并发；如果某个平台限流更低，则由 provider profile 下调。
 3. 概念验证、概念自举、批量标注、LLM-as-a-judge 和语料生成应共享 provider 级 semaphore。
 4. 长任务必须写入 `RunProgressEvent`，UI 至少展示总数、已完成、运行中、失败、当前阶段、预计剩余时间、token 和成本。
 5. provider 不返回 usage 时，允许本地估算 token，但必须标记 `estimated=true`。
 
 详细设计见 [LLM Service Runtime](./LLM_SERVICE_RUNTIME.md)。
+
+## 4.2 Embedding 检索运行时
+
+Rosetta 主 workflow 的参考样例检索不再依赖纯 token overlap。默认 embedding backend 为：
+
+```text
+rosetta-local-hash-384
+```
+
+它位于 `app/infrastructure/embedding`，使用 word n-gram 与 char n-gram feature hashing 生成本地向量，再用 `numpy` cosine 排序。这个 backend 不调用 DeepSeek、智谱或其他 embedding API，不消耗 token，也不要求下载 transformer 权重。
+
+使用位置：
+
+1. “定义与规范”的 `标注验证（top-k 参考）`。
+2. `app/workflows/annotation/context.py` 中的相似样例与边界远例选择。
+
+后续如果引入 `sentence-transformers`、智谱 `embedding-3`、ONNX 或 GGUF embedding，应复用同一个 embedding/retriever 接口，并在 run metadata 中记录 `retrieval_model / dimensions / top_k / score`。详细设计见 [Embedding Retrieval](./EMBEDDING_RETRIEVAL.md)。
 
 ## 5. Agent 执行模型
 

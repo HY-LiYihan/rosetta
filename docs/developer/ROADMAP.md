@@ -14,7 +14,7 @@
 8. `v4.3.0`：Prompt-as-Parameter 最小实现，接入 prompt 分段、Mask 启发式文本梯度、LLM-AdamW trace、长度惩罚和 gold loss validation。
 9. `v4.3.1`：LLM service runtime 愿景文档，明确每次大模型调用都是服务调用，provider profile 管理平台参数，并要求 UI 展示进度、ETA、token 和成本。
 10. `v4.4.0`：提示词优化训练实验，比较 `llm_optimize_only / llm_reflection / text_gradient_adamw`。
-11. `v4.5.0`：提示词训练接入 LLM service runtime，DeepSeek 默认 `deepseek-v4-pro`，provider 并发上限默认 20，候选泄露先去语料化修复再决定接受或拒绝。
+11. `v4.5.0`：提示词训练接入 LLM service runtime，DeepSeek 默认 `deepseek-v4-pro`，provider 并发上限默认 50，候选泄露先去语料化修复再决定接受或拒绝。
 12. `v4.5.1`：三方法真实对比实验使用“连续 5 轮 loss 无下降”停止条件，并输出 `comparison_report.md / comparison_result.json / prompt_evolution.jsonl`。
 
 ## 下一阶段路线

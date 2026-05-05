@@ -17,10 +17,12 @@ from app.runtime.store import RuntimeStore
 from app.ui.components.busy import busy_button, clear_busy
 from app.ui.i18n import t
 from app.workflows.bootstrap import (
+    CRITIC_ADAMW_OPTIMIZER,
     FULL_JSON_OUTPUT_FORMAT,
-    LLM_OPTIMIZE_ONLY,
-    LLM_REFLECTION,
+    MASK_GUIDED_OPTIMIZATION,
+    PROMPT_OPTIMIZER_METHODS,
     PromptTrainingConfig,
+    SGD_CANDIDATE_SEARCH,
     concept_prompt_spec_from_guideline,
     frozen_output_protocol_from_guideline,
     gold_task_from_markup,
@@ -30,6 +32,7 @@ from app.workflows.bootstrap import (
     start_prompt_training_background_run,
     validate_gold_examples,
     validate_prompt_format_contract,
+    normalize_prompt_optimizer_method,
 )
 
 st.title(t("concept_lab.title"))
@@ -113,7 +116,7 @@ def _parse_gold_jsonl(content: str, source_name: str = "pasted.jsonl") -> list[A
     return tasks
 
 
-def _make_predictor(platform_id: str, model: str, concurrency: int = 20):
+def _make_predictor(platform_id: str, model: str, concurrency: int = 50):
     runtime = LLMServiceRuntime.from_provider(platform_id, model, concurrency=concurrency)
 
     def predictor(system_prompt: str, messages: list[dict], temperature: float) -> str:
@@ -125,6 +128,10 @@ def _make_predictor(platform_id: str, model: str, concurrency: int = 20):
 
 
 def _training_method_label(method: str) -> str:
+    try:
+        method = normalize_prompt_optimizer_method(method)
+    except Exception:
+        pass
     return t(f"concept_lab.training_method_{method}")
 
 
@@ -547,9 +554,18 @@ else:
     if guideline_payload.get("metadata", {}).get("official_sample"):
         st.info(t("concept_lab.official_gold_ready", count=gold_count, target=target_count))
 
-    validation_tab, optimization_tab = st.tabs([t("concept_lab.prompt_validation_tab"), t("concept_lab.prompt_optimization_tab")])
+    st.session_state.setdefault("concept_lab_active_section", "validation")
+    active_section = st.radio(
+        t("concept_lab.active_section"),
+        ["validation", "optimization"],
+        key="concept_lab_active_section",
+        format_func=lambda value: t(
+            "concept_lab.prompt_validation_tab" if value == "validation" else "concept_lab.prompt_optimization_tab"
+        ),
+        horizontal=True,
+    )
 
-    with validation_tab:
+    if active_section == "validation":
         st.subheader(t("concept_lab.prompt_validation_tab"))
         st.caption(t("concept_lab.prompt_validation_help"))
         validation_mode = st.radio(
@@ -596,6 +612,7 @@ else:
             type="primary",
             use_container_width=True,
         ):
+            st.session_state["concept_lab_active_section"] = "validation"
             try:
                 if validation_mode == "format":
                     result = validate_prompt_format_contract(store, selected_guideline)
@@ -609,6 +626,7 @@ else:
                     progress_status = st.empty()
                     progress_metrics = st.empty()
                     started_at = time.perf_counter()
+                    validation_runtime_holder: dict[str, Any] = {}
 
                     def _render_validation_progress(event: dict[str, Any]) -> None:
                         total = max(1, int(event.get("total") or target_count or 1))
@@ -631,19 +649,27 @@ else:
                             )
                         )
                         with progress_metrics.container():
-                            cols = st.columns(4)
+                            usage = (
+                                validation_runtime_holder["runtime"].usage_summary()
+                                if validation_runtime_holder.get("runtime") is not None
+                                else {}
+                            )
+                            cols = st.columns(6)
                             cols[0].metric(t("common.completed"), completed)
                             cols[1].metric(t("concept_lab.training_running_calls"), int(event.get("running") or 0))
                             cols[2].metric(t("concept_lab.training_concurrency"), int(event.get("concurrency") or 1))
                             cols[3].metric(t("concept_lab.training_eta"), _format_seconds(eta))
+                            cols[4].metric(t("concept_lab.training_total_calls"), usage.get("llm_call_count", completed))
+                            cols[5].metric(t("concept_lab.training_total_tokens"), usage.get("total_tokens", 0))
 
                     with st.spinner(t("concept_lab.validating_status")):
-                        predictor = _make_predictor(validation_platform_id, validation_model_name, concurrency=20)
+                        predictor = _make_predictor(validation_platform_id, validation_model_name, concurrency=50)
+                        validation_runtime_holder["runtime"] = getattr(predictor, "runtime", None)
                         result = validate_gold_examples(
                             store,
                             selected_guideline,
                             predictor=predictor,
-                            concurrency=20,
+                            concurrency=50,
                             progress_callback=_render_validation_progress,
                             reference_k=validation_reference_k if validation_mode == "llm_with_examples" else 0,
                         )
@@ -693,22 +719,14 @@ else:
             with st.expander(t("concept_lab.validation_detail_log"), expanded=False):
                 st.json(result)
 
-    with optimization_tab:
+    if active_section == "optimization":
         st.subheader(t("concept_lab.prompt_optimization_tab"))
         st.caption(t("concept_lab.prompt_optimization_help"))
         version_table = _prompt_version_rows(version_rows)
         if version_table:
             st.markdown(f"**{t('concept_lab.prompt_versions_title')}**")
             st.dataframe(version_table, use_container_width=True, hide_index=True)
-        optimization_mode = st.radio(
-            t("concept_lab.optimization_mode"),
-            ["manual", "self_supervised", "train_like"],
-            key="concept_lab_optimization_mode",
-            format_func=lambda mode: t(f"concept_lab.optimization_{mode}"),
-            horizontal=True,
-        )
-
-        if optimization_mode == "manual":
+        with st.expander(t("concept_lab.optimization_manual"), expanded=False):
             st.caption(t("concept_lab.optimization_manual_help"))
             manual_key = f"concept_lab_manual_prompt_editor_{selected_guideline}"
             if manual_key not in st.session_state:
@@ -722,6 +740,7 @@ else:
                 type="primary",
                 use_container_width=True,
             ):
+                st.session_state["concept_lab_active_section"] = "optimization"
                 try:
                     clean_prompt, sanitizer_warnings = sanitize_concept_description(
                         manual_prompt,
@@ -764,9 +783,17 @@ else:
                 finally:
                     clear_busy(manual_button_key)
                     st.rerun()
-        else:
-            method = LLM_OPTIMIZE_ONLY if optimization_mode == "self_supervised" else LLM_REFLECTION
-            st.info(t(f"concept_lab.optimization_{optimization_mode}_help"))
+
+        st.markdown(f"**{t('concept_lab.automatic_optimizers_title')}**")
+        st.caption(t("concept_lab.automatic_optimizers_help"))
+        selected_methods = st.multiselect(
+            t("concept_lab.training_methods"),
+            list(PROMPT_OPTIMIZER_METHODS),
+            default=list(PROMPT_OPTIMIZER_METHODS),
+            format_func=_training_method_label,
+            key="concept_lab_selected_prompt_optimizers",
+        )
+        if selected_methods:
             train_col1, train_col2, train_col3, train_col4, train_col5 = st.columns([1, 1, 1, 1, 1])
             training_max_rounds = int(
                 train_col1.number_input(t("concept_lab.training_max_rounds"), min_value=1, max_value=30, value=30, step=1, key="concept_lab_training_max_rounds")
@@ -778,7 +805,7 @@ else:
                 train_col3.number_input(t("concept_lab.training_min_delta"), min_value=0.0, max_value=1.0, value=0.01, step=0.01, key="concept_lab_training_min_delta")
             )
             training_concurrency = int(
-                train_col4.number_input(t("concept_lab.training_concurrency"), min_value=1, max_value=20, value=20, step=1, key="concept_lab_training_concurrency")
+                train_col4.number_input(t("concept_lab.training_concurrency"), min_value=1, max_value=50, value=50, step=1, key="concept_lab_training_concurrency")
             )
             training_patience_rounds = int(
                 train_col5.number_input(t("concept_lab.training_patience_rounds"), min_value=1, max_value=20, value=5, step=1, key="concept_lab_training_patience_rounds")
@@ -808,12 +835,13 @@ else:
                 use_container_width=True,
                 disabled=gold_count < target_count or active_training_running,
             ):
+                st.session_state["concept_lab_active_section"] = "optimization"
                 try:
                     run_id = start_prompt_training_background_run(
                         store.database_path,
                         selected_guideline,
                         config=PromptTrainingConfig(
-                            methods=(method,),
+                            methods=tuple(selected_methods),
                             max_rounds=training_max_rounds,
                             candidate_count=training_candidate_count,
                             target_pass_count=target_count,
@@ -834,6 +862,8 @@ else:
                 finally:
                     clear_busy(training_button_key)
                     st.rerun()
+        else:
+            st.warning(t("concept_lab.training_need_method"))
 
         active_training_run_id = st.session_state.get("concept_lab_active_prompt_training_run_id", "")
         should_refresh_training = False

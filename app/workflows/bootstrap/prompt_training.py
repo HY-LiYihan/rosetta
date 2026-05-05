@@ -30,6 +30,7 @@ from app.workflows.bootstrap.prompt_optimizer import (
     build_llm_adamw_trace,
     finalize_candidate_trace,
     length_penalized_loss,
+    segment_prompt,
 )
 from app.workflows.bootstrap.prompt_spec import (
     concept_prompt_spec_from_guideline,
@@ -40,7 +41,49 @@ from app.workflows.bootstrap.prompt_spec import (
 LLM_OPTIMIZE_ONLY = "llm_optimize_only"
 LLM_REFLECTION = "llm_reflection"
 TEXT_GRADIENT_ADAMW = "text_gradient_adamw"
-PROMPT_TRAINING_METHODS = (LLM_OPTIMIZE_ONLY, LLM_REFLECTION, TEXT_GRADIENT_ADAMW)
+SGD_CANDIDATE_SEARCH = "sgd_candidate_search"
+CRITIC_ADAMW_OPTIMIZER = "critic_adamw_optimizer"
+MASK_GUIDED_OPTIMIZATION = "mask_guided_optimization"
+PROMPT_OPTIMIZER_METHODS = (SGD_CANDIDATE_SEARCH, CRITIC_ADAMW_OPTIMIZER, MASK_GUIDED_OPTIMIZATION)
+PROMPT_OPTIMIZER_ALIASES = {
+    SGD_CANDIDATE_SEARCH: SGD_CANDIDATE_SEARCH,
+    CRITIC_ADAMW_OPTIMIZER: CRITIC_ADAMW_OPTIMIZER,
+    MASK_GUIDED_OPTIMIZATION: MASK_GUIDED_OPTIMIZATION,
+    LLM_OPTIMIZE_ONLY: SGD_CANDIDATE_SEARCH,
+    LLM_REFLECTION: CRITIC_ADAMW_OPTIMIZER,
+    TEXT_GRADIENT_ADAMW: MASK_GUIDED_OPTIMIZATION,
+}
+PROMPT_TRAINING_METHODS = PROMPT_OPTIMIZER_METHODS
+OPTIMIZER_DISPLAY_NAMES = {
+    SGD_CANDIDATE_SEARCH: "SGD-like Candidate Search",
+    CRITIC_ADAMW_OPTIMIZER: "AdamW-like Critic Optimizer",
+    MASK_GUIDED_OPTIMIZATION: "Mask-guided Prompt Optimization",
+}
+OPTIMIZER_DISPLAY_NAMES_ZH = {
+    SGD_CANDIDATE_SEARCH: "候选搜索优化",
+    CRITIC_ADAMW_OPTIMIZER: "批判器 AdamW 优化",
+    MASK_GUIDED_OPTIMIZATION: "遮挡梯度优化",
+}
+OPTIMIZER_FAMILIES = {
+    SGD_CANDIDATE_SEARCH: "zero_order_candidate_search",
+    CRITIC_ADAMW_OPTIMIZER: "agentic_adamw_critic",
+    MASK_GUIDED_OPTIMIZATION: "explicit_mask_text_gradient",
+}
+
+
+def normalize_prompt_optimizer_method(method: str) -> str:
+    normalized = PROMPT_OPTIMIZER_ALIASES.get(str(method or "").strip())
+    if normalized is None:
+        raise ValueError(f"Unsupported prompt training method: {method}")
+    return normalized
+
+
+def optimizer_display_name(method: str) -> str:
+    return OPTIMIZER_DISPLAY_NAMES.get(PROMPT_OPTIMIZER_ALIASES.get(method, method), str(method))
+
+
+def optimizer_display_name_zh(method: str) -> str:
+    return OPTIMIZER_DISPLAY_NAMES_ZH.get(PROMPT_OPTIMIZER_ALIASES.get(method, method), str(method))
 
 
 @dataclass(frozen=True)
@@ -106,6 +149,7 @@ class _TrainingUsageMeter:
 @dataclass(frozen=True)
 class PromptTrainingConfig:
     methods: tuple[str, ...] = PROMPT_TRAINING_METHODS
+    method_aliases: dict[str, str] | None = None
     max_rounds: int = 30
     candidate_count: int = 5
     target_pass_count: int = 15
@@ -118,7 +162,7 @@ class PromptTrainingConfig:
     no_corpus_memorization: bool = True
     memorization_policy: str = "repair_then_reject"
     raw_feedback_allowed: bool = True
-    concurrency: int = 20
+    concurrency: int = 50
     repair_leaked_candidates: bool = True
     max_repair_attempts: int = 2
     provider_id: str = "deepseek"
@@ -127,11 +171,19 @@ class PromptTrainingConfig:
     persist_progress_events: bool = True
 
     def normalized(self) -> "PromptTrainingConfig":
-        methods = tuple(method for method in self.methods if method in PROMPT_TRAINING_METHODS)
+        methods: list[str] = []
+        aliases: dict[str, str] = {}
+        for raw_method in self.methods:
+            normalized_method = normalize_prompt_optimizer_method(raw_method)
+            if normalized_method not in methods:
+                methods.append(normalized_method)
+            if str(raw_method) != normalized_method:
+                aliases[normalized_method] = str(raw_method)
         if not methods:
             raise ValueError("PromptTrainingConfig.methods must contain at least one supported method")
         return PromptTrainingConfig(
-            methods=methods,
+            methods=tuple(methods),
+            method_aliases=aliases,
             max_rounds=max(1, min(int(self.max_rounds), 100)),
             candidate_count=max(1, min(int(self.candidate_count), 5)),
             target_pass_count=max(1, int(self.target_pass_count)),
@@ -144,7 +196,7 @@ class PromptTrainingConfig:
             no_corpus_memorization=bool(self.no_corpus_memorization),
             memorization_policy="repair_then_reject",
             raw_feedback_allowed=bool(self.raw_feedback_allowed),
-            concurrency=max(1, min(int(self.concurrency), 20)),
+            concurrency=max(1, min(int(self.concurrency), 50)),
             repair_leaked_candidates=bool(self.repair_leaked_candidates),
             max_repair_attempts=max(0, min(int(self.max_repair_attempts), 5)),
             provider_id=str(self.provider_id or "deepseek"),
@@ -186,12 +238,15 @@ class PromptTrainingResult:
         return asdict(self)
 
 
-def build_llm_optimize_only_prompt(current_description: str) -> str:
+def build_llm_optimize_only_prompt(current_description: str, accepted_history: list[dict[str, Any]] | None = None) -> str:
     concept_description = strip_frozen_protocol_sections(current_description)
     return f"""请优化下面的概念提示词，使它更清晰、更稳定、更适合执行标注任务。
 
 当前可优化定义：
 {concept_description}
+
+历史优化摘要（旧 prompt -> 新 prompt -> loss 变化；只供判断哪些改写方向已经有效，不要原样复述）：
+{_accepted_history_context(accepted_history or [])}
 
 输出要求：
 1. 只返回优化后的概念阐释正文。
@@ -556,13 +611,24 @@ def _run_training_method(
     concurrency: int,
     progress_recorder: ProgressRecorder | None = None,
 ) -> dict[str, Any]:
+    method = normalize_prompt_optimizer_method(method)
+    optimizer_name = optimizer_display_name(method)
+    optimizer_family = OPTIMIZER_FAMILIES.get(method, "")
+    alias_from = (config.method_aliases or {}).get(method, "")
     method_started = time.perf_counter()
     _emit_training_progress(
         progress_recorder,
         "method_started",
         "方法训练",
-        f"{method} 开始训练",
-        {"method": method, "max_rounds": config.max_rounds, "candidate_count": config.candidate_count},
+        f"{optimizer_name} 开始训练",
+        {
+            "method": method,
+            "optimizer_name": optimizer_name,
+            "optimizer_family": optimizer_family,
+            "alias_from": alias_from,
+            "max_rounds": config.max_rounds,
+            "candidate_count": config.candidate_count,
+        },
     )
     current_description = initial_description
     rounds: list[dict[str, Any]] = []
@@ -633,6 +699,9 @@ def _run_training_method(
                 {
                     "version_label": "v0",
                     "method": method,
+                    "optimizer_name": optimizer_name,
+                    "optimizer_family": optimizer_family,
+                    "alias_from": alias_from,
                     "round_index": 0,
                     "candidate_id": "initial",
                     "description": current_description,
@@ -708,6 +777,9 @@ def _run_training_method(
             {"method": method, "round_index": round_index, "candidate_count": config.candidate_count},
         )
         candidates = _generate_training_candidates(
+            store,
+            guideline_id,
+            task_ids,
             method,
             current_description,
             guideline,
@@ -718,6 +790,9 @@ def _run_training_method(
             config.candidate_count,
             config.candidate_temperature,
             accepted_history,
+            concurrency=concurrency,
+            progress_recorder=progress_recorder,
+            round_index=round_index,
         )
         _emit_training_progress(
             progress_recorder,
@@ -819,7 +894,7 @@ def _run_training_method(
                             "guard_before_repair": guard_before_repair.to_dict() if guard_before_repair else {},
                             "guard_after_repair": memorization_check.to_dict(),
                             "memorization_check": memorization_check.to_dict(),
-                            "raw_feedback_allowed": method != LLM_OPTIMIZE_ONLY,
+                            "raw_feedback_allowed": method != SGD_CANDIDATE_SEARCH,
                             "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
                             "raw_revision_response": "[redacted: candidate failed memorization repair]",
                             "description_preview": "[redacted: candidate failed memorization repair]",
@@ -861,7 +936,7 @@ def _run_training_method(
                         "repair_accepted": repair_accepted,
                         "guard_before_repair": guard_before_repair.to_dict() if guard_before_repair else {},
                         "guard_after_repair": guard_after_repair.to_dict() if guard_after_repair else {},
-                        "raw_feedback_allowed": method != LLM_OPTIMIZE_ONLY,
+                        "raw_feedback_allowed": method != SGD_CANDIDATE_SEARCH,
                         "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
                     }
                 )
@@ -946,12 +1021,19 @@ def _run_training_method(
                     "guard_before_repair": guard_before_repair.to_dict() if guard_before_repair else {},
                     "guard_after_repair": guard_after_repair.to_dict() if guard_after_repair else {},
                     "memorization_check": memorization_check.to_dict() if memorization_check else {},
-                    "raw_feedback_allowed": method != LLM_OPTIMIZE_ONLY,
+                    "raw_feedback_allowed": method != SGD_CANDIDATE_SEARCH,
                     "sanitizer_warnings": candidate.get("sanitizer_warnings", []),
                     "raw_revision_response": "[redacted: candidate required memorization repair]"
                     if repair_attempts
                     else candidate.get("raw_response", ""),
                     "prompt_optimization_trace": optimization_trace,
+                    "critic_diagnosis": candidate.get("critic_diagnosis", ""),
+                    "controller_direction": candidate.get("controller_direction", ""),
+                    "momentum_summary": candidate.get("momentum_summary", ""),
+                    "mask_segment_id": candidate.get("mask_segment_id", ""),
+                    "mask_loss_delta": candidate.get("mask_loss_delta", ""),
+                    "mask_interpretation": candidate.get("mask_interpretation", ""),
+                    "optimizer_display_name": optimizer_display_name(method),
                     "description_preview": candidate_description[:240],
                     "evaluation_index": candidate_index,
                 }
@@ -1023,6 +1105,9 @@ def _run_training_method(
             version_entry = {
                 "version_label": f"v{len(prompt_versions)}",
                 "method": method,
+                "optimizer_name": optimizer_name,
+                "optimizer_family": optimizer_family,
+                "alias_from": alias_from,
                 "round_index": round_index,
                 "candidate_id": selected_candidate_id,
                 "previous_description": current_description,
@@ -1146,6 +1231,10 @@ def _run_training_method(
     )
     return {
         "method": method,
+        "optimizer_name": optimizer_name,
+        "optimizer_family": optimizer_family,
+        "alias_from": alias_from,
+        "method_trace_summary": _method_trace_summary(method, rounds),
         "status": "stable"
         if reached_target and (final_memorization_check is None or final_memorization_check.passed)
         else "needs_revision",
@@ -1221,6 +1310,9 @@ def _emit_training_progress(
 
 
 def _generate_training_candidates(
+    store: RuntimeStore,
+    guideline_id: str,
+    task_ids: list[str],
     method: str,
     current_description: str,
     guideline: dict,
@@ -1231,9 +1323,16 @@ def _generate_training_candidates(
     candidate_count: int,
     temperature: float,
     accepted_history: list[dict[str, Any]] | None = None,
+    concurrency: int = 1,
+    progress_recorder: ProgressRecorder | None = None,
+    round_index: int = 0,
 ) -> list[dict[str, Any]]:
-    if method == TEXT_GRADIENT_ADAMW:
-        return _generate_text_gradient_candidates(
+    method = normalize_prompt_optimizer_method(method)
+    if method == MASK_GUIDED_OPTIMIZATION:
+        return _generate_mask_guided_candidates(
+            store,
+            guideline_id,
+            task_ids,
             current_description,
             guideline,
             validation_result,
@@ -1242,60 +1341,76 @@ def _generate_training_candidates(
             predictor,
             candidate_count,
             temperature,
+            concurrency=concurrency,
+            progress_recorder=progress_recorder,
+            round_index=round_index,
         )
-    if method == LLM_REFLECTION:
-        return _generate_reflection_candidates(
+    if method == CRITIC_ADAMW_OPTIMIZER:
+        return _generate_critic_adamw_candidates(
             current_description,
             validation_result,
             failure_summary,
+            current_loss,
             predictor,
             candidate_count,
             temperature,
             accepted_history or [],
         )
-    if method == LLM_OPTIMIZE_ONLY:
-        return _generate_optimize_only_candidates(current_description, predictor, candidate_count, temperature)
+    if method == SGD_CANDIDATE_SEARCH:
+        return _generate_sgd_candidate_search_candidates(
+            current_description,
+            predictor,
+            candidate_count,
+            temperature,
+            accepted_history or [],
+        )
     raise ValueError(f"Unsupported prompt training method: {method}")
 
 
-def _generate_optimize_only_candidates(
+def _generate_sgd_candidate_search_candidates(
     current_description: str,
     predictor: Predictor | None,
     candidate_count: int,
     temperature: float,
+    accepted_history: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     if predictor is None:
         return [
             {
-                "candidate_id": "llm-optimize-only-local-fallback",
+                "candidate_id": "sgd-candidate-search-local-fallback",
                 "description": current_description,
                 "raw_response": "",
                 "sanitizer_warnings": ["local_fallback_no_predictor"],
-                "source": LLM_OPTIMIZE_ONLY,
-                "prompt_optimization": _base_trace(LLM_OPTIMIZE_ONLY, {"loss": 0.0}),
+                "source": SGD_CANDIDATE_SEARCH,
+                "prompt_optimization": _base_trace(SGD_CANDIDATE_SEARCH, {"loss": 0.0}),
+                "method": SGD_CANDIDATE_SEARCH,
             }
         ]
     candidates: list[dict[str, Any]] = []
     for index in range(1, candidate_count + 1):
-        prompt = build_llm_optimize_only_prompt(current_description)
+        prompt = build_llm_optimize_only_prompt(current_description, accepted_history or [])
         raw = predictor("你是概念提示词优化助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, warnings = sanitize_concept_description(raw, fallback=current_description)
         cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=current_description)
         warnings.extend(concept_only_warnings)
         candidates.append(
             {
-                "candidate_id": f"llm-optimize-only-{index:02d}",
+                "candidate_id": f"sgd-candidate-search-{index:02d}",
                 "description": cleaned,
                 "raw_response": raw,
                 "sanitizer_warnings": warnings,
-                "source": LLM_OPTIMIZE_ONLY,
-                "prompt_optimization": _base_trace(LLM_OPTIMIZE_ONLY, {"loss": 0.0}),
+                "source": SGD_CANDIDATE_SEARCH,
+                "prompt_optimization": _base_trace(SGD_CANDIDATE_SEARCH, {"loss": 0.0}),
+                "method": SGD_CANDIDATE_SEARCH,
             }
         )
     return candidates
 
 
-def _generate_text_gradient_candidates(
+def _generate_mask_guided_candidates(
+    store: RuntimeStore,
+    guideline_id: str,
+    task_ids: list[str],
     current_description: str,
     guideline: dict,
     validation_result: dict,
@@ -1304,48 +1419,68 @@ def _generate_text_gradient_candidates(
     predictor: Predictor | None,
     candidate_count: int,
     temperature: float,
+    concurrency: int = 1,
+    progress_recorder: ProgressRecorder | None = None,
+    round_index: int = 0,
 ) -> list[dict[str, Any]]:
     if predictor is None:
         return [
             {
-                "candidate_id": "text-gradient-local-fallback",
+                "candidate_id": "mask-guided-local-fallback",
                 "description": current_description,
                 "raw_response": "",
                 "sanitizer_warnings": ["local_fallback_no_predictor"],
-                "source": TEXT_GRADIENT_ADAMW,
-                "prompt_optimization": _base_trace(TEXT_GRADIENT_ADAMW, current_loss),
-                "method": TEXT_GRADIENT_ADAMW,
+                "source": MASK_GUIDED_OPTIMIZATION,
+                "prompt_optimization": _base_trace(MASK_GUIDED_OPTIMIZATION, current_loss),
+                "method": MASK_GUIDED_OPTIMIZATION,
             }
         ]
-    optimizer_context = build_llm_adamw_trace(current_description, validation_result, failure_summary, current_loss)
-    directions = _training_directions(validation_result)[: max(1, min(candidate_count, 5))]
+    optimizer_context = _build_mask_guided_trace(
+        store,
+        guideline_id,
+        task_ids,
+        current_description,
+        guideline,
+        current_loss,
+        predictor,
+        temperature,
+        concurrency=concurrency,
+        progress_recorder=progress_recorder,
+        round_index=round_index,
+    )
+    directions = _mask_guided_directions(optimizer_context)[: max(1, min(candidate_count, 5))]
     candidates: list[dict[str, Any]] = []
     fallback = str(guideline.get("stable_description") or current_description)
     for index, direction in enumerate(directions, start=1):
-        prompt = _build_text_gradient_prompt(current_description, validation_result, failure_summary, current_loss, direction, optimizer_context)
+        mask_row = _mask_row_for_direction(optimizer_context, direction)
+        prompt = _build_mask_guided_prompt(current_description, validation_result, failure_summary, current_loss, direction, optimizer_context)
         raw = predictor("你是概念阐释改写助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, warnings = sanitize_concept_description(raw, fallback=fallback)
         cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=fallback)
         warnings.extend(concept_only_warnings)
         candidates.append(
             {
-                "candidate_id": f"candidate-{index:02d}-{direction['id']}",
+                "candidate_id": f"mask-guided-{index:02d}-{direction['id']}",
                 "description": cleaned,
                 "raw_response": raw,
                 "sanitizer_warnings": warnings,
-                "source": TEXT_GRADIENT_ADAMW,
+                "source": MASK_GUIDED_OPTIMIZATION,
                 "direction": direction["id"],
                 "prompt_optimization": optimizer_context,
-                "method": TEXT_GRADIENT_ADAMW,
+                "method": MASK_GUIDED_OPTIMIZATION,
+                "mask_segment_id": mask_row.get("mask_segment_id", ""),
+                "mask_loss_delta": mask_row.get("mask_loss_delta", ""),
+                "mask_interpretation": mask_row.get("mask_interpretation", ""),
             }
         )
     return candidates
 
 
-def _generate_reflection_candidates(
+def _generate_critic_adamw_candidates(
     current_description: str,
     validation_result: dict,
     failure_summary: str,
+    current_loss: dict,
     predictor: Predictor | None,
     candidate_count: int,
     temperature: float,
@@ -1355,29 +1490,74 @@ def _generate_reflection_candidates(
     if predictor is None:
         return [
             {
-                "candidate_id": "llm-reflection-local-fallback",
+                "candidate_id": "critic-adamw-local-fallback",
                 "description": fallback,
                 "raw_response": "",
                 "sanitizer_warnings": ["local_fallback_no_predictor"],
-                "source": LLM_REFLECTION,
-                "prompt_optimization": _base_trace(LLM_REFLECTION, {"loss": 0.0}),
+                "source": CRITIC_ADAMW_OPTIMIZER,
+                "prompt_optimization": _base_trace(CRITIC_ADAMW_OPTIMIZER, current_loss),
+                "method": CRITIC_ADAMW_OPTIMIZER,
             }
         ]
+    critic_diagnosis = predictor(
+        "你是提示词优化批判器。只输出简洁诊断，不生成最终提示词。",
+        [{"role": "user", "content": _build_critic_diagnosis_prompt(current_description, validation_result, failure_summary, accepted_history or [])}],
+        temperature,
+    )
+    controller_direction = predictor(
+        "你是提示词优化控制器。只输出下一轮优化方向，不生成最终提示词。",
+        [{"role": "user", "content": _build_controller_prompt(current_description, current_loss, critic_diagnosis, accepted_history or [])}],
+        temperature,
+    )
+    momentum_summary = _momentum_summary(accepted_history or [], critic_diagnosis, controller_direction)
+    optimizer_context = _base_trace(CRITIC_ADAMW_OPTIMIZER, current_loss)
+    optimizer_context.update(
+        {
+            "optimizer": CRITIC_ADAMW_OPTIMIZER,
+            "critic_diagnosis": critic_diagnosis,
+            "controller_direction": controller_direction,
+            "momentum_summary": momentum_summary,
+            "proposed_trace": {
+                **optimizer_context.get("proposed_trace", {}),
+                "gradient_direction": controller_direction[:240],
+                "diagnostics": critic_diagnosis[:500],
+                "metadata": {
+                    "optimizer": CRITIC_ADAMW_OPTIMIZER,
+                    "critic_diagnosis": critic_diagnosis,
+                    "controller_direction": controller_direction,
+                    "momentum_summary": momentum_summary,
+                    "length_decay": True,
+                },
+            },
+        }
+    )
     candidates: list[dict[str, Any]] = []
     for index in range(1, candidate_count + 1):
-        prompt = _build_reflection_prompt(current_description, validation_result, failure_summary, accepted_history or [])
+        prompt = _build_critic_generator_prompt(
+            current_description,
+            validation_result,
+            failure_summary,
+            critic_diagnosis,
+            controller_direction,
+            momentum_summary,
+            accepted_history or [],
+        )
         raw = predictor("你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。", [{"role": "user", "content": prompt}], temperature)
         cleaned, warnings = sanitize_concept_description(raw, fallback=fallback)
         cleaned, concept_only_warnings = ensure_concept_only_description(cleaned, fallback=fallback)
         warnings.extend(concept_only_warnings)
         candidates.append(
             {
-                "candidate_id": f"llm-reflection-{index:02d}",
+                "candidate_id": f"critic-adamw-{index:02d}",
                 "description": cleaned,
                 "raw_response": raw,
                 "sanitizer_warnings": warnings,
-                "source": LLM_REFLECTION,
-                "prompt_optimization": _base_trace(LLM_REFLECTION, {"loss": 0.0}),
+                "source": CRITIC_ADAMW_OPTIMIZER,
+                "prompt_optimization": optimizer_context,
+                "method": CRITIC_ADAMW_OPTIMIZER,
+                "critic_diagnosis": critic_diagnosis,
+                "controller_direction": controller_direction,
+                "momentum_summary": momentum_summary,
             }
         )
     return candidates
@@ -1412,6 +1592,317 @@ training_feedback_only=true
 3. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。
 4. 不要输出解释、失败样例编号、失败摘要或修订日志。
 5. 不要出现 gold-编号、“失败摘要”、“本轮失败”、“修订建议”、“漏标”、“多标”、“边界不稳定样例”等诊断文字。"""
+
+
+def _build_critic_diagnosis_prompt(
+    current_description: str,
+    validation_result: dict,
+    failure_summary: str,
+    accepted_history: list[dict[str, Any]] | None = None,
+) -> str:
+    concept_description = strip_frozen_protocol_sections(current_description)
+    return f"""请作为 Evaluator 评价当前可优化提示词。你只做诊断，不生成最终提示词。
+
+training_feedback_only=true
+
+当前可优化提示词：
+{concept_description}
+
+历史优化摘要：
+{_accepted_history_context(accepted_history or [])}
+
+整体失败摘要：
+{failure_summary}
+
+失败样例批改对照：
+{_reflection_detail_context(validation_result.get("details", []))}
+
+请用简短条目回答：
+1. 哪些概念规则不足。
+2. 哪些规则已经有效，应保持。
+3. 哪些规则可能过长、污染或过拟合。
+4. 哪些失败更像格式问题，哪些才是语义边界问题。
+
+不要输出候选提示词，不要改写输出协议，不要复制 gold 答案。"""
+
+
+def _build_controller_prompt(
+    current_description: str,
+    current_loss: dict,
+    critic_diagnosis: str,
+    accepted_history: list[dict[str, Any]] | None = None,
+) -> str:
+    concept_description = strip_frozen_protocol_sections(current_description)
+    return f"""请作为 Controller 给出下一轮提示词优化方向。你只输出方向，不生成最终提示词。
+
+当前可优化提示词：
+{concept_description}
+
+当前 loss：{current_loss.get("loss", 0.0)}
+
+历史动量摘要：
+{_accepted_history_context(accepted_history or [])}
+
+Evaluator 诊断：
+{critic_diagnosis}
+
+请按以下四类给方向：
+- 加强：需要扩写或明确的概念/边界。
+- 保持：不要破坏的已有规则。
+- 删除：冗余、污染、可能过拟合的内容。
+- 压缩：prompt 变长但 loss 没下降时应压缩的部分。
+
+不要输出候选提示词，不要改写标签或输出格式。"""
+
+
+def _build_critic_generator_prompt(
+    current_description: str,
+    validation_result: dict,
+    failure_summary: str,
+    critic_diagnosis: str,
+    controller_direction: str,
+    momentum_summary: str,
+    accepted_history: list[dict[str, Any]] | None = None,
+) -> str:
+    concept_description = strip_frozen_protocol_sections(current_description)
+    return f"""请根据 Evaluator 诊断和 Controller 方向，生成一个新的可优化概念提示词。
+
+training_feedback_only=true
+
+当前可优化提示词：
+{concept_description}
+
+历史优化摘要：
+{_accepted_history_context(accepted_history or [])}
+
+Momentum 摘要：
+{momentum_summary}
+
+Evaluator 诊断：
+{critic_diagnosis}
+
+Controller 优化方向：
+{controller_direction}
+
+失败样例批改对照（只供抽象边界规则，不要复制原文或答案）：
+{_reflection_detail_context(validation_result.get("details", []))}
+
+整体失败摘要（只供判断，不要写入最终提示词）：
+{failure_summary}
+
+输出要求：
+1. 只输出可以直接用于下一轮标注的概念阐释正文。
+2. 只允许包含任务定义、概念定义、边界规则和排除规则。
+3. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。
+4. 不要输出解释、失败样例编号、失败摘要或修订日志。
+5. 不要复制训练语料、gold answer 或模型 answer 中的具体片段。"""
+
+
+def _momentum_summary(history: list[dict[str, Any]], critic_diagnosis: str, controller_direction: str) -> str:
+    if not history:
+        return "暂无已接受方向；本轮采用小步探索。"
+    positive = [
+        f"{item.get('version_label', 'v?')} loss 下降 {item.get('loss_delta', '')}"
+        for item in history[-5:]
+        if float(item.get("loss_delta") or 0.0) > 0
+    ]
+    return "；".join(positive) or "历史版本存在，但没有明确持续有效方向；本轮优先小步、短 prompt、保守更新。"
+
+
+def _build_mask_guided_trace(
+    store: RuntimeStore,
+    guideline_id: str,
+    task_ids: list[str],
+    current_description: str,
+    guideline: dict,
+    current_loss: dict,
+    predictor: Predictor,
+    temperature: float,
+    concurrency: int,
+    progress_recorder: ProgressRecorder | None,
+    round_index: int,
+) -> dict[str, Any]:
+    segments = [segment for segment in segment_prompt(strip_frozen_protocol_sections(current_description)) if segment.mutable][:5]
+    mask_rows: list[dict[str, Any]] = []
+    for segment in segments:
+        _emit_training_progress(
+            progress_recorder,
+            "mask_ablation_started",
+            "遮挡梯度估计",
+            f"正在遮挡片段 {segment.id} 并回测 gold loss",
+            {"method": MASK_GUIDED_OPTIMIZATION, "round_index": round_index, "mask_segment_id": segment.id},
+        )
+        masked_description = _mask_prompt_segment(current_description, segment.id)
+        masked_guideline = {**guideline, "stable_description": masked_description}
+        masked_result = _evaluate_gold_tasks(
+            store,
+            guideline_id,
+            masked_guideline,
+            task_ids,
+            predictor,
+            temperature,
+            round_index,
+            source="prompt_training_mask_guided_ablation",
+            candidate_id=f"mask-{round_index:02d}-{segment.id}",
+            concurrency=concurrency,
+        )
+        masked_loss = _concept_loss(masked_result)
+        loss_delta = round(float(masked_loss.get("loss", 0.0)) - float(current_loss.get("loss", 0.0)), 4)
+        interpretation = _mask_interpretation(loss_delta)
+        mask_row = {
+            "mask_segment_id": segment.id,
+            "segment_kind": segment.kind,
+            "segment_text_preview": segment.text[:160],
+            "masked_loss": masked_loss.get("loss", 0.0),
+            "current_loss": current_loss.get("loss", 0.0),
+            "mask_loss_delta": loss_delta,
+            "mask_interpretation": interpretation,
+            "pass_count": len(masked_result.get("passed", [])),
+        }
+        mask_rows.append(mask_row)
+        _emit_training_progress(
+            progress_recorder,
+            "mask_ablation_completed",
+            "遮挡梯度估计",
+            f"片段 {segment.id} 遮挡回测完成",
+            {
+                "method": MASK_GUIDED_OPTIMIZATION,
+                "round_index": round_index,
+                "mask_segment_id": segment.id,
+                "mask_loss_delta": loss_delta,
+                "mask_interpretation": interpretation,
+                "loss": masked_loss.get("loss", 0.0),
+            },
+        )
+    mask_rows.sort(key=lambda row: float(row.get("mask_loss_delta", 0.0)), reverse=True)
+    top = mask_rows[0] if mask_rows else {}
+    return {
+        "optimizer": MASK_GUIDED_OPTIMIZATION,
+        "segments": [segment.to_dict() for segment in segments],
+        "mask_ablation": mask_rows,
+        "text_gradients": [
+            {
+                "segment_id": row.get("mask_segment_id", ""),
+                "method": "mask_ablation",
+                "direction": row.get("mask_interpretation", ""),
+                "score": row.get("mask_loss_delta", 0.0),
+                "evidence": f"masked_loss_delta={row.get('mask_loss_delta', 0.0)}",
+                "metadata": row,
+            }
+            for row in mask_rows
+        ],
+        "proposed_trace": {
+            "segment_id": top.get("mask_segment_id", ""),
+            "perturbation_method": "mask_ablation",
+            "gradient_direction": top.get("mask_interpretation", "no_mask_signal"),
+            "current_loss": float(current_loss.get("loss", 0.0)),
+            "diagnostics": _mask_analysis_context(mask_rows),
+            "metadata": {
+                "optimizer": MASK_GUIDED_OPTIMIZATION,
+                "mask_ablation": mask_rows,
+                "length_decay": True,
+            },
+        },
+        "top_segment_id": top.get("mask_segment_id", ""),
+        "top_direction": top.get("mask_interpretation", "no_mask_signal"),
+    }
+
+
+def _mask_prompt_segment(description: str, segment_id: str) -> str:
+    concept_text = strip_frozen_protocol_sections(description)
+    segments = segment_prompt(concept_text)
+    kept = [segment.text for segment in segments if segment.id != segment_id]
+    masked = "\n\n".join(text for text in kept if text.strip()).strip()
+    return masked or "概念定义：根据当前任务定义标注符合概念边界的文本片段。"
+
+
+def _mask_interpretation(loss_delta: float) -> str:
+    if loss_delta > 0.5:
+        return "high_contribution_keep_or_refine"
+    if loss_delta < -0.5:
+        return "negative_contribution_rewrite_or_remove"
+    return "low_or_uncertain_contribution_small_step"
+
+
+def _mask_analysis_context(mask_rows: list[dict[str, Any]]) -> str:
+    if not mask_rows:
+        return "没有可遮挡的可优化片段；请做小步保守改写。"
+    lines = []
+    for row in mask_rows[:5]:
+        lines.append(
+            "- {segment}: delta={delta}, interpretation={interp}, kind={kind}, text={text}".format(
+                segment=row.get("mask_segment_id", ""),
+                delta=row.get("mask_loss_delta", 0.0),
+                interp=row.get("mask_interpretation", ""),
+                kind=row.get("segment_kind", ""),
+                text=row.get("segment_text_preview", ""),
+            )
+        )
+    return "\n".join(lines)
+
+
+def _mask_guided_directions(optimizer_context: dict[str, Any]) -> list[dict[str, str]]:
+    rows = list(optimizer_context.get("mask_ablation", []))
+    if not rows:
+        return [{"id": "minimal", "title": "最小改写", "instruction": "没有明确遮挡信号，保持短 prompt 并小步优化。"}]
+    directions: list[dict[str, str]] = []
+    for row in rows[:5]:
+        segment_id = str(row.get("mask_segment_id", "segment"))
+        interpretation = str(row.get("mask_interpretation", ""))
+        if interpretation.startswith("high_contribution"):
+            instruction = "保留该片段的核心含义，并把它改写得更清楚、更短、更可执行。"
+        elif interpretation.startswith("negative_contribution"):
+            instruction = "该片段遮挡后 loss 反而下降，请删除、压缩或重写它，避免误导。"
+        else:
+            instruction = "该片段贡献不确定，请只做小步精简，不要扩大概念。"
+        directions.append({"id": segment_id.replace("seg-", ""), "title": f"遮挡片段 {segment_id}", "instruction": instruction})
+    return directions
+
+
+def _mask_row_for_direction(optimizer_context: dict[str, Any], direction: dict[str, str]) -> dict[str, Any]:
+    suffix = str(direction.get("id", ""))
+    for row in optimizer_context.get("mask_ablation", []):
+        segment_id = str(row.get("mask_segment_id", ""))
+        if suffix and (segment_id == suffix or segment_id.endswith(suffix)):
+            return row
+    rows = list(optimizer_context.get("mask_ablation", []))
+    return rows[0] if rows else {}
+
+
+def _build_mask_guided_prompt(
+    current_description: str,
+    validation_result: dict,
+    failure_summary: str,
+    current_loss: dict,
+    direction: dict,
+    optimizer_context: dict,
+) -> str:
+    concept_description = strip_frozen_protocol_sections(current_description)
+    return f"""请根据 Mask 遮挡得到的文本梯度，优化下面的概念阐释。
+
+training_feedback_only=true
+
+当前可优化定义：
+{concept_description}
+
+本次遮挡优化方向：
+{direction['title']}：{direction['instruction']}
+
+当前 loss：
+{current_loss.get('loss', 0.0)}
+
+Mask 遮挡分析（只供判断哪句话有贡献或拖后腿，不要原样复述）：
+{_mask_analysis_context(list(optimizer_context.get("mask_ablation", [])))}
+
+失败批改摘要（只供抽象规则，不要复制语料或答案）：
+{_raw_feedback_context(validation_result, failure_summary)}
+
+输出要求：
+1. 只输出可以直接用于下一轮标注的概念阐释正文。
+2. 保留高贡献片段的核心含义，重写或删除负贡献片段。
+3. 只允许包含任务定义、概念定义、边界规则和排除规则。
+4. 不要输出标签集合、JSON schema、annotation 标注格式、输出格式或格式修复指令。
+5. 不要复制原文、标准答案、模型答案、样例编号、失败摘要或修订日志。"""
 
 
 def build_training_feedback_prompt(current_description: str, validation_result: dict, failure_summary: str) -> str:
@@ -1665,7 +2156,7 @@ def _base_trace(method: str, current_loss: dict) -> dict[str, Any]:
             "gradient_direction": "not_used",
             "current_loss": float(current_loss.get("loss", 0.0)),
             "diagnostics": "",
-            "metadata": {"optimizer": method},
+            "metadata": {"optimizer": method, "optimizer_display_name": optimizer_display_name(method)},
         },
     }
 
@@ -1750,6 +2241,10 @@ def _select_best_method(method_results: list[dict[str, Any]]) -> dict[str, Any]:
 def _method_summary(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "method": row["method"],
+        "optimizer_name": row.get("optimizer_name", optimizer_display_name(row["method"])),
+        "optimizer_family": row.get("optimizer_family", OPTIMIZER_FAMILIES.get(row["method"], "")),
+        "alias_from": row.get("alias_from", ""),
+        "method_trace_summary": row.get("method_trace_summary", _method_trace_summary(row["method"], row.get("rounds", []))),
         "status": row["status"],
         "reached_target": row["reached_target"],
         "stop_reason": row.get("stop_reason", ""),
@@ -1778,6 +2273,40 @@ def _method_summary(row: dict[str, Any]) -> dict[str, Any]:
             for round_row in row.get("rounds", [])
             for candidate in round_row.get("candidate_evaluations", [])
         ),
+    }
+
+
+def _method_trace_summary(method: str, rounds: list[dict[str, Any]]) -> dict[str, Any]:
+    critic_count = 0
+    controller_count = 0
+    mask_count = 0
+    mask_deltas: list[float] = []
+    accepted_candidates = 0
+    for round_row in rounds:
+        for candidate in round_row.get("candidate_evaluations", []):
+            if candidate.get("accepted"):
+                accepted_candidates += 1
+            if candidate.get("critic_diagnosis"):
+                critic_count += 1
+            if candidate.get("controller_direction"):
+                controller_count += 1
+            if candidate.get("mask_segment_id"):
+                mask_count += 1
+            if candidate.get("mask_loss_delta") not in {"", None}:
+                try:
+                    mask_deltas.append(float(candidate.get("mask_loss_delta")))
+                except (TypeError, ValueError):
+                    pass
+    return {
+        "method": method,
+        "optimizer_name": optimizer_display_name(method),
+        "optimizer_family": OPTIMIZER_FAMILIES.get(method, ""),
+        "accepted_candidate_count": accepted_candidates,
+        "critic_trace_count": critic_count,
+        "controller_trace_count": controller_count,
+        "mask_trace_count": mask_count,
+        "max_mask_loss_delta": max(mask_deltas) if mask_deltas else 0.0,
+        "min_mask_loss_delta": min(mask_deltas) if mask_deltas else 0.0,
     }
 
 
@@ -1946,6 +2475,8 @@ def _store_training_version(
                 "prompt_training": True,
                 "training_methods": config.methods,
                 "best_method": best["method"],
+                "best_optimizer_name": best.get("optimizer_name", optimizer_display_name(best["method"])),
+                "best_optimizer_family": best.get("optimizer_family", OPTIMIZER_FAMILIES.get(best["method"], "")),
                 "method_comparison": [_method_summary(row) for row in method_results],
                 "target_pass_count": target_pass_count,
                 "reached_target": best["reached_target"],
@@ -1990,6 +2521,9 @@ def _prompt_versions_for_best_method(initial_description: str, best: dict[str, A
         {
             "version_label": "v0",
             "method": best.get("method", ""),
+            "optimizer_name": best.get("optimizer_name", optimizer_display_name(str(best.get("method", "")))),
+            "optimizer_family": best.get("optimizer_family", OPTIMIZER_FAMILIES.get(str(best.get("method", "")), "")),
+            "alias_from": best.get("alias_from", ""),
             "round_index": 0,
             "candidate_id": "initial",
             "description": initial_description,
@@ -2026,6 +2560,9 @@ def _store_prompt_version_history(
                     "prompt_version_label": row.get("version_label", ""),
                     "prompt_version_event": row.get("event", ""),
                     "method": row.get("method", ""),
+                    "optimizer_name": row.get("optimizer_name", optimizer_display_name(str(row.get("method", "")))),
+                    "optimizer_family": row.get("optimizer_family", OPTIMIZER_FAMILIES.get(str(row.get("method", "")), "")),
+                    "alias_from": row.get("alias_from", ""),
                     "round_index": row.get("round_index", 0),
                     "candidate_id": row.get("candidate_id", ""),
                     "loss": row.get("loss", ""),
@@ -2079,7 +2616,7 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
         "## Summary",
         "",
         f"- Experiment case: `{result.get('experiment_case') or 'custom'}`",
-        f"- Best method: `{result.get('best_method', '')}`",
+        f"- Best method: `{result.get('best_method', '')}` ({optimizer_display_name(str(result.get('best_method', '')))})",
         f"- Best pass count: `{result.get('best_pass_count', 0)}/15`",
         f"- Best loss: `{result.get('best_loss', 0.0)}`",
         "- Best fields use the historical best accepted prompt, not the last round snapshot.",
@@ -2131,6 +2668,7 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
         _markdown_table(
             [
                 "method",
+                "optimizer",
                 "status",
                 "stop_reason",
                 "initial_pass",
@@ -2150,6 +2688,7 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
             [
                 [
                     row.get("method", ""),
+                    row.get("optimizer_name", optimizer_display_name(str(row.get("method", "")))),
                     row.get("status", ""),
                     row.get("stop_reason", ""),
                     row.get("initial_pass_count", 0),
@@ -2175,6 +2714,7 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
         _markdown_table(
             [
                 "method",
+                "optimizer",
                 "round",
                 "status",
                 "pass_count",
@@ -2191,6 +2731,7 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
             [
                 [
                     row.get("method", ""),
+                    optimizer_display_name(str(row.get("method", ""))),
                     row.get("round_index", ""),
                     row.get("status", ""),
                     row.get("pass_count", 0),
@@ -2211,10 +2752,11 @@ def build_prompt_training_comparison_report(result: dict[str, Any]) -> str:
         "## Candidate Status",
         "",
         _markdown_table(
-            ["method", "round", "candidate", "status", "pass_count", "loss", "memorization", "repairs"],
+            ["method", "optimizer", "round", "candidate", "status", "pass_count", "loss", "memorization", "repairs"],
             [
                 [
                     round_row.get("method", ""),
+                    optimizer_display_name(str(round_row.get("method", ""))),
                     round_row.get("round_index", ""),
                     candidate.get("candidate_id", ""),
                     candidate.get("status", ""),
@@ -2263,6 +2805,7 @@ def _prompt_evolution_rows(result: dict[str, Any]) -> list[dict[str, Any]]:
         return [
             {
                 "method": row.get("method", result.get("best_method", "")),
+                "optimizer_name": row.get("optimizer_name", optimizer_display_name(str(row.get("method", result.get("best_method", ""))))),
                 "round_index": row.get("round_index", 0),
                 "event": row.get("event", ""),
                 "version_label": row.get("version_label", ""),

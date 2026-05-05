@@ -2,6 +2,19 @@
 
 ## 2026-05-05
 
+### Feature / Prompt optimizer canonical methods and progress v4.5.12
+
+1. Prompt training 三种自动优化器正式命名为 `sgd_candidate_search`（候选搜索优化 / SGD-like Candidate Search）、`critic_adamw_optimizer`（批判器 AdamW 优化 / AdamW-like Critic Optimizer）和 `mask_guided_optimization`（遮挡梯度优化 / Mask-guided Prompt Optimization）；旧 `llm_optimize_only / llm_reflection / text_gradient_adamw` 保留为 legacy alias。
+2. `PromptTrainingConfig.methods` 默认运行三种 canonical id，`normalized()` 会把旧 id 转成新 id；CLI `prompt-training-experiment` 新增 `--methods`，支持逗号分隔 canonical id 或 legacy alias。
+3. 候选搜索优化每轮只给当前可优化 prompt 和已接受历史摘要；批判器 AdamW 优化新增 Evaluator -> Controller -> Generator trace；遮挡梯度优化会对最多 5 个可优化片段做 Mask 回测并记录 `mask_loss_delta`。
+4. “定义与规范”页面的提示词优化区域改为人工优化 + 三方案自动优化器 selector，默认三者全选，也可只运行一个；页面用持久 section radio 替代 tab，减少验证/优化/日志操作后回到第一个 tab 的问题。
+5. 提示词验证和提示词优化的进度 UI 继续展示估算进度、阶段、完成数、运行中、ETA、调用数和 token；训练事件日志能看到 candidate generation、candidate 回测、critic evaluator/controller、mask ablation 等阶段。
+6. 真实 LLM 默认并发上限从 `20` 提升到 `50`，仍由 provider profile 与共享 semaphore 约束；批量标注和 CLI 默认值同步改为 `50`。
+7. 新增 `app/infrastructure/embedding`，提供 `rosetta-local-hash-384` 本地轻量文本嵌入：基于 word n-gram 与 char n-gram 的稳定 feature hashing，使用 `numpy` 归一化向量和 cosine 检索。
+8. `标注验证（top-k 参考）` 和批量标注上下文构建改为复用本地 embedding 检索，不调用 DeepSeek、智谱或其他远端 embedding API，不消耗 token，也不需要下载 transformer 权重。
+9. 新增 [Embedding Retrieval](./developer/EMBEDDING_RETRIEVAL.md)，说明 OpenWebUI 式可插拔 embedding backend 思路、当前本地 fallback 边界和后续可替换后端。
+10. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md)、[Architecture](./developer/ARCHITECTURE.md)、[LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md)、[Developer README](./developer/README.md)、[Agent Onboarding](./developer/AGENT_ONBOARDING.md) 和 [Concept Bootstrap Pipeline](./developer/BOOTSTRAP_PIPELINE.md)，并将首页版本更新为 `v4.5.12`。
+
 ### UX / Prompt validation and optimization workspace v4.5.11
 
 1. “定义与规范”页面主操作收敛为两个 tab：`提示词验证` 和 `提示词优化`。项目、金样例和冻结输出协议保留为前置配置，不再把自举校准、修订草案和导出作为页面主功能。

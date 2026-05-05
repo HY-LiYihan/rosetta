@@ -9,11 +9,16 @@ from app.runtime.progress import ProgressRecorder
 from app.runtime.store import RuntimeStore
 from app.services.annotation_service import ANNOTATION_ASSISTANT_SYSTEM_PROMPT
 from app.workflows.bootstrap import (
+    CRITIC_ADAMW_OPTIMIZER,
     LLM_OPTIMIZE_ONLY,
     LLM_REFLECTION,
+    MASK_GUIDED_OPTIMIZATION,
+    PROMPT_OPTIMIZER_METHODS,
+    SGD_CANDIDATE_SEARCH,
     TEXT_GRADIENT_ADAMW,
     PromptTrainingConfig,
     build_llm_optimize_only_prompt,
+    normalize_prompt_optimizer_method,
     build_training_feedback_prompt,
     gold_task_from_markup,
     repair_leaked_prompt,
@@ -23,7 +28,7 @@ from app.workflows.bootstrap import (
     strip_frozen_protocol_sections,
     write_prompt_training_comparison_outputs,
 )
-from app.workflows.bootstrap.prompt_training import _build_reflection_prompt
+from app.workflows.bootstrap.prompt_training import _build_mask_guided_trace, _build_reflection_prompt, _mask_prompt_segment
 
 
 def _store_with_guideline(gold_count: int = 15):
@@ -72,7 +77,7 @@ class TestPromptTraining(unittest.TestCase):
     def test_llm_optimize_only_prompt_has_no_failure_gradient_or_protocol_values(self):
         prompt = build_llm_optimize_only_prompt("概念描述：标出科学术语。\n标签集合：Term\n输出格式：[原文]{标签}")
 
-        forbidden = ["失败摘要", "gold-", "漏标", "多标", "loss", "文本梯度"]
+        forbidden = ["失败摘要", "gold-", "漏标", "多标", "文本梯度", "批判器", "Mask"]
         for marker in forbidden:
             with self.subTest(marker=marker):
                 self.assertNotIn(marker, prompt)
@@ -98,6 +103,39 @@ class TestPromptTraining(unittest.TestCase):
         self.assertIn("排除规则：不标普通词。", cleaned)
         self.assertNotIn("标签集合：Term", cleaned)
         self.assertNotIn("输出格式", cleaned)
+
+    def test_prompt_optimizer_method_normalizes_legacy_aliases_and_concurrency(self):
+        cfg = PromptTrainingConfig(
+            methods=(LLM_OPTIMIZE_ONLY, LLM_REFLECTION, TEXT_GRADIENT_ADAMW),
+            concurrency=999,
+        ).normalized()
+
+        self.assertEqual(cfg.methods, PROMPT_OPTIMIZER_METHODS)
+        self.assertEqual(cfg.method_aliases[SGD_CANDIDATE_SEARCH], LLM_OPTIMIZE_ONLY)
+        self.assertEqual(cfg.method_aliases[CRITIC_ADAMW_OPTIMIZER], LLM_REFLECTION)
+        self.assertEqual(cfg.method_aliases[MASK_GUIDED_OPTIMIZATION], TEXT_GRADIENT_ADAMW)
+        self.assertEqual(cfg.concurrency, 50)
+        self.assertEqual(PromptTrainingConfig(concurrency=50).normalized().concurrency, 50)
+        self.assertEqual(normalize_prompt_optimizer_method(LLM_REFLECTION), CRITIC_ADAMW_OPTIMIZER)
+
+    def test_mask_prompt_segment_strips_frozen_protocol_before_ablation(self):
+        masked = _mask_prompt_segment(
+            "\n".join(
+                [
+                    "概念描述：标出科学术语。",
+                    "标签集合：Term",
+                    "边界规则：标最小完整术语。",
+                    "输出格式：[原文]{标签}",
+                ]
+            ),
+            "seg-02-boundary_rules",
+        )
+
+        self.assertIn("概念描述：标出科学术语。", masked)
+        self.assertNotIn("边界规则：标最小完整术语。", masked)
+        self.assertNotIn("标签集合", masked)
+        self.assertNotIn("输出格式", masked)
+
 
     def test_training_selects_method_that_reaches_all_gold_examples(self):
         tmp, store, guideline_id = _store_with_guideline()
@@ -140,14 +178,14 @@ class TestPromptTraining(unittest.TestCase):
         )
 
         self.assertEqual(result["status"], "stable")
-        self.assertEqual(result["best_method"], TEXT_GRADIENT_ADAMW)
+        self.assertEqual(result["best_method"], MASK_GUIDED_OPTIMIZATION)
         self.assertEqual(result["best_pass_count"], 15)
         self.assertEqual(result["method_results"][2]["stop_reason"], "reached_target")
         self.assertIn("带编号或专名结构", result["best_description"])
         self.assertNotIn("标签集合：Term", result["best_description"])
         self.assertNotIn("输出格式", result["best_description"])
         self.assertTrue(result["leakage_report"]["final_prompt_clean"])
-        winning_method = next(row for row in result["method_results"] if row["method"] == TEXT_GRADIENT_ADAMW)
+        winning_method = next(row for row in result["method_results"] if row["method"] == MASK_GUIDED_OPTIMIZATION)
         self.assertGreater(winning_method["llm_call_count"], 0)
         self.assertGreater(winning_method["estimated_tokens"], 0)
         self.assertGreaterEqual(winning_method["elapsed_seconds"], 0.0)
@@ -158,7 +196,7 @@ class TestPromptTraining(unittest.TestCase):
         training_versions = [row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training")]
         stored_prompt_versions = [row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training_version")]
         self.assertTrue(stored_prompt_versions)
-        self.assertEqual(training_versions[0]["metadata"]["best_method"], TEXT_GRADIENT_ADAMW)
+        self.assertEqual(training_versions[0]["metadata"]["best_method"], MASK_GUIDED_OPTIMIZATION)
         self.assertTrue(training_versions[0]["metadata"]["reached_target"])
         self.assertEqual(training_versions[0]["metadata"]["stop_policy"], "patience_no_loss_improvement")
         self.assertEqual(training_versions[0]["metadata"]["stop_reason"], "reached_target")
@@ -202,6 +240,10 @@ class TestPromptTraining(unittest.TestCase):
 
         def predictor(system_prompt, messages, temperature):
             prompt = messages[-1]["content"]
+            if "批判器" in system_prompt:
+                return "诊断：当前定义召回不足。"
+            if "控制器" in system_prompt:
+                return "加强：补充明确编号术语边界；保持：短提示词。"
             if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
                 candidate_calls["count"] += 1
                 return "\n".join(
@@ -240,6 +282,10 @@ class TestPromptTraining(unittest.TestCase):
 
         def predictor(system_prompt, messages, temperature):
             prompt = messages[-1]["content"]
+            if "批判器" in system_prompt:
+                return "诊断：需要比较多个候选的边界强度。"
+            if "控制器" in system_prompt:
+                return "加强：生成不同强度候选；保持：不改变输出协议。"
             if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
                 state["candidate_calls"] += 1
                 marker = {
@@ -274,14 +320,14 @@ class TestPromptTraining(unittest.TestCase):
         evaluations = result["rounds"][0]["candidate_evaluations"]
         accepted = [row for row in evaluations if row.get("accepted")]
         self.assertEqual(len(accepted), 1)
-        self.assertEqual(accepted[0]["candidate_id"], "llm-reflection-02")
+        self.assertEqual(accepted[0]["candidate_id"], "critic-adamw-02")
         self.assertEqual(accepted[0]["status"], "accepted")
         self.assertEqual(evaluations[0]["status"], "rejected_not_round_best")
         self.assertEqual(evaluations[2]["status"], "rejected_not_round_best")
-        self.assertEqual(result["rounds"][0]["accepted_candidate_id"], "llm-reflection-02")
+        self.assertEqual(result["rounds"][0]["accepted_candidate_id"], "critic-adamw-02")
         self.assertEqual(result["prompt_versions"][0]["version_label"], "v0")
         self.assertEqual(result["prompt_versions"][1]["version_label"], "v1")
-        self.assertEqual(result["prompt_versions"][1]["candidate_id"], "llm-reflection-02")
+        self.assertEqual(result["prompt_versions"][1]["candidate_id"], "critic-adamw-02")
         self.assertIn("profile_beta", result["prompt_versions"][1]["description"])
 
     def test_method_summary_keeps_historical_best_prompt(self):
@@ -291,6 +337,10 @@ class TestPromptTraining(unittest.TestCase):
 
         def predictor(system_prompt, messages, temperature):
             prompt = messages[-1]["content"]
+            if "批判器" in system_prompt:
+                return "诊断：第一轮候选可能更有效，后续应避免退化。"
+            if "控制器" in system_prompt:
+                return "加强：保留有效规则；压缩：避免无效扩写。"
             if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
                 state["candidate_calls"] += 1
                 marker = "good-rule" if state["candidate_calls"] == 1 else "poor-rule"
@@ -427,14 +477,14 @@ class TestPromptTraining(unittest.TestCase):
         )
 
         self.assertEqual(result["status"], "stable")
-        self.assertEqual(result["best_method"], LLM_REFLECTION)
+        self.assertEqual(result["best_method"], CRITIC_ADAMW_OPTIMIZER)
         self.assertNotIn("gold-00001", result["best_description"])
         self.assertNotIn("Quantum term", result["best_description"])
         self.assertNotIn("失败摘要", result["best_description"])
         self.assertNotIn("漏标", result["best_description"])
         versions = store.list_concept_versions(guideline_id=guideline_id, limit=10)
         training_version = next(row["payload"] for row in versions if row["payload"].get("metadata", {}).get("prompt_training"))
-        self.assertEqual(training_version["metadata"]["best_method"], LLM_REFLECTION)
+        self.assertEqual(training_version["metadata"]["best_method"], CRITIC_ADAMW_OPTIMIZER)
         self.assertTrue(training_version["metadata"]["method_comparison"])
 
     def test_reflection_feedback_prompt_is_marked_training_feedback_only(self):
@@ -657,6 +707,72 @@ class TestPromptTraining(unittest.TestCase):
         output_paths = run["payload"]["meta"].get("output_paths", {})
         self.assertTrue(Path(output_paths["events_path"]).exists())
         self.assertTrue(Path(output_paths["report_path"]).exists())
+
+    def test_critic_adamw_records_evaluator_controller_trace(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+
+        def predictor(system_prompt, messages, temperature):
+            if "批判器" in system_prompt:
+                return "诊断：边界规则不足，但输出协议稳定。"
+            if "控制器" in system_prompt:
+                return "加强：明确带编号专业实体；保持：短提示词；压缩：删除冗余。"
+            if system_prompt == "你是概念阐释反思优化助手。只返回最终可用的概念阐释正文。":
+                return "概念描述：critic-rule 标出带编号专业实体。"
+            if "critic-rule" in messages[-1]["content"]:
+                return _correct_annotation(messages[-1]["content"])
+            return _wrong_annotation(messages[-1]["content"])
+
+        result = run_prompt_training_experiment(
+            store,
+            guideline_id,
+            predictor=predictor,
+            config=PromptTrainingConfig(methods=(CRITIC_ADAMW_OPTIMIZER,), max_rounds=1, candidate_count=1),
+        )
+
+        candidate = result["rounds"][0]["candidate_evaluations"][0]
+        self.assertEqual(result["method_results"][0]["method"], CRITIC_ADAMW_OPTIMIZER)
+        self.assertIn("诊断", candidate["critic_diagnosis"])
+        self.assertIn("加强", candidate["controller_direction"])
+        self.assertIn("method_trace_summary", result["method_results"][0])
+        self.assertGreaterEqual(result["method_results"][0]["method_trace_summary"]["critic_trace_count"], 1)
+
+    def test_mask_guided_trace_uses_mutable_segments_only(self):
+        tmp, store, guideline_id = _store_with_guideline()
+        self.addCleanup(tmp.cleanup)
+        guideline = store.get_guideline(guideline_id)["payload"]
+        description = "\n".join(
+            [
+                "概念描述：标出科学术语。",
+                "标签集合：Term",
+                "边界规则：标最小完整术语。",
+                "输出格式：[原文]{标签}",
+            ]
+        )
+
+        def predictor(system_prompt, messages, temperature):
+            return _wrong_annotation(messages[-1]["content"])
+
+        trace = _build_mask_guided_trace(
+            store,
+            guideline_id,
+            store.list_gold_example_sets(guideline_id=guideline_id, limit=1)[0]["payload"]["task_ids"],
+            description,
+            guideline,
+            {"loss": 1.0},
+            predictor,
+            0.0,
+            concurrency=1,
+            progress_recorder=None,
+            round_index=1,
+        )
+
+        kinds = {segment["kind"] for segment in trace["segments"]}
+        self.assertIn("task_definition", kinds)
+        self.assertIn("boundary_rules", kinds)
+        self.assertNotIn("label_schema", kinds)
+        self.assertNotIn("output_format", kinds)
+        self.assertTrue(trace["mask_ablation"])
 
     def test_requires_target_gold_count(self):
         tmp, store, guideline_id = _store_with_guideline(gold_count=3)

@@ -79,6 +79,7 @@ nav:
       - Agent 快速接手: developer/AGENT_ONBOARDING.md
       - 架构总览: developer/ARCHITECTURE.md
       - LLM 服务运行时: developer/LLM_SERVICE_RUNTIME.md
+      - Embedding 检索: developer/EMBEDDING_RETRIEVAL.md
       - 工作流: developer/WORKFLOW.md
       - 脚本说明: developer/SCRIPTS.md
       - 路线图: developer/ROADMAP.md

@@ -139,7 +139,7 @@ Trace 至少记录：
 
 ```python
 PromptTrainingConfig(
-    methods=("llm_optimize_only", "llm_reflection", "text_gradient_adamw"),
+    methods=("sgd_candidate_search", "critic_adamw_optimizer", "mask_guided_optimization"),
     max_rounds=30,
     candidate_count=5,
     target_pass_count=15,
@@ -152,7 +152,7 @@ PromptTrainingConfig(
     no_corpus_memorization=True,
     memorization_policy="repair_then_reject",
     raw_feedback_allowed=True,
-    concurrency=20,
+    concurrency=50,
     repair_leaked_candidates=True,
     max_repair_attempts=2,
     provider_id="deepseek",
@@ -164,9 +164,9 @@ PromptTrainingConfig(
 
 | 方法 | 训练反馈材料 | 候选生成信息 | 防背答案约束 | 用途 |
 | --- | --- | --- | --- | --- |
-| `llm_optimize_only` | 不提供原文、标准答案、模型答案、失败详情、loss 或文本梯度 | 只告诉大模型“请优化当前概念语义提示词” | 候选只允许包含概念定义和边界规则；如有负例约束，只能作为抽象边界条件 | 最简单 baseline |
-| `llm_reflection` | 先提供当前可优化提示词，再按失败 detail 就近提供原文、gold `[span]{Term}`、model JSON answer、错误摘要和整体失败摘要，标记 `training_feedback_only=true` | 要求 LLM 把具体错误抽象成整体概念阐释 | 候选不能复制原文、gold span、model span 或可识别答案片段，也不能改输出协议 | 普通 LLM 反思 baseline |
-| `text_gradient_adamw` | 提供原始批改对照、系统计算的文本梯度方向、loss 和长度变化 | 使用 Text Gradient / `LLM-AdamW` 方向生成概念候选 | 梯度可来自具体错误，但最终候选只能保留抽象规则；格式协议由 harness 注入 | Rosetta 默认方法 |
+| `sgd_candidate_search` | 不提供原文、标准答案、模型答案、失败详情、loss 或文本梯度 | 只告诉大模型“请优化当前概念语义提示词”，并提供已接受历史摘要 | 候选只允许包含概念定义和边界规则；如有负例约束，只能作为抽象边界条件 | 最简单 zero-order baseline |
+| `critic_adamw_optimizer` | 先提供当前可优化提示词，再按失败 detail 就近提供原文、gold `[span]{Term}`、model JSON answer、错误摘要和整体失败摘要，标记 `training_feedback_only=true` | Evaluator -> Controller -> Generator，记录历史动量、片段自适应和长度惩罚 | 候选不能复制原文、gold span、model span 或可识别答案片段，也不能改输出协议 | 强 agentic optimizer |
+| `mask_guided_optimization` | 提供原始批改对照、系统计算的 Mask 遮挡 loss delta 和长度变化 | 使用显式 Text Gradient / mask ablation 方向生成概念候选 | 梯度可来自具体错误，但最终候选只能保留抽象规则；格式协议由 harness 注入 | 可解释文本梯度方法 |
 
 每种方法独立运行，不共享中间 prompt，避免方法之间互相污染。每轮固定执行：
 
@@ -207,7 +207,7 @@ current prompt
   -> stop at 15/15 or after patience rounds with no improvement
 ```
 
-每个 run 需要产生 `prompt_versions`：`v0` 是初始 prompt，后续 `v1...vn` 是每次被接受的候选。每个版本至少记录 `method / round_index / candidate_id / description / loss / loss_delta / pass_count`。这些版本会写入 `ConceptVersion`，metadata 使用 `prompt_training_version=true`；最终兼容 summary 版本继续使用 `prompt_training=true`。
+每个 run 需要产生 `prompt_versions`：`v0` 是初始 prompt，后续 `v1...vn` 是每次被接受的候选。每个版本至少记录 `method / optimizer_name / round_index / candidate_id / description / loss / loss_delta / pass_count`。这些版本会写入 `ConceptVersion`，metadata 使用 `prompt_training_version=true`；最终兼容 summary 版本继续使用 `prompt_training=true`。
 
 `v4.5.1` 后，`max_rounds` 不再等于成功标准。每个方法独立维护 `no_improvement_streak`：
 
@@ -400,12 +400,14 @@ ConceptPromptSpec
 7. `v4.5.10` 已把 `llm_reflection` 的 training feedback 改为逐条失败 detail 的相邻批改对照，优先使用验证 detail 中的 `model_raw_response`。
 8. `v4.5.11` 已新增本地格式验证和 `reference_k` gold validation；带样例验证会按 top-k 文本向量余弦相似度选择参考 gold 并注入概念上下文。
 9. `v4.5.11` 已把页面主操作收敛为提示词验证和提示词优化，并把类训练优化的 accepted prompt history 写回下一轮 reflection prompt。
-10. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
+10. `v4.5.12` 已将三种自动优化器改为 canonical id，新增 critic evaluator/controller trace、mask ablation trace，并把真实 LLM 默认并发上限提升到 50。
+11. `v4.5.12` 已将 top-k 参考 gold 检索迁移到 `rosetta-local-hash-384` 本地 embedding，避免继续依赖 token overlap 或在线 embedding API。
+12. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
 
-11. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-12. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
-13. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
-14. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
+13. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+14. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+15. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+16. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 

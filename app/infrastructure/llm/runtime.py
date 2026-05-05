@@ -9,7 +9,7 @@ from typing import Any, Callable, Iterable
 from app.infrastructure.llm.credentials import resolve_api_key
 from app.infrastructure.llm.registry import get_provider
 
-DEFAULT_LLM_CONCURRENCY = 20
+DEFAULT_LLM_CONCURRENCY = 50
 
 _SEMAPHORE_LOCK = threading.Lock()
 _PROVIDER_SEMAPHORES: dict[str, threading.BoundedSemaphore] = {}

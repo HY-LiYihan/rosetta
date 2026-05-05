@@ -17,6 +17,7 @@ from app.runtime.store import RuntimeStore
 from app.data.official_sample import PROFESSIONAL_NER_EXAMPLE
 from app.workflows.bootstrap import (
     PROMPT_TRAINING_METHODS,
+    normalize_prompt_optimizer_method,
     PromptTrainingConfig,
     analyze_bootstrap,
     gold_task_from_markup,
@@ -43,7 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     prompt_training.add_argument("--case", default="professional-ner", choices=["professional-ner", "hard-science"])
     prompt_training.add_argument("--provider", default="deepseek")
     prompt_training.add_argument("--model", default="deepseek-v4-pro")
-    prompt_training.add_argument("--concurrency", type=int, default=20)
+    prompt_training.add_argument("--concurrency", type=int, default=50)
+    prompt_training.add_argument("--methods", default=",".join(PROMPT_TRAINING_METHODS), help="Comma-separated optimizer ids or legacy aliases.")
     prompt_training.add_argument("--candidate-count", type=int, default=5)
     prompt_training.add_argument("--patience-rounds", type=int, default=5)
     prompt_training.add_argument("--max-rounds", type=int, default=30)
@@ -191,7 +193,7 @@ def _run_prompt_training_experiment_command(args: argparse.Namespace) -> dict:
         guideline.id,
         predictor=predictor,
         config=PromptTrainingConfig(
-            methods=PROMPT_TRAINING_METHODS,
+            methods=tuple(normalize_prompt_optimizer_method(method.strip()) for method in args.methods.split(",") if method.strip()),
             max_rounds=args.max_rounds,
             candidate_count=args.candidate_count,
             patience_rounds=args.patience_rounds,

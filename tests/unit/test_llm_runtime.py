@@ -22,13 +22,13 @@ class DummyProvider:
 
 
 class TestLLMServiceRuntime(unittest.TestCase):
-    def test_default_profile_concurrency_is_twenty(self):
+    def test_default_profile_concurrency_is_fifty(self):
         profile = LLMProviderProfile(provider_id="dummy-default-test", model="dummy")
 
-        self.assertEqual(DEFAULT_LLM_CONCURRENCY, 20)
-        self.assertEqual(profile.default_concurrency, 20)
-        self.assertEqual(profile.max_concurrency, 20)
-        self.assertEqual(profile.normalized_concurrency(999), 20)
+        self.assertEqual(DEFAULT_LLM_CONCURRENCY, 50)
+        self.assertEqual(profile.default_concurrency, 50)
+        self.assertEqual(profile.max_concurrency, 50)
+        self.assertEqual(profile.normalized_concurrency(999), 50)
 
     def test_map_chat_respects_provider_concurrency_and_records_usage(self):
         provider = DummyProvider()

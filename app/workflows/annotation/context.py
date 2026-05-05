@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from app.domain.annotation_doc import spans_to_legacy_string
+from app.infrastructure.embedding import embedding_similarity, rank_texts
 from app.runtime.store import RuntimeStore
-
-TOKEN_PATTERN = re.compile(r"[A-Za-z0-9_]+|[\u4e00-\u9fff]")
 
 
 def build_annotation_context(
@@ -27,11 +25,12 @@ def build_annotation_context(
     guideline = guideline_row["payload"]
     task = task_row["payload"]
     examples = _example_pool(store, guideline)
-    scored = [
-        (example, lexical_similarity(task["text"], example["text"]))
-        for example in examples
-        if example["id"] != task_id
-    ]
+    scored_hits = rank_texts(
+        task["text"],
+        [{"id": example["id"], "text": example["text"], "payload": example} for example in examples],
+        exclude_ids={task_id},
+    )
+    scored = [(hit.payload["payload"], hit.score) for hit in scored_hits]
     similar = [
         example
         for example, _score in sorted(scored, key=lambda item: (-item[1], item[0]["id"]))[: max(0, similar_k)]
@@ -60,11 +59,7 @@ def build_annotation_context(
 
 
 def lexical_similarity(left: str, right: str) -> float:
-    left_tokens = _tokens(left)
-    right_tokens = _tokens(right)
-    if not left_tokens or not right_tokens:
-        return 0.0
-    return round(len(left_tokens & right_tokens) / len(left_tokens | right_tokens), 4)
+    return embedding_similarity(left, right)
 
 
 def _example_pool(store: RuntimeStore, guideline: dict) -> list[dict[str, Any]]:
@@ -141,7 +136,3 @@ def _compose_context_prompt(
     if failure_memory:
         sections.append("近期失败模式：\n" + "\n".join(f"- {item}" for item in failure_memory[:5]))
     return "\n\n".join(section for section in sections if section)
-
-
-def _tokens(text: str) -> set[str]:
-    return {token.lower() for token in TOKEN_PATTERN.findall(text)}

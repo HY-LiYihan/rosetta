@@ -194,7 +194,7 @@ class BatchJob:
     guideline_id: str
     status: str = "queued"
     sample_count: int = 5
-    concurrency: int = 20
+    concurrency: int = 50
     review_threshold: float = 0.75
     auto_sample_rate: float = 0.05
     total_items: int = 0

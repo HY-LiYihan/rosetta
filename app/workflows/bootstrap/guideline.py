@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from math import sqrt
 from typing import Any, Callable
 
 from app.core.models import (
@@ -18,6 +16,7 @@ from app.core.models import (
     utc_timestamp,
 )
 from app.domain.annotation_doc import legacy_string_to_spans, spans_to_legacy_string
+from app.infrastructure.embedding import embedding_similarity, rank_texts
 from app.runtime.store import RuntimeStore
 from app.services.annotation_service import (
     ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
@@ -1209,20 +1208,20 @@ def _reference_examples_for_task(
     k = max(0, min(int(reference_k), 15))
     if k <= 0:
         return []
-    scored: list[tuple[float, str, dict]] = []
-    for other_id, other_payload in prediction_inputs:
-        if other_id == task_id:
-            continue
-        score = _cosine_text_similarity(str(task_payload.get("text", "")), str(other_payload.get("text", "")))
-        scored.append((score, other_id, other_payload))
+    documents = [
+        {"id": other_id, "text": other_payload.get("text", ""), "payload": other_payload}
+        for other_id, other_payload in prediction_inputs
+        if other_id != task_id
+    ]
     return [
         {
-            "id": other_id,
-            "text": payload.get("text", ""),
-            "annotation": spans_to_legacy_string(payload.get("spans", [])),
-            "similarity": round(score, 4),
+            "id": hit.id,
+            "text": hit.payload.get("payload", {}).get("text", hit.text),
+            "annotation": spans_to_legacy_string(hit.payload.get("payload", {}).get("spans", [])),
+            "similarity": round(hit.score, 4),
+            "retrieval_model": "rosetta-local-hash-384",
         }
-        for score, other_id, payload in sorted(scored, key=lambda row: (-row[0], row[1]))[:k]
+        for hit in rank_texts(str(task_payload.get("text", "")), documents)[:k]
     ]
 
 
@@ -1241,21 +1240,7 @@ def _reference_examples_prompt(reference_examples: list[dict[str, Any]]) -> str:
 
 
 def _cosine_text_similarity(left: str, right: str) -> float:
-    left_counts = Counter(_similarity_tokens(left))
-    right_counts = Counter(_similarity_tokens(right))
-    if not left_counts or not right_counts:
-        return 0.0
-    shared = set(left_counts) & set(right_counts)
-    dot = sum(left_counts[token] * right_counts[token] for token in shared)
-    left_norm = sqrt(sum(value * value for value in left_counts.values()))
-    right_norm = sqrt(sum(value * value for value in right_counts.values()))
-    if not left_norm or not right_norm:
-        return 0.0
-    return round(dot / (left_norm * right_norm), 4)
-
-
-def _similarity_tokens(text: str) -> list[str]:
-    return re.findall(r"[A-Za-z0-9_]+|[\u4e00-\u9fff]", text.lower())
+    return embedding_similarity(left, right)
 
 
 def _guideline_from_payload(payload: dict, status: str, stable_description: str | None = None) -> ConceptGuideline:

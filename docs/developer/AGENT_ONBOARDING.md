@@ -84,10 +84,10 @@ LLM 调用服务化入口是 [app/infrastructure/llm/runtime.py](../../app/infra
 | --- | --- |
 | 默认 provider | `deepseek` |
 | 默认真实模型 | `deepseek-v4-pro` |
-| 默认并发上限 | `20` |
+| 默认并发上限 | `50` |
 | usage | provider 未返回 usage 时用字符比例估算，并标记 `estimated=true` |
 
-注意：并发 `20` 是本地 runtime 上限，不是绕过平台限流。所有真实 API 调用应该共享 provider semaphore。
+注意：并发 `50` 是本地 runtime 默认上限，不是绕过平台限流。所有真实 API 调用应该共享 provider semaphore，具体平台仍可通过 provider profile 下调。
 
 ### 2.4 存储服务
 
@@ -130,7 +130,7 @@ conda run -n rosetta-dev python scripts/tool/rosetta_tool.py prompt-training-exp
   --case professional-ner \
   --provider deepseek \
   --model deepseek-v4-pro \
-  --concurrency 20 \
+  --concurrency 50 \
   --candidate-count 5 \
   --patience-rounds 5 \
   --max-rounds 30 \
