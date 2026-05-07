@@ -185,3 +185,21 @@ PLM / NLP 研究者评价：
 3. [Research Claims](../ideas/RESEARCH_CLAIMS.md) 新增“当前证据与待验证假设”，把 15 gold 内证据、held-out 假设和论文级结论分开。
 4. [Bootstrap Experiments](./BOOTSTRAP_EXPERIMENTS.md) 新增 canonical 方法名表、PLM baseline 公平协议和主评测指标。
 5. 验证 `mkdocs build --strict --clean` 和 `git diff --check`。
+
+## 9. 第 8 轮：公开介绍页语言与事实一致性复查
+
+严苛中文产品文案审稿评价：
+
+1. 公开 README 和用户教程明确承诺“中文 / English 全局切换”，但公开文档站没有这个切换入口，属于误导性功能声明。
+2. 首页和能力表中英文混杂过重，`Agentic Annotation Tool`、`LLM service runtime`、`provider semaphore`、`harness` 等词像开发备忘录，不像中文产品介绍。
+3. 用户侧同一动作仍有多套叫法：提示词验证、格式验证、本地结构验证、验证概念；定义优化与提示词优化也需要解释成“UI 名称”和“实际优化对象”的关系。
+4. 公开入口应更早说明如何打开产品，而不只给文档站和 GitHub。
+
+本轮优化：
+
+1. 删除 README 核心能力表中的“中英文界面”能力声明。
+2. 将用户教程“语言切换”章节改为“界面语言”，明确当前公开教程按中文界面维护，不再承诺侧栏切换按钮。
+3. 将 README 和文档首页的公开介绍改成中文主导：用“智能体式标注工具”“大模型服务运行时”“本地相似样例检索”等中文口径替代显眼英文术语。
+4. 修正用户教程中的 prompt 框架，补回 `相似参考样例` 槽位。
+5. 修正批量标注运行时口径：提示词验证和定义优化已接入统一运行时；批量标注当前仍使用本地任务队列和页面线程池调用 provider，后续再迁入统一运行时。
+6. 更新 README 最后更新时间，并在 changelog 记录本轮 P0/P1 事实修正。
