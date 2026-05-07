@@ -254,15 +254,16 @@ PLM / NLP 研究者评价：
 传统语言学 / 数字人文用户评价：
 
 1. 文档站需要明确的语言切换按钮，不能只在应用内有 `中文 / English`。
-2. 中文首页不应承担英文介绍，English 用户应有单独入口。
+2. `English` 不应该作为中文导航栏栏目出现；English 用户应通过语言按钮进入独立英文路径。
+3. 英文路径不能只有三页，应覆盖当前所有文档页面。
 
 维护者评价：
 
 1. 使用 MkDocs Material 原生 `extra.alternate`，避免自定义 JavaScript 做脆弱按钮。
-2. English 入口先覆盖概览、快速使用和 prompt 构成；中文文档继续作为完整主文档。
+2. English 路径需要覆盖当前所有文档页面；中文文档继续作为最完整主文档。
 
 本轮优化：
 
 1. `mkdocs.yml` 新增 `extra.alternate`，提供 `中文 / English` 顶部切换入口。
-2. 新增 `docs/en/README.md`、`docs/en/user/TUTORIAL.md` 和 `docs/en/user/PROMPT_COMPOSITION.md`。
+2. 新增 `docs/en/` 下的完整页面矩阵，并用 `not_in_nav` 避免英文页进入中文导航栏。
 3. README、docs 首页和 changelog 同步记录文档站语言切换能力。

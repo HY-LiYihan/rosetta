@@ -4,8 +4,8 @@
 
 ### Docs / MkDocs language switcher v4.5.22
 
-1. 在 [mkdocs.yml](../mkdocs.yml) 中新增 Material `extra.alternate`，让文档站顶部出现 `中文 / English` 语言切换入口。
-2. 新增 [English overview](./en/README.md)、[English quickstart](./en/user/TUTORIAL.md) 和 [English prompt composition](./en/user/PROMPT_COMPOSITION.md)，把英文介绍从中文首页中拆出。
+1. 在 [mkdocs.yml](../mkdocs.yml) 中新增 Material `extra.alternate`，让文档站顶部出现 `中文 / English` 语言切换入口；同时用 `not_in_nav` 避免 `English` 作为中文导航栏栏目出现。
+2. 新增英文路径下的完整页面矩阵，覆盖当前中文导航中的所有文档页面，把英文介绍从中文首页中拆出。
 3. 更新 [README.md](../README.md)、[docs/README.md](./README.md) 和首页页脚版本为 `v4.5.22`。
 
 ### Docs / Public docs site URL correction v4.5.21

@@ -7,6 +7,8 @@ edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
+not_in_nav: |
+  en/**
 
 theme:
   name: material
@@ -87,10 +89,6 @@ nav:
   - 部署运维:
       - Docker / Conda 部署: developer/DEPLOYMENT.md
   - 变更记录: CHANGELOG.md
-  - English:
-      - Overview: en/README.md
-      - Quickstart: en/user/TUTORIAL.md
-      - Prompt Composition: en/user/PROMPT_COMPOSITION.md
 
 extra:
   alternate:

@@ -24,11 +24,34 @@ The 15 gold examples used in the default workflow are for startup, calibration, 
 
 “Local-first” means project data, runtime records, exports, and debug artifacts are written to the local runtime directory or your own deployment directory first. It does not mean Rosetta is offline by default. If you choose a real LLM provider, prompts and task text are sent according to that provider configuration.
 
-## First Pages To Read
+## English Pages
 
-1. [Quickstart](./user/TUTORIAL.md): run the official sample and understand the main UI flow.
-2. [Prompt Composition](./user/PROMPT_COMPOSITION.md): see what the LLM receives in Chinese and English prompt templates.
-3. [Chinese home](../README.md): the canonical full documentation index.
+The English pages mirror every current documentation interface. The Chinese docs remain the most complete reference; English pages provide concise, separate entry points so English content does not appear inside the Chinese navigation bar.
+
+| Need | English page |
+| --- | --- |
+| First run | [Quickstart](./user/TUTORIAL.md) |
+| Prompt structure | [Prompt Composition](./user/PROMPT_COMPOSITION.md) |
+| Research claim | [LLM Agent vs PLM](./ideas/RESEARCH_CLAIMS.md) |
+| Prompt-as-Parameter | [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md) |
+| Core idea | [Core Annotation Bootstrap](./ideas/CORE_ANNOTATION_BOOTSTRAP.md) |
+| Documentation review | [Documentation Review Iterations](./developer/DOCS_REVIEW_ITERATIONS.md) |
+| Guideline bootstrap workflow | [Guideline Bootstrap](./developer/BOOTSTRAP_PIPELINE.md) |
+| Bootstrap experiments | [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md) |
+| Legacy research pipeline | [Legacy Research Pipeline](./developer/RESEARCH_PIPELINE.md) |
+| Corpus builder | [Corpus Builder](./developer/CORPUS_PIPELINE.md) |
+| Runtime annotation format | [Annotation Format](./developer/ANNOTATION_FORMAT.md) |
+| JSONL storage format | [Annotation JSONL Format](./developer/ANNOTATION_JSONL_FORMAT.md) |
+| Developer overview | [Developer Overview](./developer/README.md) |
+| Agent onboarding | [Agent Onboarding](./developer/AGENT_ONBOARDING.md) |
+| Architecture | [Architecture](./developer/ARCHITECTURE.md) |
+| LLM runtime | [LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md) |
+| Embedding retrieval | [Embedding Retrieval](./developer/EMBEDDING_RETRIEVAL.md) |
+| Workflow | [Workflow](./developer/WORKFLOW.md) |
+| Scripts | [Scripts](./developer/SCRIPTS.md) |
+| Roadmap | [Roadmap](./developer/ROADMAP.md) |
+| Deployment | [Deployment](./developer/DEPLOYMENT.md) |
+| Changelog | [Changelog](./CHANGELOG.md) |
 
 ## Language Boundary
 
