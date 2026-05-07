@@ -267,3 +267,24 @@ PLM / NLP 研究者评价：
 1. `mkdocs.yml` 新增 `extra.alternate`，提供 `中文 / English` 顶部切换入口。
 2. 新增 `docs/en/` 下的完整页面矩阵，并用 `not_in_nav` 避免英文页进入中文导航栏。
 3. README、docs 首页和 changelog 同步记录文档站语言切换能力。
+
+## 13. 第 12 轮：中英文导航隔离与页面级语言切换复查
+
+严苛英文读者评价：
+
+1. 英文页面如果仍显示 `首页 / 快速使用 / 研究主张`，会让英语用户误以为自己进了机器翻译残页。
+2. 语言切换如果总是回到首页，会破坏正在阅读的上下文；这不是合格的双语文档体验。
+3. 手写 `extra.alternate` 固定链接只能证明按钮存在，不能证明每个页面都有对应语言版本。
+
+维护者评价：
+
+1. 应使用 `mkdocs-static-i18n` 的 folder structure 生成语言版本，而不是把 `docs/en/**` 隐藏在同一套全局中文导航里。
+2. 英文导航必须完整覆盖现有中文导航矩阵，并使用英文栏目名。
+3. GitHub Pages workflow 必须安装同一个 i18n 插件，否则本地可构建、远端不可构建。
+
+本轮优化：
+
+1. `mkdocs.yml` 改为 `mkdocs-static-i18n` 配置，保留中文默认站点，同时为英文构建提供独立英文导航；导航矩阵只维护在 i18n 语言配置中，避免顶层 nav 和语言 nav 漂移。
+2. 移除手写固定首页 `extra.alternate` 和 `not_in_nav: en/**`，由插件生成当前页面的对应语言链接。
+3. 更新 GitHub Actions 文档部署依赖，确保远端构建安装 `mkdocs-static-i18n`。
+4. 本地检查确认 `/user/PROMPT_COMPOSITION/` 的 English 链接指向 `/en/user/PROMPT_COMPOSITION/`，英文页的中文链接指回对应中文页面。

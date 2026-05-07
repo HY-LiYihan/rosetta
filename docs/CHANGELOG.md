@@ -2,6 +2,12 @@
 
 ## 2026-05-08
 
+### Docs / Bilingual MkDocs navigation v4.5.23
+
+1. 将文档站语言切换改为 `mkdocs-static-i18n` 驱动，不再手写固定首页 `extra.alternate` 链接；语言菜单会优先跳到当前页面的对应语言版本。
+2. 为英文构建配置独立英文导航栏，英文页面显示 `Home / Quickstart / Research Claims / Workflows / Annotation Formats / Developer / Deployment / Changelog`，不再继承中文导航标签。
+3. GitHub Actions 文档部署同步安装 `mkdocs-static-i18n`，确保 GitHub Pages 与本地严格构建使用同一插件。
+
 ### Docs / MkDocs language switcher v4.5.22
 
 1. 在 [mkdocs.yml](../mkdocs.yml) 中新增 Material `extra.alternate`，让文档站顶部出现 `中文 / English` 语言切换入口；同时用 `not_in_nav` 避免 `English` 作为中文导航栏栏目出现。

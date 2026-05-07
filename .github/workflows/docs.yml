@@ -6,6 +6,7 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -24,7 +25,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install MkDocs
-        run: pip install mkdocs-material
+        run: pip install mkdocs-material mkdocs-static-i18n
 
       - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --force --no-history

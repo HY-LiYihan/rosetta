@@ -26,7 +26,7 @@ The 15 gold examples used in the default workflow are for startup, calibration, 
 
 ## English Pages
 
-The English pages mirror every current documentation interface. The Chinese docs remain the most complete reference; English pages provide concise, separate entry points so English content does not appear inside the Chinese navigation bar.
+The English pages mirror every current documentation interface. They use a separate English navigation bar, so English readers see `Home / Quickstart / Research Claims / Workflows / Annotation Formats / Developer / Deployment / Changelog` instead of translated content under Chinese navigation labels.
 
 | Need | English page |
 | --- | --- |
@@ -55,6 +55,6 @@ The English pages mirror every current documentation interface. The Chinese docs
 
 ## Language Boundary
 
-The documentation site now has a top language switcher. The English pages are a concise entry layer; the Chinese documentation remains the canonical full reference for now.
+The documentation site has a top language switcher. It uses page-level alternates: when a matching page exists, switching language keeps you on the same topic instead of sending you back to the homepage.
 
 The Streamlit app also has `中文 / English` buttons in the sidebar. Those buttons switch the main navigation and primary fixed UI labels. They do not automatically translate user input, task text, model output, labels, logs, database content, or export filenames.

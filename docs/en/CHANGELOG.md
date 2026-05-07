@@ -2,6 +2,12 @@
 
 Last updated: 2026-05-08
 
+## v4.5.23
+
+1. Replaced fixed homepage language links with `mkdocs-static-i18n` contextual alternates.
+2. Added a separate English navigation bar for the English build.
+3. Updated the GitHub Pages workflow so remote docs builds install the same i18n plugin.
+
 ## v4.5.22
 
 1. Added a MkDocs Material `中文 / English` language switcher.

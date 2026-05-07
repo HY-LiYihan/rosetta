@@ -7,8 +7,6 @@ edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
-not_in_nav: |
-  en/**
 
 theme:
   name: material
@@ -58,46 +56,79 @@ plugins:
       lang:
         - zh
         - en
-
-nav:
-  - 首页: README.md
-  - 快速使用:
-      - 用户教程: user/TUTORIAL.md
-      - 提示词构成: user/PROMPT_COMPOSITION.md
-  - 研究主张:
-      - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
-      - Prompt-as-Parameter: ideas/PROMPT_AS_PARAMETER.md
-      - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
-      - 文档评审迭代: developer/DOCS_REVIEW_ITERATIONS.md
-  - 工作流:
-      - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
-      - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
-      - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md
-      - Corpus Builder: developer/CORPUS_PIPELINE.md
-  - 标注格式:
-      - 运行时标注格式: developer/ANNOTATION_FORMAT.md
-      - JSONL 存储格式: developer/ANNOTATION_JSONL_FORMAT.md
-  - 开发维护:
-      - 开发者概览: developer/README.md
-      - Agent 快速接手: developer/AGENT_ONBOARDING.md
-      - 架构总览: developer/ARCHITECTURE.md
-      - LLM 服务运行时: developer/LLM_SERVICE_RUNTIME.md
-      - Embedding 检索: developer/EMBEDDING_RETRIEVAL.md
-      - 工作流: developer/WORKFLOW.md
-      - 脚本说明: developer/SCRIPTS.md
-      - 路线图: developer/ROADMAP.md
-  - 部署运维:
-      - Docker / Conda 部署: developer/DEPLOYMENT.md
-  - 变更记录: CHANGELOG.md
-
-extra:
-  alternate:
-    - name: 中文
-      link: https://hy-liyihan.github.io/rosetta/
-      lang: zh
-    - name: English
-      link: https://hy-liyihan.github.io/rosetta/en/
-      lang: en
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: false
+      languages:
+        - locale: zh
+          name: 中文
+          default: true
+          build: true
+          site_description: Rosetta 是基于 Streamlit 的本地优先智能体式标注工具
+          nav:
+            - 首页: README.md
+            - 快速使用:
+                - 用户教程: user/TUTORIAL.md
+                - 提示词构成: user/PROMPT_COMPOSITION.md
+            - 研究主张:
+                - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
+                - Prompt-as-Parameter: ideas/PROMPT_AS_PARAMETER.md
+                - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
+                - 文档评审迭代: developer/DOCS_REVIEW_ITERATIONS.md
+            - 工作流:
+                - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
+                - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
+                - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md
+                - Corpus Builder: developer/CORPUS_PIPELINE.md
+            - 标注格式:
+                - 运行时标注格式: developer/ANNOTATION_FORMAT.md
+                - JSONL 存储格式: developer/ANNOTATION_JSONL_FORMAT.md
+            - 开发维护:
+                - 开发者概览: developer/README.md
+                - Agent 快速接手: developer/AGENT_ONBOARDING.md
+                - 架构总览: developer/ARCHITECTURE.md
+                - LLM 服务运行时: developer/LLM_SERVICE_RUNTIME.md
+                - Embedding 检索: developer/EMBEDDING_RETRIEVAL.md
+                - 工作流: developer/WORKFLOW.md
+                - 脚本说明: developer/SCRIPTS.md
+                - 路线图: developer/ROADMAP.md
+            - 部署运维:
+                - Docker / Conda 部署: developer/DEPLOYMENT.md
+            - 变更记录: CHANGELOG.md
+        - locale: en
+          name: English
+          build: true
+          site_description: Rosetta is a local-first Streamlit-based agentic annotation tool
+          nav:
+            - Home: README.md
+            - Quickstart:
+                - User Tutorial: user/TUTORIAL.md
+                - Prompt Composition: user/PROMPT_COMPOSITION.md
+            - Research Claims:
+                - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
+                - Prompt-as-Parameter: ideas/PROMPT_AS_PARAMETER.md
+                - Core Idea: ideas/CORE_ANNOTATION_BOOTSTRAP.md
+                - Documentation Review Iterations: developer/DOCS_REVIEW_ITERATIONS.md
+            - Workflows:
+                - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
+                - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
+                - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md
+                - Corpus Builder: developer/CORPUS_PIPELINE.md
+            - Annotation Formats:
+                - Runtime Annotation Format: developer/ANNOTATION_FORMAT.md
+                - JSONL Storage Format: developer/ANNOTATION_JSONL_FORMAT.md
+            - Developer:
+                - Developer Overview: developer/README.md
+                - Agent Onboarding: developer/AGENT_ONBOARDING.md
+                - Architecture: developer/ARCHITECTURE.md
+                - LLM Service Runtime: developer/LLM_SERVICE_RUNTIME.md
+                - Embedding Retrieval: developer/EMBEDDING_RETRIEVAL.md
+                - Workflow: developer/WORKFLOW.md
+                - Scripts: developer/SCRIPTS.md
+                - Roadmap: developer/ROADMAP.md
+            - Deployment:
+                - Docker / Conda Deployment: developer/DEPLOYMENT.md
+            - Changelog: CHANGELOG.md
 
 # Links to source code files outside docs/ are intentional (GitHub-only).
 # Suppress validation errors so the build doesn't fail on them.
