@@ -719,7 +719,6 @@ else:
             type="primary",
             use_container_width=True,
         ):
-            st.session_state["concept_lab_active_section"] = "validation"
             try:
                 if validation_mode == "format":
                     result = validate_prompt_format_contract(store, selected_guideline)
@@ -847,7 +846,6 @@ else:
                 type="primary",
                 use_container_width=True,
             ):
-                st.session_state["concept_lab_active_section"] = "optimization"
                 try:
                     clean_prompt, sanitizer_warnings = sanitize_concept_description(
                         manual_prompt,
@@ -946,7 +944,6 @@ else:
                 use_container_width=True,
                 disabled=gold_count < target_count or active_training_running,
             ):
-                st.session_state["concept_lab_active_section"] = "optimization"
                 try:
                     run_id = start_prompt_training_background_run(
                         store.database_path,
