@@ -1,12 +1,12 @@
 # Bootstrap Experiments (Developer)
 
-更新时间: 2026-05-05
+更新时间: 2026-05-07
 
 ## 1. 目标
 
 本文件定义 Concept Bootstrap Pipeline 的实验入口。当前优先使用 ACTER 风格的术语抽取任务，因为它同时覆盖 domain-specific terms、common terms、out-of-domain terms 和 named entities，适合测试低资源概念校准。
 
-实验目标不是单纯证明“LLM 输出更好”，而是证明 Rosetta 的 agentic loop 在低资源和任务快速定义时，相比 PLM-first 流程具有样本效率、审核效率和可追溯优势。
+实验目标不是单纯证明“LLM 输出更好”，而是检验 Rosetta 的 agentic loop 在低资源和任务快速定义时，相比 PLM-first 流程是否具有样本效率、审核效率和可追溯优势。
 
 ## 2. 首个实验入口
 
@@ -73,7 +73,7 @@ python scripts/research/run_bootstrap.py analyze \
 7. 目标：`100/100` 通过。
 8. 停止条件：达到 `100/100`，或连续 5 轮 loss 没有下降，或达到 `max_rounds=30`。
 
-第一阶段先跑 `llm_optimize_only`，用于回答一个最弱 baseline 问题：只告诉大模型“请优化当前概念提示词”，不给失败详情、gold answer、模型答案、loss 或文本梯度，它能不能仅靠自我改写提高 100 条正例上的通过数。
+第一阶段先跑 `sgd_candidate_search`，用于回答一个最弱 baseline 问题：只告诉大模型“请优化当前概念提示词”，不给失败详情、gold answer、模型答案、loss 或文本梯度，它能不能仅靠自我改写提高 100 条正例上的通过数。旧实验名 `llm_optimize_only` 只作为 alias 保留。
 
 该实验必须使用冻结输出协议：
 
@@ -84,7 +84,7 @@ Frozen OutputProtocolSpec
   -> JSON schema, label=Term, annotation=[span]{Term}, format repair
 ```
 
-`llm_optimize_only` 的优化模型只看到 `ConceptPromptSpec`，不看到 `Frozen OutputProtocolSpec` 的可编辑版本。标注模型实际执行时，由 harness 注入冻结协议并强制返回 JSON+markup。
+`sgd_candidate_search` 的优化模型只看到 `ConceptPromptSpec`，不看到 `Frozen OutputProtocolSpec` 的可编辑版本。标注模型实际执行时，由 harness 注入冻结协议并强制返回 JSON+markup。
 
 每轮报告必须包含：
 
@@ -113,12 +113,20 @@ Frozen OutputProtocolSpec
 8. `plm_50_gold_finetune`
 9. `plm_100_gold_finetune`
 10. `plm_full_data_finetune`
-11. `llm_optimize_only`
-12. `llm_reflection`
-13. `text_gradient_adamw`
+11. `sgd_candidate_search`
+12. `critic_adamw_optimizer`
+13. `mask_guided_optimization`
 14. `mask_gradient_only`
 15. `ablation_gradient_only`
 16. `cma_es_prompt_search`
+
+方法名兼容表：
+
+| 当前 canonical id | 旧 alias | 报告中推荐写法 |
+| --- | --- | --- |
+| `sgd_candidate_search` | `llm_optimize_only` | 候选搜索优化 |
+| `critic_adamw_optimizer` | `llm_reflection` | 批判器 AdamW 优化 |
+| `mask_guided_optimization` | `text_gradient_adamw` | 遮挡梯度优化 |
 
 解释口径：
 
@@ -127,30 +135,46 @@ Frozen OutputProtocolSpec
 3. Rosetta 的 ablation 必须显示概念自举、对比式检索、自洽性路由和主动审核各自带来的收益。
 4. Prompt-as-Parameter 的贡献必须通过 ablation 证明：文本梯度估算应优于“只告诉大模型优化提示词”、普通 LLM 反思和简单候选搜索。
 
+### 4.1 PLM baseline 公平协议
+
+所有 PLM fine-tuning baseline 必须在报告中写清：
+
+1. 模型族和 checkpoint，例如 BERT / RoBERTa / domain PLM。
+2. gold 预算：15 / 50 / 100 / full-data 的样本选择策略必须固定并可复现。
+3. train / dev / held-out split，15 gold 不能同时作为 few-shot 输入、训练集和最终评测集。
+4. 训练轮数、学习率、batch size、早停策略和调参预算。
+5. negative sentence 采样策略，尤其是 positive-only term extraction 实验不能宣称负例泛化。
+6. 至少 3 个 random seed；报告均值、标准差或 bootstrap confidence interval。
+7. 当标签定义变化时，必须记录 PLM 重新标注、重新训练和重新评测的成本。
+
 ## 5. 指标
 
-核心指标：
+主评测指标：
 
 1. span precision / recall / F1
 2. boundary exact match
-3. label exact match
-4. expert review rate
-5. candidate accept rate
-6. manual rewrite rate
-7. high-confidence audit error rate
-8. concept refinement rounds
-9. gold loss curve
-10. model call cost
-11. review minutes per accepted sample
-12. PLM retraining cost under label definition change
-13. per-round loss delta
-14. invalid rewrite rate
-15. prompt length growth
-16. accepted candidate rate
-17. gradient-method agreement
-18. format failure rate
-19. format repair success rate
-20. positive-only pass count
+3. review minutes per accepted sample
+4. cost per accepted sample
+
+过程和诊断指标：
+
+1. label exact match
+2. expert review rate
+3. candidate accept rate
+4. manual rewrite rate
+5. high-confidence audit error rate
+6. concept refinement rounds
+7. gold loss curve
+8. model call cost
+9. PLM retraining cost under label definition change
+10. per-round loss delta
+11. invalid rewrite rate
+12. prompt length growth
+13. accepted candidate rate
+14. gradient-method agreement
+15. format failure rate
+16. format repair success rate
+17. positive-only pass count
 
 ## 6. 参考数据集
 

@@ -160,3 +160,28 @@
 1. 更新文档站导航，把“研究主张”作为独立入口。
 2. 所有现有 docs 文件都补入或校正了与主线相关的说明。
 3. 验证 `mkdocs build --strict --clean`，确保文档站可构建。
+
+## 8. 第 7 轮：公开网站首页与快速使用复查
+
+传统语言学 / 数字人文用户评价：
+
+1. 首页和快速使用仍偏研究工程说明，新用户不知道“现在先点哪里、准备什么文件、多久能跑完”。
+2. 用户教程需要更早给出 1-2 条金样例 JSONL 模板。
+3. “定义优化 / 提示词优化 / 概念优化 / prompt training”应在用户侧统一成“定义优化”，只保留 UI 按钮名“提示词优化”。
+4. “本地模拟”需要说明只能检查流程，不能代表真实模型效果。
+5. 导出文件要说明 `annotations.jsonl`、`report.md` 和 `manifest.json` 分别用于什么。
+
+PLM / NLP 研究者评价：
+
+1. “Rosetta 要证明”容易被理解为已有结论，应该改成“当前要检验的假设”。
+2. `Text Gradient`、`LLM-AdamW`、`SGD-like` 等术语需要避免被误读为连续数学梯度或完整优化器证明。
+3. PLM baseline 需要写清模型族、训练预算、seed、split、负例采样、早停和置信区间。
+4. canonical 方法名应优先使用 `sgd_candidate_search / critic_adamw_optimizer / mask_guided_optimization`，旧名只作为 alias。
+
+本轮优化：
+
+1. [docs/README.md](../README.md) 新增“第一次只读这两页”，把官方样例的最短路径前置。
+2. [用户教程](../user/TUTORIAL.md) 新增 5 分钟官方样例、金样例 JSONL 小抄、执行方式解释、导出文件用途和用户术语小抄。
+3. [Research Claims](../ideas/RESEARCH_CLAIMS.md) 新增“当前证据与待验证假设”，把 15 gold 内证据、held-out 假设和论文级结论分开。
+4. [Bootstrap Experiments](./BOOTSTRAP_EXPERIMENTS.md) 新增 canonical 方法名表、PLM baseline 公平协议和主评测指标。
+5. 验证 `mkdocs build --strict --clean` 和 `git diff --check`。

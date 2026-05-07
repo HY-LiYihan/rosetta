@@ -9,6 +9,8 @@
 3. 更新 [docs/README.md](./README.md) 首页结构，把官方入口、项目简介和用户路径前置，避免公开文档首页只像内部索引。
 4. 将 [docs/README.md](./README.md) 中的“当前阶段”栏目改名为“更新历史”，让首页更像面向外部读者的版本记录入口。
 5. 更新 [用户教程](./user/TUTORIAL.md) 的快速使用表述，将旧的“自举校准”改为当前页面实际动作“提示词验证 / 定义优化”。
+6. 根据新用户和 PLM/NLP 研究者角色评审，补充 [docs/README.md](./README.md) 的首次阅读路径、[用户教程](./user/TUTORIAL.md) 的 5 分钟官方样例和术语小抄、[Research Claims](./ideas/RESEARCH_CLAIMS.md) 的证据/假设边界，以及 [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md) 的 PLM baseline 公平协议和 canonical 方法名。
+7. 更新 [Documentation Review Iterations](./developer/DOCS_REVIEW_ITERATIONS.md)，记录本轮公开网站首页与快速使用复查。
 
 ### Fix / Annotation prompt reference slot v4.5.18
 
