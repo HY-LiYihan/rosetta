@@ -7,7 +7,7 @@ from app.runtime.paths import get_runtime_paths
 from app.runtime.store import RuntimeStore
 from app.ui.i18n import t
 
-VERSION = "v4.5.20"
+VERSION = "v4.5.21"
 UPDATED_AT = "2026-05-08"
 
 st.title(t("home.title"))

@@ -2,6 +2,12 @@
 
 ## 2026-05-08
 
+### Docs / Public docs site URL correction v4.5.21
+
+1. 将公开文档站地址改回 GitHub Pages: `https://hy-liyihan.github.io/rosetta/`，并把 `rosetta-stone.xyz` 明确标为 demo 页面而不是文档站。
+2. 同步更新 [mkdocs.yml](../mkdocs.yml)、[README.md](../README.md)、[docs/README.md](./README.md) 和首页页脚版本为 `v4.5.21`。
+3. 修正之前把 demo 页面误写成官方文档站的公开入口表述。
+
 ### Docs / Prompt composition contract v4.5.20
 
 1. 新增 [提示词构成](./user/PROMPT_COMPOSITION.md) 页面，按 `zh-CN / en-US` 对照说明标注 system prompt、六段 user prompt、冻结输出协议、定义优化 prompt 边界和维护同步规则。
@@ -20,7 +26,7 @@
 
 ### Docs / Public homepage entry
 
-1. 将文档站对外地址统一为 [https://rosetta-stone.xyz/](https://rosetta-stone.xyz/)，并同步更新 [mkdocs.yml](../mkdocs.yml) 的 `site_url`。
+1. 记录当时公开入口调整；其中曾误将 demo 页面写为官方文档站，已在 `v4.5.21` 纠正回 GitHub Pages。
 2. 更新 [README.md](../README.md) 首屏入口，明确官方文档站、GitHub 项目地址和 Rosetta 的对外简介。
 3. 更新 [docs/README.md](./README.md) 首页结构，把官方入口、项目简介和用户路径前置，避免公开文档首页只像内部索引。
 4. 将 [docs/README.md](./README.md) 中的“当前阶段”栏目改名为“更新历史”，让首页更像面向外部读者的版本记录入口。

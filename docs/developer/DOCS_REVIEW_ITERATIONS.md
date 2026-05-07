@@ -230,3 +230,21 @@ PLM / NLP 研究者评价：
 2. `annotation_service.py` 将 system prompt、段落顺序和段落标题抽成中英文模板常量，并保留 `zh-CN` 默认行为。
 3. 新增 `tests/unit/test_prompt_composition_docs.py`，检查提示词构成页包含程序中的中英文 system prompt 和运行时段落标题。
 4. 更新 README、文档首页、用户教程、Annotation Format、Research Claims、Prompt-as-Parameter、Architecture 和 Core Annotation Bootstrap 的相关口径。
+
+## 11. 第 10 轮：公开 docs 站地址纠错
+
+传统语言学 / 数字人文用户评价：
+
+1. 公开入口表必须把 docs 站和 demo 页面分开，否则新用户会跟错入口。
+2. `rosetta-stone.xyz` 可以存在，但不能被称为官方文档站。
+
+维护者评价：
+
+1. 站点地址要回到 GitHub Pages 原入口。
+2. 首页 badge、README 表格和 docs 首页必须保持一致。
+
+本轮优化：
+
+1. 将 `site_url` 和 README / docs 首页入口改回 `https://hy-liyihan.github.io/rosetta/`。
+2. 把 `rosetta-stone.xyz` 明确标为 demo 页面。
+3. 将首页版本更新为 `v4.5.21`，并记录到 changelog。

@@ -5,7 +5,7 @@
 基于 Streamlit 的本地优先智能体式标注工具。
 
 <p>
-  <a href="https://rosetta-stone.xyz/">
+  <a href="https://hy-liyihan.github.io/rosetta/">
     <img src="https://img.shields.io/badge/Docs-%E6%96%87%E6%A1%A3%E7%AB%99-c2410c?style=flat-square" alt="Docs">
   </a>
   <a href="https://github.com/HY-LiYihan/rosetta">
@@ -25,7 +25,8 @@
 
 | 入口 | 地址 | 说明 |
 | --- | --- | --- |
-| 官方文档站 | [rosetta-stone.xyz](https://rosetta-stone.xyz/) | 面向使用者和开发者的公开文档首页 |
+| 官方文档站 | [hy-liyihan.github.io/rosetta](https://hy-liyihan.github.io/rosetta/) | 面向使用者和开发者的公开文档首页 |
+| Demo 页面 | [rosetta-stone.xyz](https://rosetta-stone.xyz/) | 演示页面，不是文档站 |
 | GitHub 项目 | [github.com/HY-LiYihan/rosetta](https://github.com/HY-LiYihan/rosetta) | 源码、issue、提交记录和部署材料 |
 
 ## Rosetta 是什么
@@ -100,7 +101,8 @@ Rosetta 也是一套可验证的研究工程：它要检验大模型智能体在
 
 | 入口 | 地址 | 用途 |
 | --- | --- | --- |
-| 官方文档站 | [rosetta-stone.xyz](https://rosetta-stone.xyz/) | 所有文档的主入口 |
+| 官方文档站 | [hy-liyihan.github.io/rosetta](https://hy-liyihan.github.io/rosetta/) | 所有文档的主入口 |
+| Demo 页面 | [rosetta-stone.xyz](https://rosetta-stone.xyz/) | 演示页面，不是文档站 |
 | GitHub 项目 | [github.com/HY-LiYihan/rosetta](https://github.com/HY-LiYihan/rosetta) | 源码、issue、部署与提交记录 |
 | 研究主张 | [docs/ideas/RESEARCH_CLAIMS.md](./docs/ideas/RESEARCH_CLAIMS.md) | LLM agent vs PLM 的创新点、边界和实验方案 |
 | Prompt-as-Parameter | [docs/ideas/PROMPT_AS_PARAMETER.md](./docs/ideas/PROMPT_AS_PARAMETER.md) | 文本梯度估算、prompt 优化器和 `LLM-AdamW` |
