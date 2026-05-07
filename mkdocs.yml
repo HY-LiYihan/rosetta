@@ -1,6 +1,6 @@
 site_name: Rosetta
-site_description: Streamlit-based local-first agentic annotation tool
-site_url: https://hy-liyihan.github.io/rosetta/
+site_description: Rosetta 是基于 Streamlit 的本地优先 Agentic Annotation Tool
+site_url: https://rosetta-stone.xyz/
 repo_url: https://github.com/HY-LiYihan/rosetta
 repo_name: HY-LiYihan/rosetta
 edit_uri: edit/main/docs/

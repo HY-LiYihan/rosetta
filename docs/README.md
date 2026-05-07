@@ -2,9 +2,24 @@
 
 更新时间: 2026-05-07
 
-在线文档站：[https://hy-liyihan.github.io/rosetta/](https://hy-liyihan.github.io/rosetta/)
+## 官方入口
 
-Rosetta 是基于 Streamlit 的本地优先 Agentic Annotation Tool。它的核心不是“上传文本然后调一次大模型”，而是把一句话概念描述和 15 条金样例，迭代压缩成可执行、可复现、可审计的标注流水线。
+| 入口 | 地址 | 说明 |
+| --- | --- | --- |
+| 官方文档站 | [https://rosetta-stone.xyz/](https://rosetta-stone.xyz/) | 对外使用、阅读教程和查看开发文档的主入口 |
+| GitHub 项目 | [https://github.com/HY-LiYihan/rosetta](https://github.com/HY-LiYihan/rosetta) | 源码、issue、部署文件、提交记录和项目协作入口 |
+
+## 项目简介
+
+Rosetta 是基于 Streamlit 的本地优先 Agentic Annotation Tool。它面向需要快速建立标注任务的研究者、语言学家、数字人文团队和领域专家。
+
+它的核心不是“上传文本然后调一次大模型”，而是把一句话概念描述和 15 条金样例，迭代压缩成可执行、可复现、可审计的标注流水线：
+
+```text
+项目总览 -> 定义与规范 -> 批量标注 -> 审核与修正 -> 结果与导出
+```
+
+Rosetta 会把概念阐释、金样例、prompt training、批量标注、人工审核、运行 trace 和导出报告连成一个闭环。它要证明的是低资源、概念可描述、任务边界会迭代的场景中，LLM agent 能更快形成可审计的数据生产流程；它不声称在完整高质量训练集条件下无条件超过 PLM。
 
 文档面向两类主要读者：
 
