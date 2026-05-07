@@ -2,9 +2,16 @@
 
 ## 2026-05-07
 
+### UX / Hidden live debug log page v4.5.16
+
+1. `/debug` 继续只在 debug 模式下可访问，但不再显示在主导航中；需要排障时直接打开 `http://localhost:8501/debug`。
+2. 调试追踪页从普通事件列表改成实时日志流：默认读取最新 debug session，每 2 秒自动刷新，并优先展示 `llm_chat` 事件。
+3. 页面仍支持切换历史日志、事件类型过滤、关键词搜索和显示数量控制；每条 LLM 调用继续完整展示 system prompt、user prompt 和 assistant response。
+4. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Developer README](./developer/README.md)、[Deployment](./developer/DEPLOYMENT.md) 和首页版本为 `v4.5.16`。
+
 ### Feature / Debug LLM prompt trace page v4.5.15
 
-1. Debug 模式新增 `/debug` 调试追踪页面；只有通过 `--debug`、`--debug-mode`、`--rosetta-debug` 或 `ROSETTA_DEBUG_MODE=1` 启动时才会出现在侧边栏。
+1. Debug 模式新增 `/debug` 调试追踪页面；只有通过 `--debug`、`--debug-mode`、`--rosetta-debug` 或 `ROSETTA_DEBUG_MODE=1` 启动时才可访问。
 2. `OpenAICompatibleProvider.chat()` 在 debug 模式下记录完整 LLM 对话，包括 provider、model、temperature、system/user messages、模型 response、耗时和异常摘要；普通模式不记录完整 prompt / response。
 3. 调试追踪页按日志文件、事件类型和关键词筛选事件；每次 `llm_chat` 以可展开子对话窗展示完整 system prompt、user prompt 和 assistant response。
 4. 调试日志仍写入 `.runtime/logs/debug/session_*.jsonl`，页面明确提示该模式会保存敏感语料和金样例，只建议本机排障使用。

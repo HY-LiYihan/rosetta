@@ -130,6 +130,13 @@ st.markdown(
             padding: 10px 14px !important;
         }
     }
+
+    /* Keep /debug routable in debug mode without advertising it in the main navigation. */
+    section[data-testid="stSidebar"] li:has(a[href$="/debug"]),
+    section[data-testid="stSidebar"] a[href$="/debug"],
+    section[data-testid="stSidebar"] a[href*="/debug"] {
+        display: none !important;
+    }
 </style>
 """,
     unsafe_allow_html=True,
