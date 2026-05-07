@@ -2,6 +2,13 @@
 
 ## 2026-05-05
 
+### UX / Section buttons for validation and optimization v4.5.14
+
+1. “提示词验证 / 提示词优化”从小 radio 改为页面内两张大号入口按钮，当前选中项带主按钮态和勾选标记，更像子页面切换。
+2. 每个入口按钮下方增加简短说明卡，分别解释“检查当前定义是否能稳定通过金样例”和“人工编辑或运行自动优化器训练当前定义”。
+3. 这两个入口仍共享同一个 `concept_lab_active_section` 状态，但不再在 widget 之后手动写回同名 session_state，避免 Streamlit 状态冲突。
+4. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md) 和首页版本为 `v4.5.14`。
+
 ### UX / Clean definition and gold input panel v4.5.13
 
 1. “定义与规范”的自定义定义面板重命名为 `当前定义与金样例`，不再展示边界说明、负例规则、单条样例原文和单条样例标注等分散输入。

@@ -660,15 +660,30 @@ else:
         st.info(t("concept_lab.official_gold_ready", count=gold_count, target=target_count))
 
     st.session_state.setdefault("concept_lab_active_section", "validation")
-    active_section = st.radio(
-        t("concept_lab.active_section"),
-        ["validation", "optimization"],
-        key="concept_lab_active_section",
-        format_func=lambda value: t(
-            "concept_lab.prompt_validation_tab" if value == "validation" else "concept_lab.prompt_optimization_tab"
-        ),
-        horizontal=True,
-    )
+    active_section = st.session_state.get("concept_lab_active_section", "validation")
+    st.markdown(f"**{t('concept_lab.active_section')}**")
+    section_cols = st.columns(2)
+    with section_cols[0]:
+        if st.button(
+            ("✓ " if active_section == "validation" else "") + t("concept_lab.prompt_validation_tab"),
+            key="concept_lab_nav_validation",
+            type="primary" if active_section == "validation" else "secondary",
+            use_container_width=True,
+        ):
+            st.session_state["concept_lab_active_section"] = "validation"
+            st.rerun()
+        st.caption(t("concept_lab.prompt_validation_card"))
+    with section_cols[1]:
+        if st.button(
+            ("✓ " if active_section == "optimization" else "") + t("concept_lab.prompt_optimization_tab"),
+            key="concept_lab_nav_optimization",
+            type="primary" if active_section == "optimization" else "secondary",
+            use_container_width=True,
+        ):
+            st.session_state["concept_lab_active_section"] = "optimization"
+            st.rerun()
+        st.caption(t("concept_lab.prompt_optimization_card"))
+    st.divider()
 
     if active_section == "validation":
         st.subheader(t("concept_lab.prompt_validation_tab"))
