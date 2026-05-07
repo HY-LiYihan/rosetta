@@ -7,6 +7,7 @@
 1. 将文档站对外地址统一为 [https://rosetta-stone.xyz/](https://rosetta-stone.xyz/)，并同步更新 [mkdocs.yml](../mkdocs.yml) 的 `site_url`。
 2. 更新 [README.md](../README.md) 首屏入口，明确官方文档站、GitHub 项目地址和 Rosetta 的对外简介。
 3. 更新 [docs/README.md](./README.md) 首页结构，把官方入口、项目简介和用户路径前置，避免公开文档首页只像内部索引。
+4. 将 [docs/README.md](./README.md) 中的“当前阶段”栏目改名为“更新历史”，让首页更像面向外部读者的版本记录入口。
 
 ### Fix / Annotation prompt reference slot v4.5.18
 
