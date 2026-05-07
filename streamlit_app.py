@@ -6,6 +6,7 @@ from app.infrastructure.debug import configure_debug, is_debug_mode, log_debug_e
 from app.runtime.official_seed import ensure_official_sample_on_process_start
 from app.ui.components.debug_notice import render_debug_notice
 from app.ui.i18n import LANGUAGES, get_language, init_language, set_language, t
+from app.ui.routing import is_debug_route_context
 
 # 页面配置
 st.set_page_config(
@@ -23,7 +24,7 @@ seed_result = ensure_official_sample_on_process_start()
 if is_debug_mode():
     log_debug_event("runtime_seed", seed_result)
     log_debug_event("app_entry", {"argv": sys.argv[1:]})
-    if not render_debug_notice(countdown_seconds=5):
+    if not is_debug_route_context(getattr(st, "context", None)) and not render_debug_notice(countdown_seconds=5):
         st.stop()
 
 # 全局样式策略：优先使用 .streamlit/config.toml 主题配置；

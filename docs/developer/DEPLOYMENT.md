@@ -1,6 +1,6 @@
 # Deployment (Developer)
 
-更新时间: 2026-05-02
+更新时间: 2026-05-07
 
 ## 1. 目录约定
 
@@ -81,8 +81,8 @@ cd /opt/streamlit/rosetta
 1. 开启方式（二选一）：
 - `streamlit run streamlit_app.py -- --debug`
 - `ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py`
-2. Debug 开启后，首次访问会展示中英双语提示（5 秒后可关闭）。
-3. `调试追踪` 不显示在主导航中；需要时直接访问 `http://localhost:8501/debug`。
+2. Debug 开启后，普通页面首次访问会展示中英双语提示（5 秒后可关闭）。
+3. `调试追踪` 不显示在主导航中；需要时直接访问 `http://localhost:8501/debug`，该直达页不会展示强制 debug notice。
 4. `/debug` 页面默认读取最新 debug session，每 2 秒自动刷新，并优先显示 `llm_chat` 事件；也可按日志文件、事件类型和关键词筛选事件。
 5. 每次 `llm_chat` 会用子对话窗完整展示 system prompt、user prompt、assistant response、provider、model、temperature 和耗时。
 6. 调试日志写入 `.runtime/logs/debug/*.jsonl`，上传副本写入 `.runtime/data/debug_uploads/`。

@@ -2,6 +2,14 @@
 
 ## 2026-05-07
 
+### Fix / Debug route notice bypass v4.5.17
+
+1. Debug 模式下直接访问 `http://localhost:8501/debug` 时，不再展示强制 debug notice 弹窗，也不会因为 notice 未确认而 `st.stop()`。
+2. 普通页面在 debug 模式下继续保留现有中英双语 notice 和 5 秒确认流程。
+3. `/debug` 仍只在 debug 模式下可直达，继续保持隐藏导航但可访问的行为。
+4. 新增 `app.ui.routing` 路径判断 helper 与单元测试，避免依赖 Streamlit 页面环境测试 URL path。
+5. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Deployment](./developer/DEPLOYMENT.md) 和首页版本为 `v4.5.17`。
+
 ### UX / Hidden live debug log page v4.5.16
 
 1. `/debug` 继续只在 debug 模式下可访问，但不再显示在主导航中；需要排障时直接打开 `http://localhost:8501/debug`。
