@@ -54,6 +54,16 @@ query/doc -> tokenize -> token count cosine 或 Jaccard
 
 参考样例只用于理解边界，不是当前文本答案。
 
+从 `v4.5.18` 起，检索结果不再拼进可优化概念定义，而是作为 `reference_examples` 进入运行时 prompt 的专门槽位：
+
+```text
+概念定义
+  -> 相似参考样例
+  -> 冻结标注格式
+```
+
+普通 `examples` 仍可用于标签推断，但不会自动作为 few-shot 答案注入 prompt。
+
 ### 批量标注
 
 `build_annotation_context()` 使用同一个本地 embedding 排序：

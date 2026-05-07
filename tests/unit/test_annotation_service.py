@@ -19,6 +19,7 @@ class TestAnnotationService(unittest.TestCase):
         prompt = build_annotation_prompt(concept, "input text")
         self.assertIn("请根据以下概念定义标注文本。", prompt)
         self.assertIn("概念定义：\ndefinition", prompt)
+        self.assertIn("相似参考样例（可选，只用于理解边界，不是当前文本答案）：", prompt)
         self.assertIn("标注格式：", prompt)
         self.assertIn("通用格式示例（只说明输出格式，不代表当前任务概念）：", prompt)
         self.assertIn("待标注文本：\ninput text", prompt)
@@ -40,6 +41,29 @@ class TestAnnotationService(unittest.TestCase):
         self.assertNotIn('"text": "Corruption ?"', prompt)
         self.assertNotIn("[Corruption]{Term}", prompt)
         self.assertIn("待标注文本：\nNot in our company …", prompt)
+
+    def test_build_annotation_prompt_injects_explicit_reference_examples(self):
+        concept = {
+            "name": "demo",
+            "prompt": "Mark domain terms.",
+            "examples": [{"text": "Gold label source", "annotation": "[Gold label source]{Term}", "explanation": "label inference"}],
+            "reference_examples": [
+                {
+                    "text": "Similar source text",
+                    "annotation": "[Similar source text]{Term}",
+                    "explanation": "retrieved boundary reference",
+                    "similarity": 0.91,
+                }
+            ],
+        }
+        prompt = build_annotation_prompt(concept, "Current source text")
+
+        self.assertIn("相似参考样例（可选，只用于理解边界，不是当前文本答案）：", prompt)
+        self.assertIn("参考样例 1，相似度 0.91：", prompt)
+        self.assertIn("原文：Similar source text", prompt)
+        self.assertIn("标准 annotation：[Similar source text]{Term}", prompt)
+        self.assertIn("待标注文本：\nCurrent source text", prompt)
+        self.assertNotIn("Gold label source", prompt)
 
     def test_build_annotation_prompt_can_request_full_json_protocol(self):
         concept = {

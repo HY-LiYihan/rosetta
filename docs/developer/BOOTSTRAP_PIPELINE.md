@@ -350,13 +350,14 @@ ConceptPromptSpec
 ```text
 请根据以下概念定义标注文本。
 -> 概念定义
+-> 相似参考样例
 -> 标注格式
 -> 通用格式示例
 -> 待标注文本
 -> 任务强调
 ```
 
-这条约定同时适用于 15 gold 概念验证、候选回测、单条标注和批量标注。`标注格式` 只来自冻结协议；通用格式示例只说明 JSON / markup / AnnotationDoc 返回结构，不能放入当前 gold、相似样例、失败样例或任务答案。批量标注的相似样例、边界远例和失败记忆可以进入 `ConceptPromptSpec` 的上下文增强部分，但不能再携带“模型输出格式”这类协议说明。
+这条约定同时适用于 15 gold 概念验证、候选回测、单条标注和批量标注。`标注格式` 只来自冻结协议；通用格式示例只说明 JSON / markup / AnnotationDoc 返回结构，不能放入当前 gold、相似样例、失败样例或任务答案。`相似参考样例` 是单独槽位，只有 top-k 验证或批量上下文显式传入 `reference_examples` 时才填充；普通 `examples` 只用于推断标签，不能自动作为 few-shot 答案进入 prompt。批量标注的相似样例、边界远例和失败记忆可以作为边界上下文进入专用槽位或概念上下文摘要，但不能再携带“模型输出格式”这类协议说明。
 
 冻结输出协议默认采用 `JSON+markup`，也可以选择完整 `AnnotationDoc` JSON：
 
@@ -403,11 +404,12 @@ ConceptPromptSpec
 10. `v4.5.11` 已把页面主操作收敛为提示词验证和提示词优化，并把类训练优化的 accepted prompt history 写回下一轮 reflection prompt。
 11. `v4.5.12` 已将三种自动优化器改为 canonical id，新增 critic evaluator/controller trace、mask ablation trace，并把真实 LLM 默认并发上限提升到 50。
 12. `v4.5.12` 已将 top-k 参考 gold 检索迁移到 `rosetta-local-hash-384` 本地 embedding，避免继续依赖 token overlap 或在线 embedding API。
-13. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
-14. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
-15. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
-16. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
-17. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
+13. `v4.5.18` 已把 top-k / 批量参考样例从可优化概念定义中拆到专门 `相似参考样例` 槽位，避免把参考答案污染为概念语义或输出协议。
+14. 尚未完成的是统一跨 workflow 的 `AnnotationHarness` 对象、format repair 指标拆分和公开报告里的 `protocol_tampering_count` 聚合。
+15. 第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。
+16. `v4.5.2` 已新增 SQLite `run_progress_events` 并把 Definition & Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。
+17. 批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 `ProgressRecorder`，但本轮只覆盖提示词优化训练。
+18. 强格式 harness 是 `v4.5.5` 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。
 
 ## 4. 分层边界
 

@@ -1165,15 +1165,13 @@ def _predict_guideline(
         }
 
     concept_spec = concept_prompt_spec_from_guideline(guideline).text
-    reference_context = _reference_examples_prompt(reference_examples or [])
-    if reference_context:
-        concept_spec = f"{concept_spec}\n\n{reference_context}"
     output_protocol = frozen_output_protocol_from_guideline(guideline)
     prompt = build_runtime_annotation_prompt(
         concept_definition=concept_spec,
         input_text=str(task_payload["text"]),
         output_format=str(guideline.get("output_format") or ""),
         labels=output_protocol.labels,
+        reference_examples=reference_examples or [],
         task_emphasis=(
             "请标出所有符合概念定义的片段，并保持边界与文本中的原始片段一致。"
             "只输出 JSON，字段为 text、annotation、explanation；不要输出 markdown、解释性段落或额外字段。"
@@ -1223,20 +1221,6 @@ def _reference_examples_for_task(
         }
         for hit in rank_texts(str(task_payload.get("text", "")), documents)[:k]
     ]
-
-
-def _reference_examples_prompt(reference_examples: list[dict[str, Any]]) -> str:
-    if not reference_examples:
-        return ""
-    lines = [
-        "参考样例（按与当前待标注文本的 top-k 语义相似度选择；只用于理解边界，不是当前文本答案）："
-    ]
-    for index, example in enumerate(reference_examples, start=1):
-        lines.append(
-            f"参考 {index}，相似度 {example.get('similarity', 0.0)}：原文：{example.get('text', '')}\n"
-            f"标准 annotation：{example.get('annotation', '')}"
-        )
-    return "\n".join(lines)
 
 
 def _cosine_text_similarity(left: str, right: str) -> float:

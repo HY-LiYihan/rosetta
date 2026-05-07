@@ -180,6 +180,7 @@ def _run_one_item(
         "name": guideline.get("name", "概念"),
         "prompt": context["prompt"],
         "examples": context["examples"],
+        "reference_examples": context["examples"],
         "output_format": guideline.get("output_format", ""),
     }
     predictions: list[Prediction] = []

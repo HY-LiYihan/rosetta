@@ -2,6 +2,14 @@
 
 ## 2026-05-07
 
+### Fix / Annotation prompt reference slot v4.5.18
+
+1. 通用标注 prompt 在 `概念定义` 和冻结 `标注格式` 之间固定预留 `相似参考样例` 槽位，统一概念验证、批量标注和单条标注的 prompt 结构。
+2. `examples` 继续只用于标签推断，不再自动作为 few-shot 参考答案注入 prompt；只有 `reference_examples` 或 top-k / 批量上下文显式传入时才填充该槽位。
+3. `validate_gold_examples()` 的 top-k 参考样例继续由本地 `rosetta-local-hash-384` 检索，并通过专门槽位注入，不再拼进可优化概念定义。
+4. 批量标注将相似样例、边界远例作为 `reference_examples` 传给 prompt builder，输出协议仍由冻结 harness 单独注入。
+5. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Annotation Format](./developer/ANNOTATION_FORMAT.md) 和首页版本为 `v4.5.18`。
+
 ### Fix / Debug route notice bypass v4.5.17
 
 1. Debug 模式下直接访问 `http://localhost:8501/debug` 时，不再展示强制 debug notice 弹窗，也不会因为 notice 未确认而 `st.stop()`。

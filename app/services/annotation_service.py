@@ -65,10 +65,12 @@ def build_runtime_annotation_prompt(
     output_format: str = "",
     labels: list[str] | tuple[str, ...] | None = None,
     task_emphasis: str = "",
+    reference_examples: list[dict] | tuple[dict, ...] | None = None,
 ) -> str:
     """Build the frozen annotation prompt used by validation and batch annotation."""
     label = next((str(item).strip() for item in labels or [] if str(item).strip()), "Term")
     protocol_instruction, protocol_example = build_protocol_instruction(output_format, label=label)
+    reference_examples_block = format_reference_examples(reference_examples or [])
     emphasis = str(task_emphasis or "").strip() or (
         "请根据概念定义独立判断所有应标注片段。只输出 JSON，不要输出 markdown、列表、解释性段落或 schema 外字段。"
     )
@@ -76,6 +78,9 @@ def build_runtime_annotation_prompt(
 
 概念定义：
 {str(concept_definition or '').strip()}
+
+相似参考样例（可选，只用于理解边界，不是当前文本答案）：
+{reference_examples_block}
 
 {protocol_instruction}
 
@@ -99,11 +104,39 @@ def build_annotation_prompt(concept: dict, input_text: str) -> str:
         input_text=input_text,
         output_format=str(concept.get("output_format") or ""),
         labels=labels,
+        reference_examples=concept.get("reference_examples") or [],
         task_emphasis=str(
             concept.get("task_emphasis")
             or "请根据概念定义独立判断所有应标注片段。参考样例只用于理解相似边界，通用格式示例只用于说明输出格式。只输出 JSON。"
         ),
     )
+
+
+def format_reference_examples(examples: list[dict] | tuple[dict, ...], limit: int = 5) -> str:
+    """Format retrieved references in a dedicated prompt slot, separate from concept definition."""
+    rows = [example for example in examples if isinstance(example, dict)][: max(0, int(limit))]
+    if not rows:
+        return "无。"
+    blocks: list[str] = []
+    for index, example in enumerate(rows, start=1):
+        text = str(example.get("text", "")).strip()
+        annotation = example.get("annotation", "")
+        if isinstance(annotation, dict):
+            annotation_text = _annotation_doc_to_markup(annotation)
+        else:
+            annotation_text = str(annotation or "").strip()
+        explanation = str(example.get("explanation", "")).strip()
+        similarity = example.get("similarity", "")
+        meta = f"，相似度 {similarity}" if similarity != "" else ""
+        lines = [
+            f"参考样例 {index}{meta}：",
+            f"原文：{text or '无'}",
+            f"标准 annotation：{annotation_text or '无'}",
+        ]
+        if explanation:
+            lines.append(f"说明：{explanation}")
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
 
 
 def _labels_from_examples(examples: list[dict]) -> list[str]:
@@ -123,6 +156,17 @@ def _labels_from_examples(examples: list[dict]) -> list[str]:
                     seen.add(label)
                     labels.append(label)
     return labels
+
+
+def _annotation_doc_to_markup(annotation: dict) -> str:
+    parts: list[str] = []
+    for span in annotation.get("layers", {}).get("spans", []):
+        text = str(span.get("text", "")).strip()
+        label = str(span.get("label") or "Term").strip() or "Term"
+        implicit = bool(span.get("implicit", False))
+        if text:
+            parts.append(f"[{'!' if implicit else ''}{text}]{{{label}}}")
+    return " ".join(parts)
 
 
 def _markup_labels(annotation: str) -> list[str]:
