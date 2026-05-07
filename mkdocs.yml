@@ -87,6 +87,19 @@ nav:
   - 部署运维:
       - Docker / Conda 部署: developer/DEPLOYMENT.md
   - 变更记录: CHANGELOG.md
+  - English:
+      - Overview: en/README.md
+      - Quickstart: en/user/TUTORIAL.md
+      - Prompt Composition: en/user/PROMPT_COMPOSITION.md
+
+extra:
+  alternate:
+    - name: 中文
+      link: https://hy-liyihan.github.io/rosetta/
+      lang: zh
+    - name: English
+      link: https://hy-liyihan.github.io/rosetta/en/
+      lang: en
 
 # Links to source code files outside docs/ are intentional (GitHub-only).
 # Suppress validation errors so the build doesn't fail on them.

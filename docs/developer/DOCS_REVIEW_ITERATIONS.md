@@ -248,3 +248,21 @@ PLM / NLP 研究者评价：
 1. 将 `site_url` 和 README / docs 首页入口改回 `https://hy-liyihan.github.io/rosetta/`。
 2. 把 `rosetta-stone.xyz` 明确标为 demo 页面。
 3. 将首页版本更新为 `v4.5.21`，并记录到 changelog。
+
+## 12. 第 11 轮：文档站语言切换
+
+传统语言学 / 数字人文用户评价：
+
+1. 文档站需要明确的语言切换按钮，不能只在应用内有 `中文 / English`。
+2. 中文首页不应承担英文介绍，English 用户应有单独入口。
+
+维护者评价：
+
+1. 使用 MkDocs Material 原生 `extra.alternate`，避免自定义 JavaScript 做脆弱按钮。
+2. English 入口先覆盖概览、快速使用和 prompt 构成；中文文档继续作为完整主文档。
+
+本轮优化：
+
+1. `mkdocs.yml` 新增 `extra.alternate`，提供 `中文 / English` 顶部切换入口。
+2. 新增 `docs/en/README.md`、`docs/en/user/TUTORIAL.md` 和 `docs/en/user/PROMPT_COMPOSITION.md`。
+3. README、docs 首页和 changelog 同步记录文档站语言切换能力。
