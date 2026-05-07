@@ -155,17 +155,18 @@ concept_lab_page = st.Page("app/ui/pages/Concept_Lab.py", title=t("nav.concept_l
 batch_run_page = st.Page("app/ui/pages/Batch_Run.py", title=t("nav.batch_run"), icon="✏️")
 review_queue_page = st.Page("app/ui/pages/Review_Queue.py", title=t("nav.review_queue"), icon="✅")
 export_view_page = st.Page("app/ui/pages/Export_View.py", title=t("nav.export_view"), icon="📦")
+debug_page = st.Page("app/ui/pages/Debug.py", title="调试追踪", icon="🐞", url_path="debug")
 
-navigation = st.navigation(
-    pages=[
-        home_page,
-        concept_lab_page,
-        batch_run_page,
-        review_queue_page,
-        export_view_page,
-    ],
-    position="sidebar",
-    expanded=True,
-)
+pages = [
+    home_page,
+    concept_lab_page,
+    batch_run_page,
+    review_queue_page,
+    export_view_page,
+]
+if is_debug_mode():
+    pages.append(debug_page)
+
+navigation = st.navigation(pages=pages, position="sidebar", expanded=True)
 
 navigation.run()

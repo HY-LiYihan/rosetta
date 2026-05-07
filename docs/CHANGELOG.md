@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-07
+
+### Feature / Debug LLM prompt trace page v4.5.15
+
+1. Debug 模式新增 `/debug` 调试追踪页面；只有通过 `--debug`、`--debug-mode`、`--rosetta-debug` 或 `ROSETTA_DEBUG_MODE=1` 启动时才会出现在侧边栏。
+2. `OpenAICompatibleProvider.chat()` 在 debug 模式下记录完整 LLM 对话，包括 provider、model、temperature、system/user messages、模型 response、耗时和异常摘要；普通模式不记录完整 prompt / response。
+3. 调试追踪页按日志文件、事件类型和关键词筛选事件；每次 `llm_chat` 以可展开子对话窗展示完整 system prompt、user prompt 和 assistant response。
+4. 调试日志仍写入 `.runtime/logs/debug/session_*.jsonl`，页面明确提示该模式会保存敏感语料和金样例，只建议本机排障使用。
+5. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[Developer README](./developer/README.md)、[Deployment](./developer/DEPLOYMENT.md) 和首页版本为 `v4.5.15`。
+
 ## 2026-05-05
 
 ### UX / Section buttons for validation and optimization v4.5.14

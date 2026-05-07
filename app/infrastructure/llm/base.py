@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 from typing import Callable
+
+from app.infrastructure.debug import is_debug_mode, log_llm_chat
 
 ModelFilter = Callable[[list[str]], list[str]]
 
@@ -42,13 +45,27 @@ class OpenAICompatibleProvider:
     def chat(self, api_key: str, model: str, messages: list[dict], temperature: float = 0.3) -> str:
         client = self.get_client(api_key)
         extra_body = dict(self.config.chat_extra_body or {})
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=2000,
-            extra_body=extra_body or None,
-        )
+        started = time.perf_counter()
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=2000,
+                extra_body=extra_body or None,
+            )
+        except Exception as exc:
+            if is_debug_mode():
+                log_llm_chat(
+                    provider=self.config.platform_id,
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    response="",
+                    elapsed_seconds=round(time.perf_counter() - started, 4),
+                    metadata={"error": str(exc), "response_source": "exception"},
+                )
+            raise
         message = response.choices[0].message
         content = message.content
         if isinstance(content, list):
@@ -60,11 +77,40 @@ class OpenAICompatibleProvider:
                     text_chunks.append(str(item.text))
             content = "".join(text_chunks)
         if isinstance(content, str) and content.strip():
+            if is_debug_mode():
+                log_llm_chat(
+                    provider=self.config.platform_id,
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    response=content,
+                    elapsed_seconds=round(time.perf_counter() - started, 4),
+                )
             return content
 
         reasoning_content = getattr(message, "reasoning_content", None)
         if isinstance(reasoning_content, str) and reasoning_content.strip():
+            if is_debug_mode():
+                log_llm_chat(
+                    provider=self.config.platform_id,
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    response=reasoning_content,
+                    elapsed_seconds=round(time.perf_counter() - started, 4),
+                    metadata={"response_source": "reasoning_content"},
+                )
             return reasoning_content
+        if is_debug_mode():
+            log_llm_chat(
+                provider=self.config.platform_id,
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                response="",
+                elapsed_seconds=round(time.perf_counter() - started, 4),
+                metadata={"response_source": "empty"},
+            )
         return ""
 
     def embed(

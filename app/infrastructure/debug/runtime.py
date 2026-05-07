@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 _STATE = {
     "enabled": False,
@@ -53,6 +54,56 @@ def log_debug_event(event: str, payload: dict | None = None) -> None:
     }
     with Path(_STATE["log_file"]).open("a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+
+
+def log_llm_chat(
+    *,
+    provider: str,
+    model: str,
+    messages: list[dict[str, Any]],
+    temperature: float,
+    response: str,
+    elapsed_seconds: float | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    log_debug_event(
+        "llm_chat",
+        {
+            "provider": provider,
+            "model": model,
+            "temperature": temperature,
+            "messages": messages,
+            "response": response,
+            "elapsed_seconds": elapsed_seconds,
+            "metadata": metadata or {},
+        },
+    )
+
+
+def list_debug_log_files(runtime_dir: str | Path | None = None) -> list[Path]:
+    base_dir = Path(runtime_dir) if runtime_dir is not None else get_runtime_dir()
+    logs_dir = base_dir / "logs" / "debug"
+    if not logs_dir.exists():
+        return []
+    return sorted(logs_dir.glob("session_*.jsonl"), reverse=True)
+
+
+def read_debug_events(log_file: str | Path | None = None, limit: int = 1000) -> list[dict[str, Any]]:
+    files = [Path(log_file)] if log_file else list_debug_log_files()
+    events: list[dict[str, Any]] = []
+    for path in files:
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            event["_log_file"] = str(path)
+            events.append(event)
+    return events[-max(1, int(limit)) :]
 
 
 def persist_debug_upload(filename: str, content: str) -> str | None:

@@ -82,7 +82,10 @@ cd /opt/streamlit/rosetta
 - `streamlit run streamlit_app.py -- --debug`
 - `ROSETTA_DEBUG_MODE=1 streamlit run streamlit_app.py`
 2. Debug 开启后，首次访问会展示中英双语提示（5 秒后可关闭）。
-3. 调试日志写入 `.runtime/logs/debug/*.jsonl`，上传副本写入 `.runtime/data/debug_uploads/`。
+3. 侧边栏会显示 `调试追踪`，也可直接访问 `http://localhost:8501/debug`。
+4. `/debug` 页面按日志文件、事件类型和关键词筛选事件；每次 `llm_chat` 会用子对话窗完整展示 system prompt、user prompt、assistant response、provider、model、temperature 和耗时。
+5. 调试日志写入 `.runtime/logs/debug/*.jsonl`，上传副本写入 `.runtime/data/debug_uploads/`。
+6. Debug 模式会完整保存提示词、语料片段、金样例和模型回复，不能在共享生产环境长期开启；普通模式不会记录完整 LLM prompt / response。
 
 ## 8. 兼容 cron 入口
 

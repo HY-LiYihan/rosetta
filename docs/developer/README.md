@@ -32,7 +32,7 @@
 | [Embedding Retrieval](./EMBEDDING_RETRIEVAL.md) | 本地轻量 embedding、top-k 参考样例和后续可插拔后端 |
 | [Workflow](./WORKFLOW.md) | 开发、验证、提交规则 |
 | [Scripts](./SCRIPTS.md) | 统一 CLI 与 legacy scripts |
-| [Deployment](./DEPLOYMENT.md) | Docker / runtime 目录 / 健康检查 |
+| [Deployment](./DEPLOYMENT.md) | Docker / runtime 目录 / 健康检查 / debug 调试追踪 |
 | [Documentation Review Iterations](./DOCS_REVIEW_ITERATIONS.md) | 三类读者、6 轮文档评审和本轮优化记录 |
 
 ### 标注格式
@@ -54,9 +54,10 @@
 
 ## 当前状态
 
-1. v4.5.12 已将三种 prompt optimizer canonical 化、默认并发上限提升为 50，并新增本地轻量 embedding 检索 `rosetta-local-hash-384`。
-2. v4.5.1 已实现三方法真实对比实验：每个方法连续 5 轮 loss 无下降才停止，CLI 输出 Markdown 报告、完整 JSON trace 和提示词演化 JSONL。
-3. v4.5.0 已实现 LLM service runtime 最小闭环：DeepSeek 默认 `deepseek-v4-pro`，provider 并发上限默认 50，提示词训练记录调用、token、耗时、progress event 和去语料化修复统计。
+1. v4.5.15 已新增 debug 模式 `/debug` 调试追踪页，完整展示 OpenAI-compatible provider 的 LLM prompt / response 子对话；该能力只用于本机排障，日志包含敏感内容。
+2. v4.5.12 已将三种 prompt optimizer canonical 化、默认并发上限提升为 50，并新增本地轻量 embedding 检索 `rosetta-local-hash-384`。
+3. v4.5.1 已实现三方法真实对比实验：每个方法连续 5 轮 loss 无下降才停止，CLI 输出 Markdown 报告、完整 JSON trace 和提示词演化 JSONL。
+4. v4.5.0 已实现 LLM service runtime 最小闭环：DeepSeek 默认 `deepseek-v4-pro`，provider 并发上限默认 50，提示词训练记录调用、token、耗时、progress event 和去语料化修复统计。
 4. v4.4.0 已实现提示词优化训练 workflow：`app/workflows/bootstrap/prompt_training.py` 统一比较 `llm_optimize_only / llm_reflection / text_gradient_adamw`，并把胜出结果写入 `ConceptVersion.metadata` 与 runtime artifact。
 5. v4.3.1 文档化 LLM service runtime 愿景：每次大模型调用都作为服务调用处理，provider profile 管理平台参数，并要求 UI 展示进度、ETA、token 和成本。
 6. v4.3.0 已实现 Prompt-as-Parameter 最小内核：prompt 分段、Mask 文本梯度、LLM-AdamW trace、长度惩罚和 loss 验证。
