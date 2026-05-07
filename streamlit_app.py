@@ -146,16 +146,19 @@ st.markdown(
 with st.sidebar:
     st.markdown(f"### {t('common.app_title')}")
     current_language = get_language()
-    selected_language = st.selectbox(
-        t("common.language"),
-        options=list(LANGUAGES.keys()),
-        index=list(LANGUAGES.keys()).index(current_language),
-        format_func=lambda key: LANGUAGES[key],
-        key="rosetta_language_selector",
-    )
-    if selected_language != current_language:
-        set_language(selected_language)
-        st.rerun()
+    st.caption(t("common.language"))
+    language_columns = st.columns(len(LANGUAGES))
+    for column, language_key in zip(language_columns, LANGUAGES):
+        is_active_language = language_key == current_language
+        if column.button(
+            LANGUAGES[language_key],
+            key=f"rosetta_language_button_{language_key}",
+            type="primary" if is_active_language else "secondary",
+            disabled=is_active_language,
+            use_container_width=True,
+        ):
+            set_language(language_key)
+            st.rerun()
 
 # 使用新的 Streamlit 导航 API：默认只展示 5 个主流程页面
 home_page = st.Page("app/ui/pages/Home.py", title=t("nav.dashboard"), icon="🏠", default=True)

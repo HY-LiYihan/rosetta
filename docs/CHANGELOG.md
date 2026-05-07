@@ -2,6 +2,12 @@
 
 ## 2026-05-07
 
+### UX / Sidebar language buttons v4.5.19
+
+1. 将应用侧栏语言切换从下拉框改为 `中文 / English` 两个按钮；当前语言按钮高亮并禁用，点击另一个按钮后立即切换主导航和主要固定界面文案。
+2. 更新 [README.md](../README.md)、[docs/README.md](./README.md)、[用户教程](./user/TUTORIAL.md) 和首页页脚版本为 `v4.5.19`。
+3. 明确语言切换不翻译用户输入、数据库内容、任务文本、模型输出、标签值、调试日志或导出文件名。
+
 ### Docs / Public homepage entry
 
 1. 将文档站对外地址统一为 [https://rosetta-stone.xyz/](https://rosetta-stone.xyz/)，并同步更新 [mkdocs.yml](../mkdocs.yml) 的 `site_url`。
@@ -11,7 +17,7 @@
 5. 更新 [用户教程](./user/TUTORIAL.md) 的快速使用表述，将旧的“自举校准”改为当前页面实际动作“提示词验证 / 定义优化”。
 6. 根据新用户和 PLM/NLP 研究者角色评审，补充 [docs/README.md](./README.md) 的首次阅读路径、[用户教程](./user/TUTORIAL.md) 的 5 分钟官方样例和术语小抄、[Research Claims](./ideas/RESEARCH_CLAIMS.md) 的证据/假设边界，以及 [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md) 的 PLM baseline 公平协议和 canonical 方法名。
 7. 更新 [Documentation Review Iterations](./developer/DOCS_REVIEW_ITERATIONS.md)，记录本轮公开网站首页与快速使用复查。
-8. 根据严苛中文产品文案复查，删除公开文档中“中文 / English 全局切换”的功能承诺，将 [用户教程](./user/TUTORIAL.md) 的“语言切换”改为“界面语言”，并把 [README.md](../README.md) 与 [docs/README.md](./README.md) 中显眼的英文术语改为中文主导表述。
+8. 根据严苛中文产品文案复查，删除公开文档中“5 个主页面正文同步切换”等过满功能承诺，将 [用户教程](./user/TUTORIAL.md) 的“语言切换”改为“界面语言”，并把 [README.md](../README.md) 与 [docs/README.md](./README.md) 中显眼的英文术语改为中文主导表述。
 9. 根据事实一致性复查，修正批量标注运行时口径：提示词验证和定义优化已接入统一运行时，批量标注当前仍使用本地任务队列和页面线程池调用 provider；同时补齐用户教程中的 `相似参考样例` prompt 槽位。
 
 ### Fix / Annotation prompt reference slot v4.5.18
