@@ -5,7 +5,7 @@ from typing import Callable
 from app.agents.kernel import AgentKernel, AgentPolicy
 from app.agents.tools import Tool, ToolRegistry
 from app.services.annotation_service import (
-    ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
+    annotation_assistant_system_prompt,
     build_annotation_prompt,
     build_history_entry,
     parse_annotation_response,
@@ -24,10 +24,11 @@ def run_agentic_annotation(
     kernel: AgentKernel | None = None,
 ) -> dict:
     prompt = build_annotation_prompt(concept, input_text)
+    system_prompt = annotation_assistant_system_prompt(concept.get("prompt_language") or concept.get("language"))
 
     def call_model(invocation):
         raw_result = predictor(
-            ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
+            system_prompt,
             [{"role": "user", "content": prompt}],
             temperature,
         )

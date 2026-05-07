@@ -326,23 +326,24 @@ app/research/                # legacy algorithms and offline compatibility
 
 同样，后续任何论文写作如果只声称“LLM 标注效果更好”，也偏离了这条主线。Rosetta 真正要展示的是 agent 如何把概念、样例、失败、检索、审核和报告连成一个可持续改进的标注系统。
 
-## 11. v4.2.x 落地状态
+## 11. 当前落地状态
 
-当前主线已从“普通批量标注工具”升级为 concept bootstrap loop 的第一版实现：
+当前主线已从“普通批量标注工具”升级为定义优化闭环：
 
-1. `app/workflows/bootstrap` 提供 `run_concept_refinement_loop`，正式自举要求 15 条金样例，并逐轮写入 `ConceptVersion`。
-2. 定义与规范提供“开始自举校准”，展示每轮通过数、失败样例、失败摘要、loss、候选评估和最终概念草案；最终草案不混入样例编号或诊断日志。
+1. `app/workflows/bootstrap` 提供定义优化和 prompt training workflow，正式定义优化建议 15 条金样例，并逐轮写入 `ConceptVersion`。
+2. 定义与规范的主动作已经收敛为“提示词验证 / 提示词优化”；页面展示每轮通过数、失败样例、失败摘要、loss、候选评估和最终概念草案；最终草案不混入样例编号或诊断日志。
 3. 概念修订不再单路径贪心追加，而是生成多个候选概念版本，在 15 条金样例上重新试标并计算 gold loss，只接受让 loss 下降的候选。
 4. `app/workflows/annotation` 新增标注上下文构建器，每次批量标注会组合概念版本、相似样例、边界远例和失败模式摘要。
 5. 候选自洽性从简单 exact signature 升级为 span-F1、完全一致率、模型自评和规则风险组合。
 6. 审核与修正开始记录错误类型、hard example、人工修改和 gold-like 晋升信号。
 7. 导出报告开始包含概念版本和主动审核反馈。
+8. 提示词优化三方案已经收敛为 `sgd_candidate_search / critic_adamw_optimizer / mask_guided_optimization`，并把可优化定义和冻结输出协议分开。
+9. top-k 参考样例和批量上下文检索默认使用本地轻量 embedding `rosetta-local-hash-384`。
 
 仍未完成的研究级增强：
 
-1. 还没有完整 Prompt-as-Parameter 优化器；当前第一版只有 loss-guided candidate search。
-2. 还没有显式 Text Gradient Estimator，例如 Mask 遮挡、对比替换、消融链路和 LLM 自诊断的组合。
-3. 还没有真正的 embedding-based semantic retrieval；当前第一版使用轻量 lexical similarity。
-4. 还没有 LLM-as-a-judge 候选评审。
-5. 还没有 token logprob 或 semantic entropy。
-6. 还没有完整 ablation runner 和数据集级 F1 对比表。
+1. 还没有完整论文级 optimizer state；当前 `critic_adamw_optimizer` 是 AdamW-like 文本候选控制器，不等同于数值 AdamW 参数更新。
+2. 对比替换、完整消融链路和多 seed Text Gradient 稳定性仍需要进一步实现和报告。
+3. 还没有 LLM-as-a-judge 候选评审。
+4. 还没有 token logprob 或 semantic entropy。
+5. 还没有完整 ablation runner 和数据集级 F1 对比表。

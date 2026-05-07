@@ -1,5 +1,5 @@
 site_name: Rosetta
-site_description: Rosetta 是基于 Streamlit 的本地优先 Agentic Annotation Tool
+site_description: Rosetta 是基于 Streamlit 的本地优先智能体式标注工具
 site_url: https://rosetta-stone.xyz/
 repo_url: https://github.com/HY-LiYihan/rosetta
 repo_name: HY-LiYihan/rosetta
@@ -61,12 +61,13 @@ nav:
   - 首页: README.md
   - 快速使用:
       - 用户教程: user/TUTORIAL.md
+      - 提示词构成: user/PROMPT_COMPOSITION.md
   - 研究主张:
       - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
       - Prompt-as-Parameter: ideas/PROMPT_AS_PARAMETER.md
       - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
       - 文档评审迭代: developer/DOCS_REVIEW_ITERATIONS.md
-  - Workflows:
+  - 工作流:
       - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
       - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
       - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md

@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime
 
 from app.services.annotation_service import (
+    annotation_assistant_system_prompt,
     build_annotation_prompt,
     build_history_export_filename,
     build_history_export_json,
@@ -78,6 +79,30 @@ class TestAnnotationService(unittest.TestCase):
         self.assertIn("relations", prompt)
         self.assertNotIn("必须使用 [原文]{概念标签} 格式", prompt)
         self.assertIn("通用格式示例（只说明输出格式，不代表当前任务概念）：", prompt)
+
+    def test_build_annotation_prompt_can_use_english_prompt_contract(self):
+        concept = {
+            "name": "demo",
+            "prompt": "Mark domain terms.",
+            "examples": [{"text": "a", "annotation": "[a]{Term}", "explanation": "c"}],
+            "reference_examples": [{"text": "Similar text", "annotation": "[Similar text]{Term}", "similarity": 0.9}],
+            "prompt_language": "en-US",
+        }
+
+        prompt = build_annotation_prompt(concept, "input text")
+
+        self.assertEqual(
+            annotation_assistant_system_prompt("en-US"),
+            "You are a rigorous annotation assistant. Output JSON only.",
+        )
+        self.assertIn("Annotate the text according to the concept definition.", prompt)
+        self.assertIn("Concept definition:\nMark domain terms.", prompt)
+        self.assertIn("Similar reference examples", prompt)
+        self.assertIn("Reference example 1, similarity 0.9:", prompt)
+        self.assertIn("Annotation format:", prompt)
+        self.assertIn("Generic format example", prompt)
+        self.assertIn("Text to annotate:\ninput text", prompt)
+        self.assertIn("Task emphasis:", prompt)
 
     def test_parse_annotation_response_json_code_block(self):
         raw = """```json\n{\"text\":\"t\",\"annotation\":\"[t]{demo}\",\"explanation\":\"e\"}\n```"""

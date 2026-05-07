@@ -19,7 +19,7 @@ from app.domain.annotation_doc import legacy_string_to_spans, spans_to_legacy_st
 from app.infrastructure.embedding import embedding_similarity, rank_texts
 from app.runtime.store import RuntimeStore
 from app.services.annotation_service import (
-    ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
+    annotation_assistant_system_prompt,
     build_runtime_annotation_prompt,
     parse_annotation_response,
 )
@@ -1166,18 +1166,27 @@ def _predict_guideline(
 
     concept_spec = concept_prompt_spec_from_guideline(guideline).text
     output_protocol = frozen_output_protocol_from_guideline(guideline)
+    prompt_language = guideline.get("prompt_language") or guideline.get("language")
+    task_emphasis = (
+        "Mark every span that matches the concept definition and keep boundaries exactly aligned with the original text."
+        "Output JSON only, with fields text, annotation, explanation; do not output markdown, explanatory paragraphs, or extra fields."
+        if prompt_language == "en-US"
+        else (
+            "请标出所有符合概念定义的片段，并保持边界与文本中的原始片段一致。"
+            "只输出 JSON，字段为 text、annotation、explanation；不要输出 markdown、解释性段落或额外字段。"
+        )
+    )
     prompt = build_runtime_annotation_prompt(
         concept_definition=concept_spec,
         input_text=str(task_payload["text"]),
         output_format=str(guideline.get("output_format") or ""),
         labels=output_protocol.labels,
         reference_examples=reference_examples or [],
-        task_emphasis=(
-            "请标出所有符合概念定义的片段，并保持边界与文本中的原始片段一致。"
-            "只输出 JSON，字段为 text、annotation、explanation；不要输出 markdown、解释性段落或额外字段。"
-        ),
+        prompt_language=prompt_language,
+        task_emphasis=task_emphasis,
     )
-    raw = predictor(ANNOTATION_ASSISTANT_SYSTEM_PROMPT, [{"role": "user", "content": prompt}], temperature)
+    system_prompt = annotation_assistant_system_prompt(prompt_language)
+    raw = predictor(system_prompt, [{"role": "user", "content": prompt}], temperature)
     parsed, warning = parse_annotation_response(raw)
     if warning or not parsed:
         return {"score": 0.2, "route": "failed", "raw_response": raw, "model": "llm", "predicted_spans": ()}

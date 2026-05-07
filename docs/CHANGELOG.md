@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-08
+
+### Docs / Prompt composition contract v4.5.20
+
+1. 新增 [提示词构成](./user/PROMPT_COMPOSITION.md) 页面，按 `zh-CN / en-US` 对照说明标注 system prompt、六段 user prompt、冻结输出协议、定义优化 prompt 边界和维护同步规则。
+2. `app/services/annotation_service.py` 将运行时 prompt 段落标题、system prompt 和协议说明抽成中英文模板常量；默认仍为 `zh-CN`，调用方可显式传入 `prompt_language="en-US"` 生成英文控制模板。
+3. 新增单元测试检查提示词构成页是否包含程序里的中英文 system prompt 和运行时段落标题，降低 prompt builder 更新后文档漂移风险。
+4. 更新 [用户教程](./user/TUTORIAL.md)、[docs/README.md](./README.md)、[README.md](../README.md)、[Annotation Format](./developer/ANNOTATION_FORMAT.md)、[Research Claims](./ideas/RESEARCH_CLAIMS.md)、[Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md)、[Documentation Review Iterations](./developer/DOCS_REVIEW_ITERATIONS.md) 和首页版本为 `v4.5.20`。
+5. 按审读意见收紧公开口径：界面语言不自动翻译用户输入或模型输出；15 条 gold 只用于启动、校准和演示；用户侧“自举校准”改为“定义优化”；top-k gold 验证不等同 held-out 泛化评测。
+
 ## 2026-05-07
 
 ### UX / Sidebar language buttons v4.5.19

@@ -5,15 +5,69 @@ from app.domain.annotation_doc import make_annotation_doc, validate_annotation_d
 from app.domain.annotation_format import validate_annotation_markup
 
 FULL_JSON_OUTPUT_FORMAT = "rosetta.annotation_doc.v3.1.full_json"
-ANNOTATION_ASSISTANT_SYSTEM_PROMPT = "你是严谨的标注助手，只输出 JSON。"
+DEFAULT_PROMPT_LANGUAGE = "zh-CN"
+SUPPORTED_PROMPT_LANGUAGES = ("zh-CN", "en-US")
+
+ANNOTATION_ASSISTANT_SYSTEM_PROMPTS = {
+    "zh-CN": "你是严谨的标注助手，只输出 JSON。",
+    "en-US": "You are a rigorous annotation assistant. Output JSON only.",
+}
+ANNOTATION_ASSISTANT_SYSTEM_PROMPT = ANNOTATION_ASSISTANT_SYSTEM_PROMPTS[DEFAULT_PROMPT_LANGUAGE]
+
+RUNTIME_PROMPT_SECTION_ORDER = (
+    "concept_definition",
+    "reference_examples",
+    "annotation_format",
+    "format_example",
+    "input_text",
+    "task_emphasis",
+)
+RUNTIME_PROMPT_SECTION_LABELS = {
+    "zh-CN": {
+        "concept_definition": "概念定义",
+        "reference_examples": "相似参考样例（可选，只用于理解边界，不是当前文本答案）",
+        "annotation_format": "标注格式",
+        "format_example": "通用格式示例（只说明输出格式，不代表当前任务概念）",
+        "input_text": "待标注文本",
+        "task_emphasis": "任务强调",
+    },
+    "en-US": {
+        "concept_definition": "Concept definition",
+        "reference_examples": "Similar reference examples (optional; for boundary understanding only, not the answer for the current text)",
+        "annotation_format": "Annotation format",
+        "format_example": "Generic format example (format only; not the current task concept)",
+        "input_text": "Text to annotate",
+        "task_emphasis": "Task emphasis",
+    },
+}
 
 
-def build_protocol_instruction(output_format: str, label: str = "Term") -> tuple[str, str]:
+def normalize_prompt_language(prompt_language: str | None) -> str:
+    normalized = str(prompt_language or DEFAULT_PROMPT_LANGUAGE).strip()
+    return normalized if normalized in SUPPORTED_PROMPT_LANGUAGES else DEFAULT_PROMPT_LANGUAGE
+
+
+def annotation_assistant_system_prompt(prompt_language: str | None = None) -> str:
+    language = normalize_prompt_language(prompt_language)
+    return ANNOTATION_ASSISTANT_SYSTEM_PROMPTS[language]
+
+
+def build_protocol_instruction(output_format: str, label: str = "Term", prompt_language: str | None = None) -> tuple[str, str]:
     """Return the frozen runtime protocol instruction and a concept-neutral example."""
+    language = normalize_prompt_language(prompt_language)
     clean_label = str(label or "Term").strip() or "Term"
     output_format = str(output_format or "").strip()
     if output_format == FULL_JSON_OUTPUT_FORMAT:
-        instruction = """标注格式：
+        if language == "en-US":
+            instruction = """Annotation format:
+- Return a JSON object.
+- JSON fields are fixed as text, annotation, explanation.
+- annotation must be a complete AnnotationDoc JSON object with version, text, layers.
+- layers must at least include spans, relations, attributes, comments, document_labels.
+- span fields must include id, start, end, text, label, implicit.
+- text must exactly match the text to annotate."""
+        else:
+            instruction = """标注格式：
 - 返回一个 JSON object。
 - JSON 字段固定为 text、annotation、explanation。
 - annotation 必须是完整 AnnotationDoc JSON object，包含 version、text、layers。
@@ -45,7 +99,15 @@ def build_protocol_instruction(output_format: str, label: str = "Term") -> tuple
             "explanation": "Briefly state why the marked span matches the concept.",
         }
     else:
-        instruction = f"""标注格式：
+        if language == "en-US":
+            instruction = f"""Annotation format:
+- Return a JSON object.
+- JSON fields are fixed as text, annotation, explanation.
+- annotation uses [span]{{{clean_label}}} to mark all target spans.
+- If there is no target span, return an empty string for annotation.
+- text must exactly match the text to annotate."""
+        else:
+            instruction = f"""标注格式：
 - 返回一个 JSON object。
 - JSON 字段固定为 text、annotation、explanation。
 - annotation 使用 [span]{{{clean_label}}} 标出所有目标片段。
@@ -66,36 +128,65 @@ def build_runtime_annotation_prompt(
     labels: list[str] | tuple[str, ...] | None = None,
     task_emphasis: str = "",
     reference_examples: list[dict] | tuple[dict, ...] | None = None,
+    prompt_language: str | None = None,
 ) -> str:
     """Build the frozen annotation prompt used by validation and batch annotation."""
+    language = normalize_prompt_language(prompt_language)
+    labels_by_key = RUNTIME_PROMPT_SECTION_LABELS[language]
     label = next((str(item).strip() for item in labels or [] if str(item).strip()), "Term")
-    protocol_instruction, protocol_example = build_protocol_instruction(output_format, label=label)
-    reference_examples_block = format_reference_examples(reference_examples or [])
+    protocol_instruction, protocol_example = build_protocol_instruction(output_format, label=label, prompt_language=language)
+    reference_examples_block = format_reference_examples(reference_examples or [], prompt_language=language)
+    if language == "en-US":
+        intro = "Annotate the text according to the concept definition."
+        emphasis = str(task_emphasis or "").strip() or (
+            "Judge every span independently according to the concept definition. Output JSON only; do not output markdown, lists, explanatory paragraphs, or fields outside the schema."
+        )
+        return f"""{intro}
+
+{labels_by_key["concept_definition"]}:
+{str(concept_definition or '').strip()}
+
+{labels_by_key["reference_examples"]}:
+{reference_examples_block}
+
+{protocol_instruction}
+
+{labels_by_key["format_example"]}:
+{protocol_example}
+
+{labels_by_key["input_text"]}:
+{input_text}
+
+{labels_by_key["task_emphasis"]}:
+{emphasis}"""
+
     emphasis = str(task_emphasis or "").strip() or (
         "请根据概念定义独立判断所有应标注片段。只输出 JSON，不要输出 markdown、列表、解释性段落或 schema 外字段。"
     )
     return f"""请根据以下概念定义标注文本。
 
-概念定义：
+{labels_by_key["concept_definition"]}：
 {str(concept_definition or '').strip()}
 
-相似参考样例（可选，只用于理解边界，不是当前文本答案）：
+{labels_by_key["reference_examples"]}：
 {reference_examples_block}
 
 {protocol_instruction}
 
-通用格式示例（只说明输出格式，不代表当前任务概念）：
+{labels_by_key["format_example"]}：
 {protocol_example}
 
-待标注文本：
+{labels_by_key["input_text"]}：
 {input_text}
 
-任务强调：
+{labels_by_key["task_emphasis"]}：
 {emphasis}"""
 
 
 def build_annotation_prompt(concept: dict, input_text: str) -> str:
     """Build the user prompt for annotation request."""
+    prompt_language = concept.get("prompt_language") or concept.get("language")
+    language = normalize_prompt_language(prompt_language)
     labels = concept.get("labels") or []
     if not labels:
         labels = _labels_from_examples(concept.get("examples", []))
@@ -105,18 +196,26 @@ def build_annotation_prompt(concept: dict, input_text: str) -> str:
         output_format=str(concept.get("output_format") or ""),
         labels=labels,
         reference_examples=concept.get("reference_examples") or [],
+        prompt_language=language,
         task_emphasis=str(
             concept.get("task_emphasis")
-            or "请根据概念定义独立判断所有应标注片段。参考样例只用于理解相似边界，通用格式示例只用于说明输出格式。只输出 JSON。"
+            or (
+                "Judge every span independently according to the concept definition. Reference examples only help understand similar boundaries; the generic format example only explains output format. Output JSON only."
+                if language == "en-US"
+                else "请根据概念定义独立判断所有应标注片段。参考样例只用于理解相似边界，通用格式示例只用于说明输出格式。只输出 JSON。"
+            )
         ),
     )
 
 
-def format_reference_examples(examples: list[dict] | tuple[dict, ...], limit: int = 5) -> str:
+def format_reference_examples(
+    examples: list[dict] | tuple[dict, ...], limit: int = 5, prompt_language: str | None = None
+) -> str:
     """Format retrieved references in a dedicated prompt slot, separate from concept definition."""
+    language = normalize_prompt_language(prompt_language)
     rows = [example for example in examples if isinstance(example, dict)][: max(0, int(limit))]
     if not rows:
-        return "无。"
+        return "None." if language == "en-US" else "无。"
     blocks: list[str] = []
     for index, example in enumerate(rows, start=1):
         text = str(example.get("text", "")).strip()
@@ -127,14 +226,22 @@ def format_reference_examples(examples: list[dict] | tuple[dict, ...], limit: in
             annotation_text = str(annotation or "").strip()
         explanation = str(example.get("explanation", "")).strip()
         similarity = example.get("similarity", "")
-        meta = f"，相似度 {similarity}" if similarity != "" else ""
-        lines = [
-            f"参考样例 {index}{meta}：",
-            f"原文：{text or '无'}",
-            f"标准 annotation：{annotation_text or '无'}",
-        ]
+        if language == "en-US":
+            meta = f", similarity {similarity}" if similarity != "" else ""
+            lines = [
+                f"Reference example {index}{meta}:",
+                f"Source text: {text or 'None'}",
+                f"Gold annotation: {annotation_text or 'None'}",
+            ]
+        else:
+            meta = f"，相似度 {similarity}" if similarity != "" else ""
+            lines = [
+                f"参考样例 {index}{meta}：",
+                f"原文：{text or '无'}",
+                f"标准 annotation：{annotation_text or '无'}",
+            ]
         if explanation:
-            lines.append(f"说明：{explanation}")
+            lines.append(f"Explanation: {explanation}" if language == "en-US" else f"说明：{explanation}")
         blocks.append("\n".join(lines))
     return "\n\n".join(blocks)
 

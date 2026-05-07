@@ -20,7 +20,7 @@ from app.core.models import (
 )
 from app.data.prodigy_jsonl import task_from_dict
 from app.runtime.store import RuntimeStore
-from app.services.annotation_service import ANNOTATION_ASSISTANT_SYSTEM_PROMPT, build_annotation_prompt, parse_annotation_response
+from app.services.annotation_service import annotation_assistant_system_prompt, build_annotation_prompt, parse_annotation_response
 from app.workflows.annotation.context import build_annotation_context
 
 Predictor = Callable[[str, list[dict], float], str]
@@ -182,11 +182,13 @@ def _run_one_item(
         "examples": context["examples"],
         "reference_examples": context["examples"],
         "output_format": guideline.get("output_format", ""),
+        "prompt_language": guideline.get("prompt_language") or guideline.get("language"),
     }
+    system_prompt = annotation_assistant_system_prompt(concept.get("prompt_language") or concept.get("language"))
     predictions: list[Prediction] = []
     for run_index in range(job.sample_count):
         raw = predictor(
-            ANNOTATION_ASSISTANT_SYSTEM_PROMPT,
+            system_prompt,
             [{"role": "user", "content": build_annotation_prompt(concept, task.text)}],
             temperature,
         )

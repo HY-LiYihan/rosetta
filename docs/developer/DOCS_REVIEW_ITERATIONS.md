@@ -203,3 +203,30 @@ PLM / NLP 研究者评价：
 4. 修正用户教程中的 prompt 框架，补回 `相似参考样例` 槽位。
 5. 修正批量标注运行时口径：提示词验证和定义优化已接入统一运行时；批量标注当前仍使用本地任务队列和页面线程池调用 provider，后续再迁入统一运行时。
 6. 更新 README 最后更新时间，并在 changelog 记录本轮 P0/P1 事实修正。
+
+## 10. 第 9 轮：提示词构成与中英文边界复查
+
+传统语言学 / 数字人文用户评价：
+
+1. 用户需要一页直接回答“模型到底看见了什么”，否则会把界面语言、概念阐释语言、标签名和模型输出语言混为一谈。
+2. “一句话概念描述 + 15 条金样例”必须更早说明边界：这是启动和校准，不是泛化保证。
+3. top-k 参考样例验证不能写得像泛化评测；gold 验证必须说明排除当前样例自身和记录参考来源的实验要求。
+
+PLM / NLP 研究者评价：
+
+1. 研究主张页不能继续把输出格式、示例和失败记忆写成可训练文本参数；当前强 harness 契约只允许优化概念定义、边界规则和排除规则。
+2. 用户侧旧术语“自举校准”应改成“定义优化”，开发侧可保留 bootstrap 作为内部 workflow 名称。
+3. 旧方法名只能作为兼容 alias；公开用户文档优先使用 `sgd_candidate_search / critic_adamw_optimizer / mask_guided_optimization`。
+
+维护者评价：
+
+1. 中英文 prompt 构成应有权威入口，不应散落在 README、Annotation Format、Bootstrap Pipeline 和教程里。
+2. 不能暗示界面切换会自动翻译用户输入、任务文本、模型输出或日志。
+3. 最好用测试把文档和程序里的 prompt 段落标题绑在一起，减少漂移。
+
+本轮优化：
+
+1. 新增 [提示词构成](../user/PROMPT_COMPOSITION.md)，按 `zh-CN / en-US` 对照说明 system prompt、六段 user prompt、冻结输出协议和定义优化 prompt 边界。
+2. `annotation_service.py` 将 system prompt、段落顺序和段落标题抽成中英文模板常量，并保留 `zh-CN` 默认行为。
+3. 新增 `tests/unit/test_prompt_composition_docs.py`，检查提示词构成页包含程序中的中英文 system prompt 和运行时段落标题。
+4. 更新 README、文档首页、用户教程、Annotation Format、Research Claims、Prompt-as-Parameter、Architecture 和 Core Annotation Bootstrap 的相关口径。
