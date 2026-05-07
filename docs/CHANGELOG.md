@@ -2,6 +2,11 @@
 
 ## 2026-05-08
 
+### Docs / Homepage changelog cleanup v4.5.24
+
+1. 从文档首页移除重复的“更新历史”长列表，避免与独立 [变更记录](./CHANGELOG.md) 页面重复维护。
+2. 文档站仍保留导航栏中的“变更记录 / Changelog”入口，版本历史只在该页面集中维护。
+
 ### Docs / Bilingual MkDocs navigation v4.5.23
 
 1. 将文档站语言切换改为 `mkdocs-static-i18n` 驱动，不再手写固定首页 `extra.alternate` 链接；语言菜单会优先跳到当前页面的对应语言版本。
