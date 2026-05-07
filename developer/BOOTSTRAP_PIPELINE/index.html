@@ -1,0 +1,2726 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Rosetta 是基于 Streamlit 的本地优先智能体式标注工具">
+      
+      
+      
+        <link rel="canonical" href="https://hy-liyihan.github.io/rosetta/developer/BOOTSTRAP_PIPELINE/">
+      
+      
+        <link rel="prev" href="../../ideas/CORE_ANNOTATION_BOOTSTRAP/">
+      
+      
+        <link rel="next" href="../BOOTSTRAP_EXPERIMENTS/">
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="zh">
+        
+          <link rel="alternate" href="../../en/developer/BOOTSTRAP_PIPELINE/" hreflang="en">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Guideline Bootstrap - Rosetta</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#concept-bootstrap-pipeline-developer" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="Rosetta" class="md-header__button md-logo" aria-label="Rosetta" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Rosetta
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Guideline Bootstrap
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="切换到暗色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到暗色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="切换到亮色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到亮色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="选择当前语言">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="zh" class="md-select__link">
+              中文
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../../en/developer/BOOTSTRAP_PIPELINE/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/HY-LiYihan/rosetta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HY-LiYihan/rosetta
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user/TUTORIAL/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  快速使用
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ideas/RESEARCH_CLAIMS/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  研究主张
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  工作流
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ANNOTATION_FORMAT/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  标注格式
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  开发维护
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DEPLOYMENT/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  部署运维
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../CHANGELOG/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  变更记录
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Rosetta" class="md-nav__button md-logo" aria-label="Rosetta" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Rosetta
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/HY-LiYihan/rosetta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HY-LiYihan/rosetta
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速使用
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    快速使用
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/TUTORIAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    用户教程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/PROMPT_COMPOSITION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    提示词构成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    研究主张
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    研究主张
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ideas/RESEARCH_CLAIMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM Agent vs PLM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ideas/PROMPT_AS_PARAMETER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prompt-as-Parameter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ideas/CORE_ANNOTATION_BOOTSTRAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    核心想法
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工作流
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    工作流
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guideline Bootstrap
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guideline Bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 目标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 非目标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 端到端流程
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 算法契约
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#32-prompt-optimization-subsystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Prompt Optimization Subsystem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#33-prompt-training-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Prompt Training Experiment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3 Prompt Training Experiment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#34-annotation-harness-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Annotation Harness Contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 分层边界
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 最小数据格式
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 不确定性信号
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 专家队列策略
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 运行产物
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 实验指标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 历史 10 版本落地顺序
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 当前实现状态
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 下一步开发检查
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BOOTSTRAP_EXPERIMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Experiments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CORPUS_PIPELINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Corpus Builder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标注格式
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    标注格式
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ANNOTATION_FORMAT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运行时标注格式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ANNOTATION_JSONL_FORMAT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSONL 存储格式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发维护
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发维护
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构总览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LLM_SERVICE_RUNTIME/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM 服务运行时
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EMBEDDING_RETRIEVAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding 检索
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WORKFLOW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工作流
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCRIPTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    脚本说明
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    路线图
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    部署运维
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    部署运维
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker / Conda 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    变更记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 目标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 非目标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 端到端流程
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 算法契约
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#32-prompt-optimization-subsystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Prompt Optimization Subsystem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#33-prompt-training-experiment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Prompt Training Experiment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3 Prompt Training Experiment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#34-annotation-harness-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Annotation Harness Contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 分层边界
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 最小数据格式
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 不确定性信号
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 专家队列策略
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 运行产物
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 实验指标
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 历史 10 版本落地顺序
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 当前实现状态
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 下一步开发检查
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="concept-bootstrap-pipeline-developer">Concept Bootstrap Pipeline (Developer)<a class="headerlink" href="#concept-bootstrap-pipeline-developer" title="Permanent link">&para;</a></h1>
+<p>更新时间: 2026-05-05</p>
+<h2 id="1">1. 目标<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>Concept Bootstrap Pipeline 是 Rosetta 的新研究主线。它把“一句话概念描述 + 15 个金样例”扩展成一条可复现的大规模标注流水线。</p>
+<p>核心目标不是单次自动标注，而是：</p>
+<ol>
+<li>用少量金样例校准概念描述。</li>
+<li>用多次采样估计模型自洽性。</li>
+<li>把低置信样本优先交给人类专家。</li>
+<li>用专家选择结果持续更新 hard examples 与提示策略。</li>
+<li>生成可和 ACTER、NCBI、BC2GM、CoNLL03 等数据集对比的实验产物。</li>
+</ol>
+<p>这条流水线也是 Rosetta 证明 LLM agent 强于低预算 PLM-first 标注流程的核心实验载体。它不以“单次 LLM 输出是否正确”为终点，而以“概念版本是否变好、人工审核是否更省、导出数据是否可复现”为终点。</p>
+<h2 id="2">2. 非目标<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<ol>
+<li>不改 Docker/container 部署链路。</li>
+<li>不把这条线并入 legacy <code>corpusgen</code> 顶层边界；语料生成只能作为高级数据工厂 workflow 服务主标注线。</li>
+<li>不把系统做成复杂的多 agent 平台。</li>
+<li>不要求用户一开始准备大规模 gold dataset。</li>
+<li>不声称 LLM 在完整高质量训练集条件下无条件超过最优 PLM。</li>
+</ol>
+<h2 id="3">3. 端到端流程<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>用户输入
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  -&gt; concept brief
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  -&gt; 15 gold examples
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>概念校准
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  -&gt; only-description annotation
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  -&gt; failed examples
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  -&gt; candidate concept generation
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  -&gt; gold loss scoring
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  -&gt; accept only improving clean revision
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  -&gt; until all gold examples pass
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>大规模标注
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>  -&gt; k-run sampling
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  -&gt; consistency scoring
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>  -&gt; high-confidence pseudo labels
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>  -&gt; low-confidence human review queue
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>专家批改
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>  -&gt; show candidate annotations as multiple choice
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>  -&gt; expert chooses best candidate or edits manually
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>  -&gt; hard examples and failure notes
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>增强推理
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>  -&gt; similar example retrieval
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>  -&gt; boundary/distant example retrieval
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>  -&gt; label-statistic reflection
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>实验输出
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>  -&gt; predictions
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>  -&gt; human choices
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>  -&gt; uncertainty metrics
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>  -&gt; gold comparison
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>  -&gt; PLM / LLM budget comparison
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>  -&gt; EMNLP-style report tables
+</code></pre></div>
+<h2 id="31">3.1 算法契约<a class="headerlink" href="#31" title="Permanent link">&para;</a></h2>
+<p>正式自举循环必须满足：</p>
+<ol>
+<li>少于 15 条金样例只能保存草稿，不能启动正式自举。</li>
+<li>每轮先评估当前概念，得到 <code>current_loss</code>。</li>
+<li>大模型只负责生成候选概念正文，不负责组织日志。</li>
+<li>系统用同一批金样例重新评估候选概念。</li>
+<li>只有候选 loss 下降时才接受该候选。</li>
+<li>失败摘要、样例编号、漏标、多标和原始响应只进入 metadata / artifact，不进入最终概念阐释。</li>
+<li>如果连续无改进，停止搜索并保留当前最优版本。</li>
+</ol>
+<p>内部 loss 不是最终论文指标。它是自举搜索时的优化目标，主要由失败样例数、边界不稳定样例数、漏标数、多标数和平均 span-F1 组成。最终实验仍应报告标准 precision / recall / F1、人工审核量和成本。</p>
+<h2 id="32-prompt-optimization-subsystem">3.2 Prompt Optimization Subsystem<a class="headerlink" href="#32-prompt-optimization-subsystem" title="Permanent link">&para;</a></h2>
+<p><code>v4.3.0</code> 开始，当前 <code>loss-guided candidate search</code> 已接入显式 Prompt-as-Parameter 最小内核。概念阐释不再只是整段字符串交给 LLM 改写，而是先切分为可训练文本参数，再估算 Text Gradient，并把优化方向、长度惩罚和候选验证结果写入 trace。</p>
+<p>默认数据流：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ConceptVersion
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -&gt; segment prompt
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  -&gt; estimate text gradients
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  -&gt; generate candidate prompts
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  -&gt; evaluate gold loss
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  -&gt; accept / reject
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  -&gt; write optimization trace
+</code></pre></div>
+<p>未来实现应包含以下组件：</p>
+<ol>
+<li><code>PromptSegmenter</code>: 将概念阐释切成任务定义、概念定义、边界规则和失败模式抽象；负例约束如需使用，应作为高级概念语义片段处理，而不是默认用户必填项。</li>
+<li><code>TextGradientEstimator</code>: 用 Mask 遮挡、对比替换、消融链路和 LLM 自我诊断估算文本梯度。</li>
+<li><code>PromptOptimizer</code>: 根据梯度方向、历史状态和长度惩罚生成更新策略。</li>
+<li><code>CandidateGenerator</code>: 调用 LLM 生成干净候选 prompt，不把失败日志拼进最终文本。</li>
+<li><code>PromptOptimizationTrace</code>: 记录每一步扰动、loss delta、候选、是否接受和诊断日志。</li>
+</ol>
+<p>v1 文档默认优化器是 <code>LLM-AdamW</code>：</p>
+<ol>
+<li>保留历史有效方向，避免每轮随机漂移。</li>
+<li>对高频波动片段小步更新，对稳定有效方向加大权重。</li>
+<li>对 prompt 长度做 weight decay，禁止靠无限加规则降低短期 loss。</li>
+<li>所有候选必须通过同一批 gold examples 验证，只有 loss 下降才接受。</li>
+</ol>
+<p>Trace 至少记录：</p>
+<ol>
+<li><code>segment_id</code></li>
+<li><code>perturbation_method</code></li>
+<li><code>gradient_direction</code></li>
+<li><code>current_loss</code></li>
+<li><code>candidate_loss</code></li>
+<li><code>loss_delta</code></li>
+<li><code>length_delta</code></li>
+<li><code>accepted</code></li>
+<li><code>diagnostics</code></li>
+</ol>
+<p>当前状态边界：<code>v4.3.0</code> 已实现最小 Prompt-as-Parameter 内核，包括 prompt 分段、启发式 Mask 文本梯度、<code>LLM-AdamW</code> trace、长度惩罚和 gold loss validation。<code>v4.4.0</code> 在此基础上新增提示词优化训练实验，能在同一批 15 条金样例上比较三种候选生成策略，并把完整训练轨迹写入 artifact。对比替换、消融链路和跨轮 optimizer state 仍是后续工作。</p>
+<h2 id="33-prompt-training-experiment">3.3 Prompt Training Experiment<a class="headerlink" href="#33-prompt-training-experiment" title="Permanent link">&para;</a></h2>
+<p><code>run_prompt_training_experiment</code> 是 <code>v4.4.0</code> 新增的高层训练入口。它不替代 <code>run_concept_refinement_loop</code>，而是用于把“一个简单任务描述能否训练到 15 条金样例全通过”变成可比较、可复现的实验。</p>
+<p>输入：</p>
+<ol>
+<li><code>guideline_id</code></li>
+<li>当前 guideline 的 15 条 gold tasks</li>
+<li><code>PromptTrainingConfig</code></li>
+<li>可选 <code>predictor</code></li>
+<li>可选 <code>auto_apply</code></li>
+</ol>
+<p>默认配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">PromptTrainingConfig</span><span class="p">(</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">methods</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;sgd_candidate_search&quot;</span><span class="p">,</span> <span class="s2">&quot;critic_adamw_optimizer&quot;</span><span class="p">,</span> <span class="s2">&quot;mask_guided_optimization&quot;</span><span class="p">),</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">max_rounds</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">candidate_count</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">target_pass_count</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">min_loss_delta</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">patience_rounds</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">stop_policy</span><span class="o">=</span><span class="s2">&quot;patience_no_loss_improvement&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">candidate_temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">evaluation_temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">length_penalty</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">no_corpus_memorization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">memorization_policy</span><span class="o">=</span><span class="s2">&quot;repair_then_reject&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">raw_feedback_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">concurrency</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">repair_leaked_candidates</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">max_repair_attempts</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="n">provider_id</span><span class="o">=</span><span class="s2">&quot;deepseek&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;deepseek-v4-pro&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="p">)</span>
+</code></pre></div>
+<p>三种方法必须使用同一套 gold loss、同一批金样例、同一套候选接受规则和同一个冻结输出协议：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>训练反馈材料</th>
+<th>候选生成信息</th>
+<th>防背答案约束</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sgd_candidate_search</code></td>
+<td>不提供原文、标准答案、模型答案、失败详情、loss 或文本梯度</td>
+<td>只告诉大模型“请优化当前概念语义提示词”，并提供已接受历史摘要</td>
+<td>候选只允许包含概念定义和边界规则；如有负例约束，只能作为抽象边界条件</td>
+<td>最简单 zero-order baseline</td>
+</tr>
+<tr>
+<td><code>critic_adamw_optimizer</code></td>
+<td>先提供当前可优化提示词，再按失败 detail 就近提供原文、gold <code>[span]{Term}</code>、model JSON answer、错误摘要和整体失败摘要，标记 <code>training_feedback_only=true</code></td>
+<td>Evaluator -&gt; Controller -&gt; Generator，记录历史动量、片段自适应和长度惩罚</td>
+<td>候选不能复制原文、gold span、model span 或可识别答案片段，也不能改输出协议</td>
+<td>强 agentic optimizer</td>
+</tr>
+<tr>
+<td><code>mask_guided_optimization</code></td>
+<td>提供原始批改对照、系统计算的 Mask 遮挡 loss delta 和长度变化</td>
+<td>使用显式 Text Gradient / mask ablation 方向生成概念候选</td>
+<td>梯度可来自具体错误，但最终候选只能保留抽象规则；格式协议由 harness 注入</td>
+<td>可解释文本梯度方法</td>
+</tr>
+</tbody>
+</table>
+<p>每种方法独立运行，不共享中间 prompt，避免方法之间互相污染。每轮固定执行：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>evaluate current prompt
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  -&gt; compute gold loss
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  -&gt; build training feedback prompt
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  -&gt; generate concept-only candidate prompts
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  -&gt; sanitize candidate prompts
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  -&gt; run MemorizationGuard on candidate prompts
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  -&gt; repair leaked candidate prompts when possible
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  -&gt; run MemorizationGuard again
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  -&gt; inject frozen output protocol
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  -&gt; strict parse and format repair
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  -&gt; evaluate each candidate on the same 15 gold examples
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>  -&gt; accept only loss-decreasing clean candidate
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  -&gt; stop if 15/15 pass or 5 consecutive rounds have no loss improvement
+</code></pre></div>
+<p><code>v4.5.11</code> 页面层把 prompt training 暂时收敛为三种用户可理解的优化方式：</p>
+<table>
+<thead>
+<tr>
+<th>页面方式</th>
+<th>底层方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>人工优化</td>
+<td>manual <code>ConceptVersion</code> write</td>
+<td>用户直接编辑可优化提示词，保存后写入新的 prompt 版本</td>
+</tr>
+<tr>
+<td>无样例自监督优化</td>
+<td><code>llm_optimize_only</code></td>
+<td>候选生成阶段只告诉 LLM “请优化当前提示词”，不提供失败样例、gold answer、model answer、loss 或历史</td>
+</tr>
+<tr>
+<td>类训练优化</td>
+<td><code>llm_reflection</code></td>
+<td>当前第一版训练式优化器：每轮基于失败对照生成候选，默认 5 个，逐个回测 15 条 gold</td>
+</tr>
+</tbody>
+</table>
+<p>类训练优化的默认循环必须保持如下语义：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>current prompt
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  -&gt; ask LLM for 5 optimized candidates
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  -&gt; evaluate each candidate on the same 15 gold examples
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  -&gt; choose the candidate with the lowest loss
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  -&gt; accept only if loss improves
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  -&gt; record old prompt -&gt; new prompt -&gt; loss delta
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>  -&gt; include accepted-history summary in the next LLM reflection prompt
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  -&gt; stop at 15/15 or after patience rounds with no improvement
+</code></pre></div>
+<p>每个 run 需要产生 <code>prompt_versions</code>：<code>v0</code> 是初始 prompt，后续 <code>v1...vn</code> 是每次被接受的候选。每个版本至少记录 <code>method / optimizer_name / round_index / candidate_id / description / loss / loss_delta / pass_count</code>。这些版本会写入 <code>ConceptVersion</code>，metadata 使用 <code>prompt_training_version=true</code>；最终兼容 summary 版本继续使用 <code>prompt_training=true</code>。</p>
+<p><code>v4.5.1</code> 后，<code>max_rounds</code> 不再等于成功标准。每个方法独立维护 <code>no_improvement_streak</code>：</p>
+<ol>
+<li>任一候选让本轮 loss 下降超过 <code>min_loss_delta</code>，接受该候选并把 streak 重置为 0。</li>
+<li>本轮所有候选都没有让 loss 下降，streak 加 1。</li>
+<li>达到 <code>15/15</code> 时立即停止，<code>stop_reason=reached_target</code>。</li>
+<li>连续 5 轮无下降时停止，<code>stop_reason=no_loss_improvement_patience</code>。</li>
+<li>达到 <code>max_rounds</code> 仍未满足上述条件时停止，<code>stop_reason=max_rounds</code>。</li>
+</ol>
+<p>结果汇总使用历史最优接受版本，而不是最后一轮快照。真实 LLM 即使 <code>evaluation_temperature=0.0</code> 也可能有轻微波动，因此 method result 中的 <code>best_loss / best_pass_count / best_round_index / best_description</code> 必须指向训练过程中观察到的最优已接受 prompt；<code>stop_reason / round_count / no_improvement_streak</code> 则描述该方法实际如何停止。</p>
+<p><code>training feedback prompt</code> 和 <code>learned operational prompt</code> 是不同对象：</p>
+<ol>
+<li><code>training feedback prompt</code> 是优化模型看的批改材料，可以包含原文、标准答案和模型回答，但必须标记 <code>training_feedback_only=true</code>。</li>
+<li><code>learned operational prompt</code> 是后续批量标注使用的概念阐释，不能复制语料词、gold span、model span、原句或可识别答案片段。</li>
+<li><code>ConceptVersion.description</code> 只保存通过防背答案检查的 concept-only operational prompt。</li>
+<li>raw feedback、raw response、失败样例和完整候选日志只进入 artifact 或折叠日志。</li>
+</ol>
+<p><code>v4.5.10</code> 后，<code>llm_reflection</code> 的批改反馈必须保持句子级对照相邻，而不是把 gold answer、model answer 和错误摘要分散在不同段落：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>当前提示词（只包含可优化的概念定义和边界规则）：
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>{current ConceptPromptSpec}
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>整体失败摘要（只供判断改写方向）：
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>{failure_summary}
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>失败样例批改对照：
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>失败样例 1
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>原文：{failed_detail.text}
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>标准答案 annotation：{gold spans rendered as [span]{Term}}
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>模型回答 JSON：{&quot;text&quot;: &quot;...&quot;, &quot;annotation&quot;: &quot;...&quot;, &quot;explanation&quot;: &quot;...&quot;}
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>错误摘要：{missing / extra / route / score summary}
+</code></pre></div>
+<p>反馈构建优先读取概念验证 detail：<code>gold_spans</code> 渲染为 <code>[span]{Term}</code>，<code>model_raw_response</code> 作为模型回答 JSON；如果没有 raw response，则从 <code>predicted_spans</code> 重构一个安全 JSON 摘要。这个结构可以让优化模型像看逐题批改一样学习边界问题，但输出要求仍然是只返回概念阐释正文，不能带回样例编号、失败摘要、gold answer、model answer 或输出协议。</p>
+<p><code>MemorizationGuard</code> 的输入来自同一批 15 条 gold：</p>
+<ol>
+<li>gold task 原文。</li>
+<li>gold spans 和 runtime annotation。</li>
+<li>当前轮模型答案中的 predicted spans。</li>
+<li>从这些文本抽取出的词、短语和 n-gram hash。</li>
+<li>允许项仅包含标签名、输出格式等任务公共词。</li>
+</ol>
+<p><code>v4.5.0</code> 后，候选泄露不再立即拒绝。默认策略是 <code>repair_then_reject</code>：</p>
+<ol>
+<li><code>MemorizationGuard</code> 先标记 <code>clean / soft_leak / critical_leak</code>。</li>
+<li>如果候选泄露，系统把候选提示词和 runtime 内部的 transient raw matches 交给 <code>repair_leaked_prompt()</code>。</li>
+<li>修复模型只做“去语料化”：删除具体词、短语、原句、答案片段和样例编号，把它们改写成抽象边界规则或排除规则。</li>
+<li>修复最多 2 次。修复后通过 guard 的候选才进入 gold loss 回测。</li>
+<li>修复后仍泄露时，记录 <code>status=memorization_repair_failed</code>、<code>memorization_passed=false</code>、<code>blocked_terms_count</code>、<code>guard_before_repair</code>、<code>guard_after_repair</code> 和 <code>repair_attempts</code>。</li>
+<li>主报告仍只展示 hash / count；raw matches 默认不写入公开 UI 和报告。</li>
+</ol>
+<p>每种方法和每一轮还会记录轻量 usage：</p>
+<ol>
+<li><code>llm_call_count</code>: predictor 调用次数。</li>
+<li><code>estimated_tokens</code>: 基于 system prompt、messages 和 raw response 字符数的粗略估算。</li>
+<li><code>elapsed_seconds</code>: 该方法或该轮墙钟耗时。</li>
+<li><code>usage.estimated=true</code>: 当前优先使用 <code>LLMServiceRuntime</code> 的 token 估算；如果 provider 后续返回真实 usage，应替换为 provider usage 并标记 <code>estimated=false</code>。</li>
+</ol>
+<p>最终选择规则：</p>
+<ol>
+<li>优先选择达到 <code>15/15</code> 的方法。</li>
+<li>达到目标的方法还必须通过最终提示词防背答案检查。</li>
+<li>如果多个方法都达到目标，选择 loss 更低者。</li>
+<li>如果 loss 相同，选择 prompt 更短者。</li>
+<li>如果仍相同，选择轮数更少者。</li>
+<li>如果没有方法达到 <code>15/15</code>，或最佳方法最终提示词不干净，选择最终 loss 最低者，但状态标记为 <code>needs_revision</code>。</li>
+</ol>
+<p>落盘契约：</p>
+<ol>
+<li><code>ConceptVersion.description</code> 只保存胜出的干净提示词。</li>
+<li><code>ConceptVersion.metadata.prompt_training=true</code>。</li>
+<li><code>ConceptVersion.metadata.best_method</code> 保存胜出方法。</li>
+<li><code>ConceptVersion.metadata.method_comparison</code> 保存每种方法的状态、停止原因、初始 loss、最佳 loss、loss delta、通过数、轮数和提示词长度。</li>
+<li><code>ConceptVersion.metadata.leakage_summary</code> 保存 <code>candidate_blocked_count</code>、<code>final_prompt_clean</code>、fingerprint 摘要和最终检查结果。</li>
+<li>完整 round trace、training feedback、候选 raw response、净化警告、loss detail、轻量 usage、<code>MemorizationGuard</code> 检查和 <code>PromptOptimizationTrace</code> 写入 <code>.runtime/artifacts/prompt_training/*.json</code>。</li>
+<li>CLI 对比实验额外输出 <code>comparison_report.md</code>、<code>comparison_result.json</code>、<code>prompt_evolution.jsonl</code> 和 <code>run_events.jsonl</code>，用于人工阅读、后续统计、提示词演化复核和运行过程复现。</li>
+</ol>
+<p><code>v4.5.2</code> 后，提示词优化训练增加后台运行与进度事件层，但不改变三方法优化算法：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Definition &amp; Guideline click
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  -&gt; create WorkflowRun(status=running)
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  -&gt; start_prompt_training_background_run()
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  -&gt; background thread creates RuntimeStore + LLMServiceRuntime
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  -&gt; run_prompt_training_experiment(progress_recorder=...)
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  -&gt; write run_progress_events
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  -&gt; write comparison_report.md / comparison_result.json / prompt_evolution.jsonl / run_events.jsonl
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  -&gt; update WorkflowRun(status=succeeded|failed)
+</code></pre></div>
+<p>阶段事件至少包括：</p>
+<ol>
+<li><code>run_started / run_completed / run_failed</code></li>
+<li><code>method_started / method_completed</code></li>
+<li><code>round_started / round_completed</code></li>
+<li><code>gold_validation_started / gold_validation_completed</code></li>
+<li><code>candidate_generation_started / candidate_generated</code></li>
+<li><code>candidate_repair_started / candidate_repair_completed</code></li>
+<li><code>candidate_evaluation_started / candidate_evaluated</code></li>
+<li><code>candidate_accepted / candidate_rejected</code></li>
+<li><code>call_queued / call_started / call_succeeded / call_failed / call_retried</code></li>
+</ol>
+<p>事件 payload 必须是安全摘要：不能包含 raw prompt、raw response、gold 原文、gold span、model span 或 private leakage matches。完整可复现实验依赖 artifact 中的受控 trace，而 UI 日志只展示阶段、计数、loss、候选状态、token 和错误摘要。</p>
+<h3 id="34-annotation-harness-contract">3.4 Annotation Harness Contract<a class="headerlink" href="#34-annotation-harness-contract" title="Permanent link">&para;</a></h3>
+<p><code>v4.5.5</code> 文档契约把标注 prompt 拆成两部分：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ConceptPromptSpec
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  -&gt; concept_definition
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  -&gt; boundary_rules
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  -&gt; optional negative constraints as advanced concept semantics
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>Frozen OutputProtocolSpec
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  -&gt; labels
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  -&gt; JSON schema
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  -&gt; annotation markup
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  -&gt; parser contract
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  -&gt; format repair instructions
+</code></pre></div>
+<p><code>ConceptPromptSpec</code> 是 prompt training 的优化对象。<code>Frozen OutputProtocolSpec</code> 是 harness 责任，不进入 optimizer 的可编辑空间。后续代码实现时，页面、CLI 和 workflow 都应遵守同一条运行链路：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ConceptPromptSpec
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  -&gt; inject Frozen OutputProtocolSpec
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  -&gt; LLM call
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  -&gt; strict JSON parse
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>  -&gt; schema / text / label / markup validation
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  -&gt; format repair loop if needed
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  -&gt; semantic loss only after format is valid
+</code></pre></div>
+<p><code>v4.5.9</code> 起，运行时标注 prompt 的段落顺序必须固定为：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>请根据以下概念定义标注文本。
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>-&gt; 概念定义
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>-&gt; 相似参考样例
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>-&gt; 标注格式
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>-&gt; 通用格式示例
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>-&gt; 待标注文本
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>-&gt; 任务强调
+</code></pre></div>
+<p>这条约定同时适用于 15 gold 概念验证、候选回测、单条标注和批量标注。<code>标注格式</code> 只来自冻结协议；通用格式示例只说明 JSON / markup / AnnotationDoc 返回结构，不能放入当前 gold、相似样例、失败样例或任务答案。<code>相似参考样例</code> 是单独槽位，只有 top-k 验证或批量上下文显式传入 <code>reference_examples</code> 时才填充；普通 <code>examples</code> 只用于推断标签，不能自动作为 few-shot 答案进入 prompt。批量标注的相似样例、边界远例和失败记忆可以作为边界上下文进入专用槽位或概念上下文摘要，但不能再携带“模型输出格式”这类协议说明。</p>
+<p>冻结输出协议默认采用 <code>JSON+markup</code>，也可以选择完整 <code>AnnotationDoc</code> JSON：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;原始输入文本，必须与任务 text 一致&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="nt">&quot;annotation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;使用 [span]{Term} 标出所有目标片段&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;一句简短理由&quot;</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="p">}</span>
+</code></pre></div>
+<p>完整 <code>AnnotationDoc</code> JSON 用于 relation、attributes 或多层标注任务，<code>annotation</code> 字段必须是 object，包含 <code>version / text / layers</code>，其中 <code>layers</code> 至少包含 <code>spans / relations / attributes / comments / document_labels</code>。</p>
+<p>约束：</p>
+<ol>
+<li>JSON 外不能有 markdown fence、解释性 prose 或额外包装。</li>
+<li>span-markup 协议下，<code>annotation</code> 必须使用 <code>[span]{Term}</code> 行内 markup；完整 JSON 协议下，<code>annotation</code> 必须是合法 AnnotationDoc object。<code>Term</code> 或其他标签来自 gold 推断和 harness 注入，不由 optimizer 学习。</li>
+<li><code>text</code> 必须与当前任务原文一致；不能改写、翻译或摘要。</li>
+<li>每个 span 必须能在 <code>text</code> 中定位，label 必须属于冻结标签集合。</li>
+<li>schema、标签、markup 格式、repair 指令和 parser 行为不能被候选提示词修改。</li>
+</ol>
+<p>格式失败和语义失败必须分开：</p>
+<ol>
+<li>先做 strict parse 与 schema validation。</li>
+<li>如果 JSON、字段、markup、label 或 span 定位失败，进入最多 2 次 format repair。</li>
+<li>format repair prompt 只能强调冻结输出协议，不能改写概念定义、边界规则或高级负例约束。</li>
+<li>repair 成功后才计算 semantic loss。</li>
+<li>repair 失败记录为 <code>format_failed</code>，不混入漏标、多标或边界错误。</li>
+<li>实验报告必须单独展示 <code>format_failure_rate</code>、<code>format_repair_success_rate</code>、<code>semantic_loss</code> 和 <code>pass_count</code>。</li>
+</ol>
+<p>当前状态边界：现有解析器和部分 workflow 已能处理 JSON 响应与 markup 字段，但统一的 <code>AnnotationHarness</code>、跨 workflow 的 strict validation / repair loop 和格式指标拆分仍是下一阶段实现任务。本节是实现契约，不表示这些能力已经全部接入每条路径。</p>
+<p>实现边界：</p>
+<ol>
+<li><code>v4.5.7</code> 已先完成页面与候选生成层的对齐：<code>Definition &amp; Guideline</code> 页面分栏展示 <code>ConceptPromptSpec</code> 和 <code>Frozen OutputProtocolSpec</code>；<code>llm_optimize_only / llm_reflection / text_gradient_adamw</code> 的候选生成 prompt 只要求输出任务定义、概念定义、边界规则和排除规则。</li>
+<li><code>v4.5.7</code> 已加入轻量 concept-only 清理：候选提示词如果带回标签集合、输出格式、JSON schema 或 annotation markup，会从候选 description 中剥离，并记录 <code>removed_frozen_output_protocol</code> warning。</li>
+<li><code>v4.5.7</code> 的评估调用会把冻结标签、JSON 字段和 annotation 格式重新注入给标注模型，因此候选生成阶段不需要也不允许学习输出协议。</li>
+<li><code>v4.5.8</code> 已把新概念表单收紧为概念名称、概念定义和协议选项；标签从 gold span label 推断，缺省为 <code>Term</code>。解析器已能接受 <code>[span]{Term}</code> 字符串和完整 AnnotationDoc dict。</li>
+<li><code>v4.5.13</code> 已把自定义定义面板进一步清理为当前定义名称、当前概念阐释、金样例格式和上传/粘贴金样例；边界、排除和特殊情况应写进当前概念阐释正文，不再作为独立表单字段。</li>
+<li><code>v4.5.9</code> 已把概念验证和批量标注的运行时 prompt 统一到同一个 helper，移除“不要参考金答案”表述，并把批量上下文里的输出格式说明移入冻结 <code>标注格式</code> 段落。</li>
+<li><code>v4.5.10</code> 已把概念验证、候选回测、单条标注和批量标注的 system prompt 统一为 <code>你是严谨的标注助手，只输出 JSON。</code>；workflow 差异只留在 user prompt 和冻结协议注入中。</li>
+<li><code>v4.5.10</code> 已把 <code>llm_reflection</code> 的 training feedback 改为逐条失败 detail 的相邻批改对照，优先使用验证 detail 中的 <code>model_raw_response</code>。</li>
+<li><code>v4.5.11</code> 已新增本地格式验证和 <code>reference_k</code> gold validation；带样例验证会按 top-k 文本向量余弦相似度选择参考 gold 并注入概念上下文。</li>
+<li><code>v4.5.11</code> 已把页面主操作收敛为提示词验证和提示词优化，并把类训练优化的 accepted prompt history 写回下一轮 reflection prompt。</li>
+<li><code>v4.5.12</code> 已将三种自动优化器改为 canonical id，新增 critic evaluator/controller trace、mask ablation trace，并把真实 LLM 默认并发上限提升到 50。</li>
+<li><code>v4.5.12</code> 已将 top-k 参考 gold 检索迁移到 <code>rosetta-local-hash-384</code> 本地 embedding，避免继续依赖 token overlap 或在线 embedding API。</li>
+<li><code>v4.5.18</code> 已把 top-k / 批量参考样例从可优化概念定义中拆到专门 <code>相似参考样例</code> 槽位，避免把参考答案污染为概念语义或输出协议。</li>
+<li>尚未完成的是统一跨 workflow 的 <code>AnnotationHarness</code> 对象、format repair 指标拆分和公开报告里的 <code>protocol_tampering_count</code> 聚合。</li>
+<li>第一版成功标准只看 15 条金样例，不加入 held-out validation；因此只能证明“没有直接背答案且能通过训练 gold”，不能证明泛化。</li>
+<li><code>v4.5.2</code> 已新增 SQLite <code>run_progress_events</code> 并把 Definition &amp; Guideline prompt training 改为后台轮询；pause/resume/cancel 仍未实现。</li>
+<li>批量标注、概念自举和 LLM-as-a-judge 后续应复用同一 <code>ProgressRecorder</code>，但本轮只覆盖提示词优化训练。</li>
+<li>强格式 harness 是 <code>v4.5.5</code> 文档契约，后续代码实现必须复用同一冻结输出协议，不允许每个 workflow 自己拼格式 prompt。</li>
+</ol>
+<h2 id="4">4. 分层边界<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<p>这条流水线现在是 Rosetta 主工作流的一部分。新功能优先进入 <code>app/workflows/*</code>，旧 <code>app/research/*</code> 和 <code>scripts/research/*</code> 只保留为离线分析、算法参考和兼容入口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>app/workflows/bootstrap/      # 15 gold examples -&gt; concept description refinement
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>app/workflows/annotation/     # k-run sampling, context building, consistency routing
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>app/workflows/review/         # human choice, hard examples, gold-like feedback
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>app/workflows/evaluation/     # reports, metrics, experiment summaries
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>app/research/                 # legacy offline analysis and algorithm references
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>scripts/research/             # legacy CLI entrypoints
+</code></pre></div>
+<p>允许共享的模块：</p>
+<ol>
+<li><code>app/domain/*</code>：标注格式与 AnnotationDoc。</li>
+<li><code>app/infrastructure/llm/*</code>：Kimi / BigModel / DeepSeek / Qwen provider。</li>
+<li><code>app/research/*</code>：已实现的 consistency、contrastive retrieval、label statistics、reflection 参考算法。</li>
+</ol>
+<h2 id="5">5. 最小数据格式<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<p>LLM 的输出格式和最终存储格式不需要一致。</p>
+<p>标注时，为了让模型更容易完成任务，可以继续使用行内标注格式：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Patients with [heart failure]{Specific_Term} may receive [ventricular assist devices]{Specific_Term}.
+</code></pre></div>
+<p>这种格式适合放进 prompt，因为标签紧贴原文，模型不需要手工计算字符偏移。</p>
+<p>最终存储时，必须统一转换为 Prodigy-compatible JSONL。内部主格式保持简单 JSONL，避免直接绑定 INCEpTION <code>jsoncas</code>；同时沿用 Prodigy 常见字段 <code>spans / relations / label / options / accept / answer / meta</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">&quot;schema_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rosetta.prodigy_jsonl.v1&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sample-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Patients with heart failure may receive ventricular assist devices.&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="nt">&quot;tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="nt">&quot;spans&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;T1&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">      </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">      </span><span class="nt">&quot;end&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">27</span><span class="p">,</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">      </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart failure&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">      </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Specific_Term&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">      </span><span class="nt">&quot;implicit&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">  </span><span class="nt">&quot;relations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">  </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;accept&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">  </span><span class="nt">&quot;meta&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="w">    </span><span class="nt">&quot;dataset&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ACTER&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="w">    </span><span class="nt">&quot;domain&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart_failure&quot;</span>
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="p">}</span>
+</code></pre></div>
+<p>这个格式不是新发明。它参考 Prodigy annotation task JSON：每条记录包含 <code>text</code>，并用 <code>spans</code> 保存实体或片段的字符起止偏移和标签；用 <code>relations</code> 保存片段或 token 关系；用 <code>options / accept / answer</code> 保存分类与人工决策。spaCy 的训练数据格式也使用字符 offset 表示 spans。完整格式规范见 <a href="../ANNOTATION_JSONL_FORMAT/">ANNOTATION_JSONL_FORMAT.md</a>。</p>
+<p>每次模型输出候选：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="nt">&quot;schema_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rosetta.prodigy_candidate.v1&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="nt">&quot;sample_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sample-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="nt">&quot;candidate_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;run-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Patients with heart failure may receive ventricular assist devices.&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">  </span><span class="nt">&quot;tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">  </span><span class="nt">&quot;spans&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">    </span><span class="p">{</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;T1&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">      </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="p">,</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">      </span><span class="nt">&quot;end&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">27</span><span class="p">,</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="w">      </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;heart failure&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="w">      </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Specific_Term&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="w">      </span><span class="nt">&quot;implicit&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="w">  </span><span class="nt">&quot;relations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="w">  </span><span class="nt">&quot;runtime_annotation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="w">    </span><span class="nt">&quot;format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;inline_markup.v1&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="w">    </span><span class="nt">&quot;annotation_markup&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[heart failure]{Specific_Term}&quot;</span>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="w">  </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="w">  </span><span class="nt">&quot;explanation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The phrase names a domain-specific medical condition.&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="w">  </span><span class="nt">&quot;model_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.82</span><span class="p">,</span>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="w">  </span><span class="nt">&quot;uncertainty_reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Boundary is clear.&quot;</span>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="p">}</span>
+</code></pre></div>
+<p>专家复核选择：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="p">{</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">&quot;sample_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sample-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="nt">&quot;selected_candidate_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;candidate-003&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="nt">&quot;decision&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;accept_candidate&quot;</span><span class="p">,</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">&quot;edited_annotation&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="nt">&quot;notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Candidate C has the correct span boundary.&quot;</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>转换原则：</p>
+<ol>
+<li>Prompt 中优先使用行内 markup，降低模型输出难度。</li>
+<li>解析后立刻转换成 <code>spans</code>，并校验 <code>text[start:end] == span.text</code>。</li>
+<li>研究产物、评测、专家复核、导入导出一律以 Prodigy-compatible JSONL 为准。</li>
+<li>如果接入 INCEpTION，则只在边界层做 <code>jsoncas &lt;-&gt; prodigy_jsonl</code> 转换。</li>
+</ol>
+<p>参考：</p>
+<ol>
+<li>Prodigy NER / span annotation JSONL：<code>text</code> + <code>spans[{start,end,label}]</code>。</li>
+<li>spaCy data formats：spans 使用字符 offset tuple 表达。</li>
+<li>INCEpTION：复杂项目交换可使用 <code>UIMA CAS JSON</code>，但不作为 Rosetta 内部主格式。</li>
+</ol>
+<h2 id="6">6. 不确定性信号<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p>单一信号不可靠，因此采用组合路由：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>uncertainty =
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  annotation_disagreement
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>  + model_self_uncertainty
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>  + rule_verification_risk
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>  + judge_disagreement
+</code></pre></div>
+<p>第一版实现优先支持：</p>
+<ol>
+<li><code>annotation_disagreement</code>：多次输出之间的 span-level 差异。</li>
+<li><code>model_self_uncertainty</code>：模型自评 confidence，仅作辅助。</li>
+<li><code>rule_verification_risk</code>：格式、span、逻辑规则错误。</li>
+</ol>
+<p>第二阶段再加入：</p>
+<ol>
+<li>LLM-as-a-judge 候选评审。</li>
+<li>token probability / logprob，如果目标平台稳定支持。</li>
+<li>semantic entropy 风格的语义聚类。</li>
+</ol>
+<p>所有不确定性信号都应写入 <code>Prediction.meta</code> 或 <code>ReviewTask.meta</code>。否则导出报告无法解释为什么某条样本被自动通过、进入审核或被标为 hard example。</p>
+<h2 id="7">7. 专家队列策略<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<p>专家不是平均批改所有样本，而是优先处理低置信样本。</p>
+<p>推荐三种实验策略：</p>
+<ol>
+<li><code>random_review</code>：随机抽样给专家，作为弱基线。</li>
+<li><code>uncertainty_first</code>：优先给专家低自洽样本。</li>
+<li><code>hybrid_review</code>：低自洽样本优先，同时保留少量高置信样本抽检。</li>
+</ol>
+<p>UI 或 CLI 输出都应尽量把复核任务做成选择题：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>候选 A: ...
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>候选 B: ...
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>候选 C: ...
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>候选 D: ...
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>候选 E: ...
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>候选 F: 以上都不对，手动修正
+</code></pre></div>
+<h2 id="8">8. 运行产物<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<p>默认输出目录：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>.runtime/research/&lt;config-name&gt;/bootstrap_&lt;timestamp&gt;/
+</code></pre></div>
+<p>核心产物：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>concept_versions.jsonl
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>gold_examples.jsonl
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>candidate_runs.jsonl
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>consistency_scores.jsonl
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>human_review_queue.jsonl
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>human_choices.jsonl
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>hard_examples.jsonl
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>retrieval_traces.jsonl
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>label_statistics.json
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>report.md
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>manifest.json
+</code></pre></div>
+<h2 id="9">9. 实验指标<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<p>必须优先覆盖：</p>
+<ol>
+<li>span-level precision / recall / F1。</li>
+<li>boundary exact match。</li>
+<li>label exact match。</li>
+<li>同等人工预算下的收益。</li>
+<li>专家选择候选即可通过的比例。</li>
+<li>必须手动改写的比例。</li>
+<li>高置信自动通过样本的抽检错误率。</li>
+<li>低置信样本转为 hard examples 后的下一轮提升。</li>
+</ol>
+<p>与 PLM 对比时还要记录：</p>
+<ol>
+<li>同等 gold 数量下 PLM fine-tuning 的 F1。</li>
+<li>Full-data PLM fine-tuning 的上界表现。</li>
+<li>Rosetta 达到同等 F1 所需的人工审核量。</li>
+<li>Rosetta 额外模型调用成本。</li>
+<li>概念漂移或标签定义变化后，Rosetta 更新概念版本和 PLM 重新训练的成本差异。</li>
+</ol>
+<h2 id="10-10">10. 历史 10 版本落地顺序<a class="headerlink" href="#10-10" title="Permanent link">&para;</a></h2>
+<ol>
+<li><code>v3.1.0</code>: 核心研究想法归档。</li>
+<li><code>v3.2.0</code>: Pipeline 文档、架构边界与版本路线。</li>
+<li><code>v3.3.0</code>: 数据契约与 JSONL IO。</li>
+<li><code>v3.4.0</code>: 多次输出自洽性评分。</li>
+<li><code>v3.5.0</code>: 人类专家复核队列。</li>
+<li><code>v3.6.0</code>: 相似 / 边界对比式检索。</li>
+<li><code>v3.7.0</code>: 标签统计与反思计划。</li>
+<li><code>v3.8.0</code>: Bootstrap runner 与 CLI。</li>
+<li><code>v3.9.0</code>: ACTER / EMNLP 实验模板。</li>
+<li><code>v3.10.0</code>: 报告生成、对比表与最终文档串联。</li>
+<li><code>v3.11.0</code>: 存储格式升级为可扩展 Annotation JSONL。</li>
+<li><code>v3.12.0</code>: 存储格式收敛为 Prodigy-compatible JSONL profile。</li>
+</ol>
+<h2 id="11">11. 当前实现状态<a class="headerlink" href="#11" title="Permanent link">&para;</a></h2>
+<p><code>v3.3.0</code> 已完成最小数据层：</p>
+<ol>
+<li><code>app/research/bootstrap_contracts.py</code></li>
+<li>定义 <code>BootstrapSpan</code>、<code>BootstrapSample</code>、<code>BootstrapCandidate</code>。</li>
+<li>校验 span offset 与原文一致。</li>
+<li>
+<p>校验模型自评 confidence 必须在 <code>0-1</code>。</p>
+</li>
+<li>
+<p><code>app/research/bootstrap_io.py</code></p>
+</li>
+<li>支持读取 Annotation JSONL，并兼容旧顶层 <code>spans</code> JSONL。</li>
+<li>支持从旧行内 <code>[span]{label}</code> gold annotation 迁移到 <code>spans</code>。</li>
+<li>写出时统一落盘为 Prodigy-compatible JSONL。</li>
+<li>支持候选标注记录的 JSONL 读写。</li>
+</ol>
+<p><code>v3.4.0</code> 已完成自洽性评分层：</p>
+<ol>
+<li><code>app/research/consistency.py</code></li>
+<li>计算同一样本多次候选之间的 pairwise span-F1。</li>
+<li>计算 exact-match rate。</li>
+<li>汇总模型自评 confidence。</li>
+<li>输出 <code>high / medium / low</code> 路由，用于后续专家复核队列。</li>
+</ol>
+<p><code>v3.5.0</code> 已完成专家复核队列层：</p>
+<ol>
+<li><code>app/research/human_review.py</code></li>
+<li>将 <code>medium / low</code> 路由样本转成 <code>HumanReviewTask</code>。</li>
+<li>每个复核任务包含候选 A/B/C... 与固定手动修正选项。</li>
+<li>按 route 和 uncertainty score 生成优先级，低置信样本排在前面。</li>
+</ol>
+<p><code>v3.6.0</code> 已完成对比式检索层：</p>
+<ol>
+<li><code>app/research/contrastive_retrieval.py</code></li>
+<li>基于轻量 lexical similarity 选择最相似样例。</li>
+<li>从剩余低相似样例中选择少量 boundary examples。</li>
+<li>输出结构区分 <code>similar</code> 与 <code>boundary</code>，后续可替换为 Embedding-3 检索而不改变上层接口。</li>
+</ol>
+<p><code>v3.7.0</code> 已完成标签统计与反思计划层：</p>
+<ol>
+<li><code>app/research/label_statistics.py</code></li>
+<li>从 gold / high-confidence 样本统计 token 的 entity/context/other 分布。</li>
+<li>
+<p>输出 entity/context/other probability，为 DEER 风格 label-guided retrieval 做准备。</p>
+</li>
+<li>
+<p><code>app/research/reflection.py</code></p>
+</li>
+<li>基于统计结果生成反思计划。</li>
+<li>当前覆盖 unseen token、possible false negative、boundary token 三类风险。</li>
+<li>该层只生成计划，不直接调用模型，避免自动反思失控。</li>
+</ol>
+<p><code>v3.8.0</code> 已完成离线 runner 与 CLI：</p>
+<ol>
+<li><code>app/research/bootstrap_runner.py</code></li>
+<li>输入 normalized samples 与 candidate runs。</li>
+<li>输出 consistency scores、human review queue、label statistics、reflection plans 与 retrieval traces。</li>
+<li>
+<p>当前 runner 不直接调用模型，适合作为真实模型调用后的分析与实验汇总层。</p>
+</li>
+<li>
+<p><code>scripts/research/run_bootstrap.py</code></p>
+</li>
+<li>提供 <code>analyze</code> 子命令：</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>python<span class="w"> </span>scripts/research/run_bootstrap.py<span class="w"> </span>analyze<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span>--samples<span class="w"> </span>path/to/samples.jsonl<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span>--candidates<span class="w"> </span>path/to/candidate_runs.jsonl<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">  </span>--run-name<span class="w"> </span>acter-heart-failure
+</code></pre></div>
+<p><code>v3.10.0</code> 已完成报告生成：</p>
+<ol>
+<li><code>app/research/bootstrap_report.py</code></li>
+<li>根据 manifest、consistency scores、review queue、label statistics 和 reflection plans 生成 <code>report.md</code>。</li>
+<li>
+<p>报告包含 consistency route 分布、专家复核队列规模、top entity tokens、reflection item 类型统计、计划 baselines 与 metrics。</p>
+</li>
+<li>
+<p><code>scripts/research/run_bootstrap.py</code></p>
+</li>
+<li><code>analyze</code> 子命令新增 <code>--experiment</code>，用于把实验配置中的 baselines / metrics 写入报告。</li>
+</ol>
+<p><code>v3.11.0</code> 已完成可扩展存储格式过渡：</p>
+<ol>
+<li><code>app/research/bootstrap_io.py</code></li>
+<li>支持读取 <code>rosetta.annotation_jsonl.v1</code>。</li>
+<li>
+<p>旧顶层 <code>spans</code>、旧 <code>annotation_markup</code> 与 <code>gold_annotation</code> 仍作为兼容输入。</p>
+</li>
+<li>
+<p>存储主结构</p>
+</li>
+<li><code>annotation.layers.spans</code> 作为过渡结构被保留为兼容输入。</li>
+</ol>
+<p><code>v3.12.0</code> 已完成 Prodigy-compatible JSONL 规范化：</p>
+<ol>
+<li><code>docs/developer/ANNOTATION_JSONL_FORMAT.md</code></li>
+<li>明确格式来源：Prodigy task JSON、spaCy span offsets、INCEpTION <code>jsoncas</code> 互操作边界。</li>
+<li>明确 <code>label / options / accept / answer / meta</code> 等字段含义。</li>
+<li>
+<p>覆盖 span、relation、概念包含、句子级、段落级、文章级标注示例。</p>
+</li>
+<li>
+<p><code>app/research/bootstrap_io.py</code></p>
+</li>
+<li>新写出的 normalized samples 使用 <code>rosetta.prodigy_jsonl.v1</code>。</li>
+<li>新写出的 candidate runs 使用 <code>rosetta.prodigy_candidate.v1</code>。</li>
+<li>继续兼容旧 <code>annotation.layers</code> 读取。</li>
+</ol>
+<p><code>v4.2.0</code> 已将 bootstrap 从离线研究原型接入主工作流：</p>
+<ol>
+<li><code>app/workflows/bootstrap/guideline.py</code></li>
+<li>新增 <code>run_concept_refinement_loop</code>。</li>
+<li>正式自举要求 15 条金样例。</li>
+<li>
+<p>每轮写入 <code>ConceptVersion</code>，记录通过数、失败样例、边界不稳定样例和失败摘要。</p>
+</li>
+<li>
+<p><code>app/workflows/annotation/context.py</code></p>
+</li>
+<li>构建批量标注上下文。</li>
+<li>
+<p>组合稳定概念版本、相似 gold/high-confidence 样例、边界远例和失败模式摘要。</p>
+</li>
+<li>
+<p><code>app/workflows/annotation/batch.py</code></p>
+</li>
+<li>候选评分升级为 span-F1、exact match rate、模型自评和规则风险组合。</li>
+<li>
+<p><code>Prediction.meta</code> 记录采样序号、共识分组、span-F1、规则风险和上下文样例 id。</p>
+</li>
+<li>
+<p><code>app/workflows/review/queue.py</code></p>
+</li>
+<li>
+<p>审核保存记录错误类型、是否 hard example、是否 gold-like、是否人工编辑和选择的候选。</p>
+</li>
+<li>
+<p><code>app/data/exporters.py</code></p>
+</li>
+<li>报告升级为实验报告，包含概念版本和主动审核反馈。</li>
+</ol>
+<p><code>v4.2.1</code> 修正概念修订的 prompt/log 边界：</p>
+<ol>
+<li><code>app/workflows/bootstrap/guideline.py</code></li>
+<li>大模型修订任务只要求返回优化后的概念阐释正文，不再要求复杂 JSON。</li>
+<li><code>ConceptVersion.description</code> 只保存净化后的最终提示词。</li>
+<li>失败样例编号、失败摘要、逐条 failure cases、模型原始响应和净化警告写入 <code>ConceptVersion.metadata</code>。</li>
+<li>
+<p>净化 guard 会阻止 <code>gold-000xx</code>、<code>失败摘要</code>、<code>修订建议</code>、<code>漏标</code>、<code>多标</code> 等诊断内容进入最终提示词。</p>
+</li>
+<li>
+<p><code>app/ui/pages/Concept_Lab.py</code></p>
+</li>
+<li>“最终概念版本草案”只展示干净提示词。</li>
+<li>“失败详情与修订日志”折叠区展示 failure cases、raw revision response 和 sanitizer warnings。</li>
+</ol>
+<p><code>v4.2.2</code> 将概念修订升级为 loss-guided search：</p>
+<ol>
+<li>每轮先评估当前概念在 15 条金样例上的表现，得到 <code>current_loss</code>。</li>
+<li>大模型按多个探索方向生成候选概念，例如提高召回、收紧边界、平衡改写。</li>
+<li>每个候选概念都重新试标同一组金样例，计算 <code>selected_loss</code> 候选指标。</li>
+<li>只有当候选 loss 下降超过阈值时，候选才会被接受为下一轮概念版本。</li>
+<li>如果没有候选改善 loss，则状态记为 <code>no_improvement</code>，保留当前最优概念，避免错误修订继续累积。</li>
+<li><code>ConceptVersion.metadata</code> 记录 <code>optimizer/current_loss/selected_loss/loss_delta/accepted_candidate_id/candidate_evaluations</code>，便于复现实验路径。</li>
+</ol>
+<p>当前 loss 由失败样例数、边界不稳定数、漏标数、多标数和平均 span-F1 score 组成。候选只有在完整 span set 优于当前版本时才会被接受；多标额外片段不会被算作通过。这个 loss 不是最终论文指标，而是自举搜索时的内部优化目标。</p>
+<p><code>v4.2.4</code> 将 Prompt-as-Parameter 写为下一阶段方法框架：</p>
+<ol>
+<li>Prompt 被视为可训练文本参数，而不是静态提示词。</li>
+<li>Text Gradient 通过 Mask 遮挡、对比替换、消融链路和 LLM 自诊断估算。</li>
+<li>默认优化器叙事是 <code>LLM-AdamW + gold loss validation + length decay</code>。</li>
+<li>当前只完成文档升级，不宣称完整文本梯度优化器已经实现。</li>
+</ol>
+<p><code>v4.3.0</code> 将 Prompt-as-Parameter 接入概念自举最小电路：</p>
+<ol>
+<li>新增 <code>app/workflows/bootstrap/prompt_optimizer.py</code>。</li>
+<li><code>segment_prompt()</code> 将概念阐释切为 <code>task_definition / label_schema / boundary_rules / negative_rules / output_format</code> 等片段，其中标签集合和输出格式默认不可随意改写。</li>
+<li><code>estimate_text_gradients()</code> 根据失败数、边界不稳定数、漏标、多标和当前 loss 生成启发式 Mask 文本梯度。</li>
+<li><code>build_llm_adamw_trace()</code> 选择最高影响片段，形成候选改写方向，并把该方向注入修订 prompt。</li>
+<li><code>length_penalized_loss()</code> 对变长候选加入惩罚，防止“越优化越长、越优化越烂”。</li>
+<li><code>finalize_candidate_trace()</code> 写入候选 loss、loss delta、length delta 和 accepted 状态。</li>
+<li><code>ConceptVersion.metadata.prompt_optimization_trace</code> 保存最终接受候选的优化轨迹；所有候选的 trace 保存在 <code>candidate_evaluations</code> 中。</li>
+</ol>
+<p>当前 v4.3.0 的梯度估算仍是轻量启发式，不等同于完整 Mask 遮挡重跑。它的价值是先把接口、trace 和接受准则落稳，为后续真实消融、对比替换和多策略实验留出可测试边界。</p>
+<h2 id="12">12. 下一步开发检查<a class="headerlink" href="#12" title="Permanent link">&para;</a></h2>
+<p>每次改动 bootstrap 相关代码时，至少回答：</p>
+<ol>
+<li>是否仍然保证 15 条金样例是正式自举门槛。</li>
+<li>是否仍然只保存干净概念阐释到 <code>ConceptVersion.description</code>。</li>
+<li>是否仍然能从 metadata 复现失败样例、loss 和候选选择。</li>
+<li>是否能导出 PLM / LLM 对比所需字段。</li>
+<li>是否能让用户在定义与规范看懂“当前为什么变好或没有变好”。</li>
+<li>如果实现 Prompt-as-Parameter，是否记录了被扰动片段、梯度估算方法、loss delta 和长度变化。</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

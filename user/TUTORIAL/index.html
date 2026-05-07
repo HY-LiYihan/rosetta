@@ -1,0 +1,2451 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Rosetta 是基于 Streamlit 的本地优先智能体式标注工具">
+      
+      
+      
+        <link rel="canonical" href="https://hy-liyihan.github.io/rosetta/user/TUTORIAL/">
+      
+      
+        <link rel="prev" href="../..">
+      
+      
+        <link rel="next" href="../PROMPT_COMPOSITION/">
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="zh">
+        
+          <link rel="alternate" href="../../en/user/TUTORIAL/" hreflang="en">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>用户教程 - Rosetta</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="Rosetta" class="md-header__button md-logo" aria-label="Rosetta" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Rosetta
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              用户教程
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="切换到暗色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到暗色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="cyan"  aria-label="切换到亮色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到亮色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="选择当前语言">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="zh" class="md-select__link">
+              中文
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../../en/user/TUTORIAL/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/HY-LiYihan/rosetta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HY-LiYihan/rosetta
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  快速使用
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ideas/RESEARCH_CLAIMS/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  研究主张
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../developer/BOOTSTRAP_PIPELINE/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  工作流
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../developer/ANNOTATION_FORMAT/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  标注格式
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../developer/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  开发维护
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../developer/DEPLOYMENT/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  部署运维
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../CHANGELOG/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  变更记录
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Rosetta" class="md-nav__button md-logo" aria-label="Rosetta" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Rosetta
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/HY-LiYihan/rosetta" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HY-LiYihan/rosetta
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速使用
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    快速使用
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    用户教程
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    用户教程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 最少要知道的 5 个词
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 使用流程总览
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 使用流程总览">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 5 分钟跑通官方样例
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 项目总览
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 定义与规范
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 批量标注
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 审核与修正
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 结果与导出
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 界面语言
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 完整使用案例：专业命名实体标注
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 完整使用案例：专业命名实体标注">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 定义与规范
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 批量标注
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 审核与修正
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 结果与导出
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 标注格式
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 用户术语小抄
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PROMPT_COMPOSITION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    提示词构成
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    研究主张
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    研究主张
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ideas/RESEARCH_CLAIMS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM Agent vs PLM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ideas/PROMPT_AS_PARAMETER/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prompt-as-Parameter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ideas/CORE_ANNOTATION_BOOTSTRAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    核心想法
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工作流
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    工作流
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/BOOTSTRAP_PIPELINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guideline Bootstrap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/BOOTSTRAP_EXPERIMENTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bootstrap Experiments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/CORPUS_PIPELINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Corpus Builder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    标注格式
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    标注格式
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/ANNOTATION_FORMAT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运行时标注格式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/ANNOTATION_JSONL_FORMAT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JSONL 存储格式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../developer/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    开发维护
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    开发维护
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/ARCHITECTURE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    架构总览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/LLM_SERVICE_RUNTIME/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM 服务运行时
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/EMBEDDING_RETRIEVAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding 检索
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/WORKFLOW/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工作流
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/SCRIPTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    脚本说明
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    路线图
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    部署运维
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    部署运维
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer/DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker / Conda 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    变更记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 最少要知道的 5 个词
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 使用流程总览
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 使用流程总览">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 5 分钟跑通官方样例
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 项目总览
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 定义与规范
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 批量标注
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 审核与修正
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 结果与导出
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 界面语言
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 完整使用案例：专业命名实体标注
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 完整使用案例：专业命名实体标注">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 定义与规范
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 批量标注
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 审核与修正
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 结果与导出
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 标注格式
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 用户术语小抄
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="_1">用户教程（网站使用版）<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>更新时间: 2026-05-08</p>
+<p>Rosetta 是一个基于 Streamlit 的本地优先标注工具。默认界面为中文，主流程只保留 5 个页面。</p>
+<p>这份教程优先面向第一次接触数据标注工具的用户。你不需要先理解模型训练、PLM 或 agent 架构，只需要按页面顺序完成：定义任务与标注规范、给出 15 条标准答案、验证并优化定义、批量处理文本、审核不确定样本、导出数据。</p>
+<h2 id="0-5">0. 最少要知道的 5 个词<a class="headerlink" href="#0-5" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>概念阐释</strong>：你用自然语言告诉系统“什么应该被标出来，什么不应该”。它不是论文定义，而是模型执行标注时要看的操作说明。</li>
+<li><strong>金样例</strong>：你亲自确认正确的标准样例。定义优化建议准备 15 条，因为系统要用它们反复测试概念阐释是否稳定。</li>
+<li><strong>提示词验证</strong>：系统用格式检查、无样例标注验证或 top-k 参考样例验证，检查当前定义能否稳定标出金样例。</li>
+<li><strong>定义优化</strong>：页面入口叫“提示词优化”，实际优化对象是可优化定义。系统会生成候选定义、计算 loss、只接受变好版本；达到 15/15 或连续 5 轮无下降时停止。</li>
+<li><strong>审核与修正</strong>：系统把自己不确定的样本优先交给人类专家。你通常先选候选答案，必要时再轻量修改。</li>
+</ol>
+<h2 id="1">1. 使用流程总览<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<p>推荐路径：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>项目总览 -&gt; 定义与规范 -&gt; 批量标注 -&gt; 审核与修正 -&gt; 结果与导出
+</code></pre></div>
+<p>这条路径对应一次完整标注实验，也对应后续论文或项目报告中的一条证据链：</p>
+<ol>
+<li>在“定义与规范”输入一句话概念描述，并维护 15 条金样例。</li>
+<li>在“提示词验证”中运行格式验证、无样例标注验证或 top-k 参考样例验证，再进入用于定义优化的“提示词优化”，选择人工优化、无样例自监督优化或类训练优化。</li>
+<li>在“批量标注”上传 TXT、JSONL 或 CSV，系统自动生成标注任务，并用相似样例、边界远例和失败记忆增强提示词。</li>
+<li>批量任务按多次采样、自洽性、模型自评和规则风险路由。</li>
+<li>低置信、低自洽和抽检样本进入“审核与修正”，专家选择候选并记录错误类型。</li>
+<li>在“结果与导出”下载 Prodigy-compatible JSONL 和实验报告。</li>
+</ol>
+<h3 id="11-5">1.1 5 分钟跑通官方样例<a class="headerlink" href="#11-5" title="Permanent link">&para;</a></h3>
+<p>如果你只是想确认网站和本机流程能跑通，可以先不用创建新项目：</p>
+<ol>
+<li>打开“定义与规范”，使用默认官方项目“专业命名实体标注”。</li>
+<li>在“提示词验证”中先运行“格式验证”，确认 15 条金样例的结构是合法的。</li>
+<li>打开“批量标注”，粘贴 2-3 句英文科技文本，执行方式选择“本地模拟”。</li>
+<li>打开“审核与修正”，如果出现待审核样本，就选择候选或跳过。</li>
+<li>打开“结果与导出”，下载 <code>annotations.jsonl</code> 和 <code>report.md</code>。</li>
+</ol>
+<p>“本地模拟”只用于检查页面、队列、审核和导出链路，不代表真实模型效果；正式实验应选择“调用大模型”，并记录所用 provider、model、并发和 token。</p>
+<h2 id="2">2. 项目总览<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<p>“项目总览”只展示最必要的信息：</p>
+<ol>
+<li>当前任务总数、候选标注数、待审核数和批量任务数。</li>
+<li>一个“继续下一步”入口，根据当前状态跳转到定义与规范、批量标注、审核与修正或结果与导出。</li>
+<li>最近批量任务和最近审核状态。</li>
+<li>折叠区中的完整流程说明和本地运行目录。</li>
+</ol>
+<h2 id="3">3. 定义与规范<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<p>“定义与规范”负责产出稳定概念阐释和金样例库。它是 Rosetta 最重要的页面：如果定义没有验证和优化好，后面的批量标注会放大错误。</p>
+<p>页面顶部提供“提示词验证 / 提示词优化”两个入口。先验证当前定义，再根据验证结果决定是否优化。</p>
+<p>这个页面先做四件事：选择或新建标注项目；在“当前定义与金样例”里选择已有定义或新建定义；填写当前定义名称和当前概念阐释；选择金样例格式并上传/粘贴 15 条金样例；运行提示词验证或定义优化。定义优化的页面入口显示为“提示词优化”。</p>
+<p>需要填写：</p>
+<ol>
+<li>标注项目。已有项目直接选择，需要新项目时点击“新建项目”。</li>
+<li>当前定义。已有定义可以直接编辑，需要新定义时选择“新建定义”。</li>
+<li>当前定义名称。</li>
+<li>当前概念阐释。</li>
+<li>金样例格式，默认“自动识别”。</li>
+<li>金样例文件或 JSONL 粘贴。</li>
+<li>标注输出协议，一般保持默认。</li>
+</ol>
+<p>金样例推荐使用 JSONL。最小格式如下，每行一条样例：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>{&quot;text&quot;:&quot;Quantum dots can emit precise colors when excited by light.&quot;,&quot;annotation&quot;:&quot;[Quantum dots]{Term} can emit precise colors when excited by light.&quot;}
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>{&quot;text&quot;:&quot;The telescope detected faint gravitational waves from a distant merger.&quot;,&quot;annotation&quot;:&quot;The telescope detected faint [gravitational waves]{Term} from a distant merger.&quot;}
+</code></pre></div>
+<p>其中 <code>text</code> 是原句，<code>annotation</code> 是把目标片段用 <code>[片段]{标签}</code> 标出来后的答案。CSV 更适合先导入待标注原文，不适合作为完整金样例；如果要做正式定义优化，建议准备带 <code>annotation</code> 的 JSONL。</p>
+<p>边界、排除和特殊情况都写进“当前概念阐释”正文里；定义优化也只改这一段可优化定义。标签会从金样例里的 span label 自动推断；如果推断不到，系统默认使用 <code>Term</code>。标注输出协议提供两个选项：</p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Span 标注：JSON + <code>[span]{Term}</code></td>
+<td>当前默认路径，适合普通 span 标注任务；模型运行时可以返回简单 markup，Rosetta 会解析成统一 AnnotationDoc / Prodigy-compatible 存储格式</td>
+</tr>
+<tr>
+<td>全量 JSON：AnnotationDoc</td>
+<td>适合 relation、attributes 或多层标注任务；模型运行时直接返回完整 AnnotationDoc JSON，最终仍进入统一存储结构</td>
+</tr>
+</tbody>
+</table>
+<p>页面会直接把当前规范分成两栏：</p>
+<ol>
+<li><strong>可优化定义</strong>：你需要认真写的是当前概念阐释，包括任务定义、概念定义、边界和排除说明。提示词优化训练只会改这一栏。</li>
+<li><strong>冻结输出协议</strong>：Rosetta 负责固定标签、JSON 字段、<code>[span]{Term}</code> 或完整 AnnotationDoc JSON、格式校验和格式修复。这一栏会被锁定注入给模型，不交给优化器改写。</li>
+</ol>
+<p>也就是说，提示词优化训练不会去“训练”标签、JSON schema 或输出格式。它只尝试把概念规则写得更清楚；模型每次实际标注时，Rosetta 会加入固定输出格式，并检查返回结果是否合格。</p>
+<p>注意这里有两层格式：<strong>模型运行时格式</strong>可以是简单的 <code>[span]{Term}</code>，便于 LLM 稳定输出；<strong>最终存储格式</strong>仍是 Rosetta 统一的结构化标注格式，保留 spans、relations、meta 和导出所需字段。</p>
+<p>模型真实标注时，Rosetta 会把 prompt 固定拼成六段。中英文模板的完整对照见 <a href="../PROMPT_COMPOSITION/">提示词构成</a>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>概念定义
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>-&gt; 相似参考样例
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>-&gt; 标注格式
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>-&gt; 通用格式示例
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>-&gt; 待标注文本
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>-&gt; 任务强调
+</code></pre></div>
+<p>其中“相似参考样例”是可选槽位，只在 top-k 验证或批量标注明确检索到参考样例时填充。通用格式示例只讲 JSON 和 <code>[span]{Term}</code> 或 AnnotationDoc 应该长什么样，不使用你的 gold 句子、gold 答案或当前待标注文本。这样可以让模型知道怎么返回结果，又不会把标准答案混进 operational prompt。</p>
+<p>金样例输入面板包含以下字段：</p>
+<ol>
+<li>当前定义名称。</li>
+<li>当前概念阐释。</li>
+<li>金样例格式，默认选择“自动识别”。</li>
+<li>上传金样例文件，或粘贴 JSONL。</li>
+</ol>
+<p>自动识别会根据文件扩展名和首条记录判断格式：<code>text + annotation</code> JSONL、Prodigy/Rosetta spans JSONL 或 CSV。正式 gold 推荐使用 JSONL，并包含可定位的 span 标注；CSV 只适合先导入原文列，不适合作为完整金样例。</p>
+<p>保存后会写入本地 SQLite，并可导出：</p>
+<ol>
+<li><code>concept_guideline.md</code></li>
+<li><code>gold_examples.jsonl</code></li>
+<li><code>concept_versions.jsonl</code></li>
+</ol>
+<p>“定义与规范”页面现在主要只有两个 tab：<code>提示词验证</code> 和 <code>提示词优化</code>。</p>
+<p>提示词验证分三种。页面上的“格式验证”就是本地结构检查；它不调用大模型，适合作为第一步：</p>
+<table>
+<thead>
+<tr>
+<th>验证</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>格式验证</td>
+<td>本地检查 ConceptPromptSpec、冻结输出协议、标签和 gold span 是否合法，不消耗模型</td>
+</tr>
+<tr>
+<td>无样例标注验证</td>
+<td>调用大模型直接标 15 条 gold，不给参考样例</td>
+</tr>
+<tr>
+<td>标注验证（top-k 参考）</td>
+<td>每条待标注句子会先用本地轻量 embedding 检索 top-k 相似 gold 作为参考，再调用大模型标注</td>
+</tr>
+</tbody>
+</table>
+<p>top-k 参考检索默认使用 <code>rosetta-local-hash-384</code> 本地 embedding，不调用智谱或 DeepSeek embedding API，不消耗 token。检索出的参考样例会进入标注 prompt 的“相似参考样例”专门槽位，位置在概念定义和冻结输出协议之间；它只用于理解边界，不是当前句子的答案。真实 LLM 验证默认并发上限为 <code>50</code>；页面会显示进度条、运行中数量、已用时、预计剩余时间、调用数、token 和模型耗时。验证时使用的模型身份和批量标注一致，都是“严谨的标注助手，只输出 JSON”。验证结果会分成通过、失败、边界不稳定三类；最终保存的概念阐释只保留可直接用于标注的提示词正文。</p>
+<p>在 gold 验证中，top-k 参考样例只用于观察“带检索上下文时是否更稳定”，不能当作 held-out 泛化评测。严格实验应排除当前待测 gold 自身，并在报告中记录参考样例来源；无样例标注验证仍是判断当前定义是否独立可执行的主诊断。</p>
+<p>定义优化分三种，页面入口显示为“提示词优化”：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>你可以怎么理解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>人工优化</td>
+<td>给一个编辑框，专家直接修改当前可优化提示词并保存为新版本</td>
+</tr>
+<tr>
+<td>无样例自监督优化</td>
+<td>只告诉大模型“请优化当前提示词”，不给它看失败细节、gold answer、loss 或历史</td>
+</tr>
+<tr>
+<td>类训练优化</td>
+<td>当前第一版使用失败对照，让大模型每轮生成候选提示词，再用 15 条 gold 选择 loss 最小且下降的版本</td>
+</tr>
+</tbody>
+</table>
+<p>推荐首次测试参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>优化方式</td>
+<td>先选“类训练优化”</td>
+</tr>
+<tr>
+<td>最大训练轮数</td>
+<td>30</td>
+</tr>
+<tr>
+<td>每轮候选数</td>
+<td>5</td>
+</tr>
+<tr>
+<td>最小损失下降</td>
+<td>0.01</td>
+</tr>
+<tr>
+<td>连续无下降轮数</td>
+<td>5</td>
+</tr>
+<tr>
+<td>成功后自动应用最佳提示词</td>
+<td>第一次先不勾选</td>
+</tr>
+</tbody>
+</table>
+<p>点击“开始优化训练”后，任务会进入后台运行，按钮会变成不可重复点击的运行状态。页面会出现“当前训练任务”卡片，并每 2 秒自动刷新一次；你可以看到当前阶段、预计剩余时间、已完成模型调用、运行中调用、token、修复次数、当前最佳方法、最佳通过数和当前最佳 loss。你可以离开页面，稍后回来继续查看同一个 run。</p>
+<p>类训练优化的核心循环是：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>当前 prompt
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  -&gt; 让 LLM 生成 5 个优化候选
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  -&gt; 逐个跑 15 条 gold 计算 loss
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  -&gt; 选出最优候选
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  -&gt; 如果 loss 下降，就接受
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  -&gt; 把“旧 prompt -&gt; 新 prompt -&gt; loss 变化”记入历史
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  -&gt; 下一轮生成候选时，把这段历史摘要告诉 LLM
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  -&gt; 持续到 15/15 或连续多轮无提升
+</code></pre></div>
+<p>训练完成后，页面会展示最佳方法、通过数、loss、最佳干净提示词、v0 到 vn 的提示词版本历史和折叠训练日志。如果达到 15/15，可以检查最佳提示词后再决定是否应用；如果没有达到，系统会继续探索，直到连续 5 轮 loss 没有下降或达到最大轮数，状态会显示“仍需修订”。最佳提示词按历史最优接受版本统计，不等同于最后一轮的临时结果。</p>
+<p>提示词优化训练会区分“批改参考”“候选定义”和“最终定义”：</p>
+<ol>
+<li>批改参考可以包含原文、标准答案和模型自己的错误回答，用来帮助判断概念边界哪里不稳定。</li>
+<li>最终定义不能复制原文、具体答案片段、gold span 或模型 span。它只能把错误抽象成边界规则、排除规则和输出要求。</li>
+<li>Rosetta 会拦截这类复制答案的候选，并在报告中只展示安全摘要、hash 和数量。</li>
+<li>日志区可以按事件类型和阶段筛选，也可以下载 <code>run_events.jsonl</code>。这个文件记录训练过程中的阶段、候选状态、模型调用、token、ETA 和错误摘要。</li>
+<li>这一轮只测试 15 条 gold，因此结果只能说明当前 gold 集合内的训练表现。如果要写论文或证明泛化，后续还需要 held-out 数据。</li>
+</ol>
+<p>系统也会区分“格式错误”和“概念错误”：先检查 JSON 与 markup 格式，再统计漏标、多标和边界错误。这样你能知道问题到底是模型没有按格式输出，还是概念规则本身不够清楚。</p>
+<p>如果要运行完整三方法真实对比实验，可以使用统一 CLI：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>conda<span class="w"> </span>run<span class="w"> </span>-n<span class="w"> </span>rosetta-dev<span class="w"> </span>python<span class="w"> </span>scripts/tool/rosetta_tool.py<span class="w"> </span>prompt-training-experiment<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--case<span class="w"> </span>professional-ner<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>--provider<span class="w"> </span>deepseek<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--model<span class="w"> </span>deepseek-v4-pro<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span>--concurrency<span class="w"> </span><span class="m">50</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span>--candidate-count<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span>--patience-rounds<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span>--max-rounds<span class="w"> </span><span class="m">30</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span>--output-dir<span class="w"> </span>.runtime/experiments/prompt_training_professional_ner<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span>--record
+</code></pre></div>
+<p>CLI 和页面产物保持一致：<code>comparison_report.md</code>、<code>comparison_result.json</code>、<code>prompt_evolution.jsonl</code> 和 <code>run_events.jsonl</code>。</p>
+<p>完成后重点查看 <code>comparison_report.md</code>、<code>comparison_result.json</code> 和 <code>prompt_evolution.jsonl</code>。</p>
+<h2 id="4">4. 批量标注<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<p>“批量标注”负责把原始语料变成任务队列。批量标注会自动构建标注上下文：</p>
+<ol>
+<li>当前稳定概念版本。</li>
+<li>相似金样例或高置信样例。</li>
+<li>少量边界远例，提醒模型不要过度泛化。</li>
+<li>最近失败模式摘要。</li>
+</ol>
+<p>输入支持：</p>
+<ol>
+<li>TXT：默认按段落和中英文句末标点分句，并做轻量 tokenize。</li>
+<li>JSONL：优先按 Prodigy-compatible task 读取。</li>
+<li>CSV：选择文本列，其余列进入 <code>meta</code>。</li>
+</ol>
+<p>提交任务时可以设置：</p>
+<ol>
+<li>每条采样次数：1、3 或 5。</li>
+<li>并发数：默认 50。真实 API 小样本测试建议先手动降到 1-5。</li>
+<li>人工审核阈值：默认 0.75。</li>
+<li>高置信抽检比例：默认 5%。</li>
+</ol>
+<p>执行方式：</p>
+<table>
+<thead>
+<tr>
+<th>执行方式</th>
+<th>适合什么时候用</th>
+<th>结果能否代表真实模型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>只提交队列</td>
+<td>只想确认导入、分句和任务创建是否正常</td>
+<td>不能，尚未生成模型标注</td>
+</tr>
+<tr>
+<td>本地模拟</td>
+<td>首次检查页面、队列、审核和导出链路</td>
+<td>不能，只是 smoke test，不消耗 API</td>
+</tr>
+<tr>
+<td>调用大模型</td>
+<td>正式标注或真实实验</td>
+<td>是一次真实模型运行；仍需记录 provider、model、并发、token 和运行报告，并保留人工审核</td>
+</tr>
+</tbody>
+</table>
+<p>批量任务写入本地 SQLite 队列。提交后可以离开页面，之后到“审核与修正”查看低置信样本。</p>
+<p>长耗时动作运行时，按钮会切换为“正在处理…”并变成不可点击状态。此时重复点击不会提交第二个批量任务；等待页面恢复或跳转到审核与修正即可。</p>
+<h2 id="5">5. 审核与修正<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<p>“审核与修正”不是表格后台，而是逐条弹出的专家审核台。</p>
+<p>顶部可以设置：</p>
+<ol>
+<li>低于多少置信度需要审核。</li>
+<li>是否包含高置信抽检样本。</li>
+<li>批次过滤。</li>
+</ol>
+<p>每条审核卡片展示：</p>
+<ol>
+<li>原文。</li>
+<li>当前概念阐释。</li>
+<li>少量金样例参考。</li>
+<li>候选 A/B/C/D/E。</li>
+<li>综合置信度、自洽性、模型自评和路由原因。</li>
+</ol>
+<p>可执行操作：</p>
+<ol>
+<li>保存选择。</li>
+<li>编辑 span 后保存手动修正。</li>
+<li>标记全部不对。</li>
+<li>跳过。</li>
+<li>标记为疑难样例。</li>
+<li>选择错误类型。</li>
+<li>将高质量人工确认结果标记为 gold-like 样例，参与后续检索。</li>
+</ol>
+<p>保存后会更新对应任务，并把审核结果写入本地 SQLite。高质量人工确认样本可以被标记为 gold-like，用作下一轮检索和概念修订参考；明显暴露边界问题的样本可以标记为疑难样例。</p>
+<p>审核保存过程中，当前动作按钮会进入“正在处理…”状态，其余审核按钮也会暂时不可点击，避免同一条样本被重复保存。</p>
+<h2 id="6">6. 结果与导出<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p>“结果与导出”用于最终检查和下载数据。</p>
+<p>支持查看：</p>
+<ol>
+<li>任务总数。</li>
+<li>自动通过率。</li>
+<li>人工审核率。</li>
+<li>待审核数量。</li>
+<li>标签分布。</li>
+<li>片段长度和候选一致性概况。</li>
+</ol>
+<p>支持导出：</p>
+<ol>
+<li>全部样本。</li>
+<li>全部已确认样本。</li>
+<li>自动通过样本。</li>
+<li>人工审核样本。</li>
+<li>疑难样例。</li>
+<li>低置信样本。</li>
+</ol>
+<p>主导出格式是 Prodigy-compatible JSONL。<code>annotations.jsonl</code> 用于后续训练、统计、人工复核或迁移到其他标注工具；<code>report.md</code> 用于记录本次运行的方法、概念版本、模型设置、人工审核量和自动通过比例；<code>manifest.json</code> 用于让脚本复现或检查导出批次。后续要比较 LLM agent 和 PLM 时，优先保存 <code>report.md</code>。</p>
+<h2 id="7">7. 界面语言<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<p>应用侧栏顶部提供 <code>中文 / English</code> 两个切换按钮。当前语言按钮会高亮，点击另一个按钮会切换主导航和主要固定界面文案。</p>
+<p>公开教程按中文界面维护，页面名称、按钮和示例都以中文为准。文档中的英文主要保留在文件格式、命令、模型名、字段名和代码标识符中，例如 <code>JSONL</code>、<code>report.md</code>、<code>deepseek-v4-pro</code> 和 <code>[span]{Term}</code>。用户输入、数据库内容、任务文本、模型输出、标签值、调试日志和导出文件名不会被自动翻译。模型运行时提示词的中英文组成见 <a href="../PROMPT_COMPOSITION/">提示词构成</a>；界面语言按钮不会自动翻译你的概念阐释或待标注文本。</p>
+<h2 id="8">8. 完整使用案例：专业命名实体标注<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<p>这个案例是 Rosetta 的官方样例。程序启动后会准备这个项目，并内置 15 条金样例和基础提示词。</p>
+<h3 id="81">8.1 定义与规范<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
+<p>打开“定义与规范”后，默认选择官方项目：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>项目名称</td>
+<td>专业命名实体标注</td>
+</tr>
+<tr>
+<td>项目说明</td>
+<td>用于从英文科学与技术科普文本中抽取可命名、可边界化的专业实体，包括研究对象、方法、材料、设备、过程和领域专门概念。</td>
+</tr>
+</tbody>
+</table>
+<p>官方概念阐释已经写入：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>概念名称</td>
+<td>专业命名实体</td>
+</tr>
+<tr>
+<td>当前概念阐释</td>
+<td>标出英文科学与技术文本中具有明确领域含义、可命名且边界清楚的专业实体。优先标注最小完整实体名称；包含形成实体名称所必需的修饰成分，但不要扩展到整句或普通描述；多词实体应整体标注。</td>
+</tr>
+<tr>
+<td>标注输出协议</td>
+<td>Span 标注：JSON + <code>[span]{Term}</code></td>
+</tr>
+</tbody>
+</table>
+<p>标签 <code>Term</code> 来自官方 gold 标注并作为冻结输出协议注入，不需要在表单里手填。官方样例没有把负例规则作为主输入项暴露；如果后续任务确实需要复杂排除条件，应直接写进当前概念阐释里的“不包括……”规则。</p>
+<p>下面 15 条金样例已自动内置在官方项目中。这里列出它们是为了让你知道系统正在用什么验证和优化定义；这些具体实体不会被写进 operational prompt：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>{&quot;text&quot;:&quot;Quantum dots can emit precise colors when excited by light.&quot;,&quot;annotation&quot;:&quot;[Quantum dots]{Term} can emit precise colors when excited by light.&quot;}
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>{&quot;text&quot;:&quot;The telescope detected faint gravitational waves from a distant merger.&quot;,&quot;annotation&quot;:&quot;The telescope detected faint [gravitational waves]{Term} from a distant merger.&quot;}
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>{&quot;text&quot;:&quot;Researchers used CRISPR gene editing to repair a mutation in the cells.&quot;,&quot;annotation&quot;:&quot;Researchers used [CRISPR gene editing]{Term} to repair a mutation in the cells.&quot;}
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>{&quot;text&quot;:&quot;Perovskite solar cells may improve the efficiency of next-generation panels.&quot;,&quot;annotation&quot;:&quot;[Perovskite solar cells]{Term} may improve the efficiency of next-generation panels.&quot;}
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>{&quot;text&quot;:&quot;The experiment measured superconductivity at extremely low temperatures.&quot;,&quot;annotation&quot;:&quot;The experiment measured [superconductivity]{Term} at extremely low temperatures.&quot;}
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>{&quot;text&quot;:&quot;A new catalyst accelerated hydrogen production during electrolysis.&quot;,&quot;annotation&quot;:&quot;A new [catalyst]{Term} accelerated [hydrogen production]{Term} during [electrolysis]{Term}.&quot;}
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>{&quot;text&quot;:&quot;The spacecraft mapped methane plumes in the planet&#39;s atmosphere.&quot;,&quot;annotation&quot;:&quot;The spacecraft mapped [methane plumes]{Term} in the planet&#39;s [atmosphere]{Term}.&quot;}
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>{&quot;text&quot;:&quot;The vaccine candidate uses messenger RNA to train immune cells.&quot;,&quot;annotation&quot;:&quot;The vaccine candidate uses [messenger RNA]{Term} to train [immune cells]{Term}.&quot;}
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>{&quot;text&quot;:&quot;Scientists observed protein folding with high-resolution microscopy.&quot;,&quot;annotation&quot;:&quot;Scientists observed [protein folding]{Term} with [high-resolution microscopy]{Term}.&quot;}
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>{&quot;text&quot;:&quot;The battery prototype uses a solid-state electrolyte.&quot;,&quot;annotation&quot;:&quot;The battery prototype uses a [solid-state electrolyte]{Term}.&quot;}
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>{&quot;text&quot;:&quot;Neutrino oscillation reveals that neutrinos have mass.&quot;,&quot;annotation&quot;:&quot;[Neutrino oscillation]{Term} reveals that [neutrinos]{Term} have mass.&quot;}
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>{&quot;text&quot;:&quot;The reactor design improves plasma confinement in fusion experiments.&quot;,&quot;annotation&quot;:&quot;The reactor design improves [plasma confinement]{Term} in [fusion experiments]{Term}.&quot;}
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>{&quot;text&quot;:&quot;Carbon capture systems remove carbon dioxide from industrial exhaust.&quot;,&quot;annotation&quot;:&quot;[Carbon capture systems]{Term} remove [carbon dioxide]{Term} from industrial exhaust.&quot;}
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>{&quot;text&quot;:&quot;The sensor detects biomarkers associated with early-stage disease.&quot;,&quot;annotation&quot;:&quot;The sensor detects [biomarkers]{Term} associated with early-stage disease.&quot;}
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>{&quot;text&quot;:&quot;Nanoporous membranes can filter salts from seawater.&quot;,&quot;annotation&quot;:&quot;[Nanoporous membranes]{Term} can filter salts from seawater.&quot;}
+</code></pre></div>
+<p>可以先选择“本地结构验证”，点击“验证概念”，确认 15 条金样例能通过本地结构检查。</p>
+<p>如果要测试完整的提示词优化训练，进入“提示词优化”tab，先选择“类训练优化”，保持最大训练轮数 <code>30</code>、每轮候选数 <code>5</code>、连续无下降轮数 <code>5</code>，点击“开始优化训练”。建议第一次不要勾选自动应用，先查看 v0 到 vn 的版本历史、loss 变化和折叠日志；确认结果后再手动或自动应用最佳提示词。</p>
+<h3 id="82">8.2 批量标注<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
+<p>进入“批量标注”，选择官方项目和概念。可以先粘贴一小段 TXT 测试：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Astronomers used adaptive optics to sharpen images of distant exoplanets.
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>The new polymer membrane improved desalination efficiency in laboratory tests.
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>Researchers monitored neural activity with calcium imaging during the experiment.
+</code></pre></div>
+<p>推荐首次测试参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每条采样次数</td>
+<td>1</td>
+</tr>
+<tr>
+<td>并发数</td>
+<td>50；如果只是首次真实 API 小样本 smoke，可手动降为 1</td>
+</tr>
+<tr>
+<td>人工审核阈值</td>
+<td>0.75</td>
+</tr>
+<tr>
+<td>高置信抽检比例</td>
+<td>0.05</td>
+</tr>
+<tr>
+<td>执行方式</td>
+<td>本地模拟</td>
+</tr>
+</tbody>
+</table>
+<p>点击“提交批量任务”。如果只想创建队列、不立刻执行，选择“只提交队列”。</p>
+<h3 id="83">8.3 审核与修正<a class="headerlink" href="#83" title="Permanent link">&para;</a></h3>
+<p>进入“审核与修正”，保持默认阈值 <code>0.75</code>。如果有待审核样本，逐条查看原文、当前概念阐释、金样例参考和候选 A/B/C/D/E。</p>
+<p>推荐操作顺序：</p>
+<ol>
+<li>候选正确时，选择候选并点击“保存选择”。</li>
+<li>候选边界不准时，编辑 span 列表后点击“保存手动修正”。</li>
+<li>所有候选都不对时，点击“全部不对”，必要时勾选“标记为疑难样例”。</li>
+</ol>
+<h3 id="84">8.4 结果与导出<a class="headerlink" href="#84" title="Permanent link">&para;</a></h3>
+<p>进入“结果与导出”，先查看任务总数、自动通过率、人工审核率和标签分布。</p>
+<p>常用导出范围：</p>
+<ol>
+<li>“全部已确认样本”：用于训练或评测。</li>
+<li>“人工审核样本”：用于分析模型错误。</li>
+<li>“疑难样例”：用于下一轮修订概念阐释。</li>
+</ol>
+<p>下载 <code>annotations.jsonl</code> 和 <code>report.md</code> 后，即可进入后续实验记录或论文对比。报告会包含概念版本变化、疑难样例、人工修改量和主动审核反馈。</p>
+<p>如果要和 PLM 做对比，建议额外记录：</p>
+<ol>
+<li>当前只用了多少条人工 gold。</li>
+<li>PLM baseline 使用同样数量 gold 时的表现。</li>
+<li>Rosetta 自动通过了多少样本，人工审核了多少样本。</li>
+<li>人类专家是直接选择候选、轻量编辑，还是完全重写。</li>
+</ol>
+<h2 id="9">9. 标注格式<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<p>LLM 运行时仍使用易读 markup：</p>
+<ol>
+<li>显性标注：<code>[原文片段]{概念标签}</code></li>
+<li>隐含义标注：<code>[!隐含义]{概念标签}</code></li>
+</ol>
+<p>长期存储格式见 <a href="../../developer/ANNOTATION_JSONL_FORMAT/">Annotation JSONL Format</a>。</p>
+<h2 id="10">10. 用户术语小抄<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>文档术语</th>
+<th>普通理解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>loss</td>
+<td>错误分数，越低越好</td>
+</tr>
+<tr>
+<td>top-k 参考样例</td>
+<td>当前句子最相似的几个参考例</td>
+</tr>
+<tr>
+<td>embedding 检索</td>
+<td>本地相似度检索，不调用在线 embedding API</td>
+</tr>
+<tr>
+<td>Prodigy-compatible JSONL</td>
+<td>方便后续训练、评测和迁移的结构化标注文件</td>
+</tr>
+<tr>
+<td>JSON+markup</td>
+<td>模型运行时返回的简单格式，例如 <code>[Quantum dots]{Term}</code></td>
+</tr>
+<tr>
+<td>冻结输出协议</td>
+<td>标签、JSON 字段和格式校验由 Rosetta 固定，不交给优化器改写</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

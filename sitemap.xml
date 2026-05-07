@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/CHANGELOG/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/CHANGELOG/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/CHANGELOG/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/ANNOTATION_FORMAT/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ANNOTATION_FORMAT/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ANNOTATION_FORMAT/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/ANNOTATION_JSONL_FORMAT/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ANNOTATION_JSONL_FORMAT/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ANNOTATION_JSONL_FORMAT/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/ARCHITECTURE/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ARCHITECTURE/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ARCHITECTURE/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/BOOTSTRAP_EXPERIMENTS/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/BOOTSTRAP_EXPERIMENTS/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/BOOTSTRAP_EXPERIMENTS/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/BOOTSTRAP_PIPELINE/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/BOOTSTRAP_PIPELINE/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/BOOTSTRAP_PIPELINE/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/CORPUS_PIPELINE/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/CORPUS_PIPELINE/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/CORPUS_PIPELINE/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/DEPLOYMENT/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/DEPLOYMENT/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/DEPLOYMENT/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/EMBEDDING_RETRIEVAL/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/EMBEDDING_RETRIEVAL/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/EMBEDDING_RETRIEVAL/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/LLM_SERVICE_RUNTIME/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/LLM_SERVICE_RUNTIME/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/LLM_SERVICE_RUNTIME/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/ROADMAP/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ROADMAP/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ROADMAP/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/SCRIPTS/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/SCRIPTS/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/SCRIPTS/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/developer/WORKFLOW/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/WORKFLOW/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/WORKFLOW/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/ideas/CORE_ANNOTATION_BOOTSTRAP/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/ideas/CORE_ANNOTATION_BOOTSTRAP/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/ideas/CORE_ANNOTATION_BOOTSTRAP/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/ideas/PROMPT_AS_PARAMETER/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/ideas/PROMPT_AS_PARAMETER/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/ideas/PROMPT_AS_PARAMETER/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/ideas/RESEARCH_CLAIMS/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/ideas/RESEARCH_CLAIMS/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/ideas/RESEARCH_CLAIMS/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/user/PROMPT_COMPOSITION/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/user/PROMPT_COMPOSITION/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/user/PROMPT_COMPOSITION/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/user/TUTORIAL/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/user/TUTORIAL/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/user/TUTORIAL/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/CHANGELOG/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/CHANGELOG/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/CHANGELOG/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/ANNOTATION_FORMAT/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ANNOTATION_FORMAT/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ANNOTATION_FORMAT/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/ANNOTATION_JSONL_FORMAT/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ANNOTATION_JSONL_FORMAT/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ANNOTATION_JSONL_FORMAT/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/ARCHITECTURE/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ARCHITECTURE/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ARCHITECTURE/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/BOOTSTRAP_EXPERIMENTS/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/BOOTSTRAP_EXPERIMENTS/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/BOOTSTRAP_EXPERIMENTS/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/BOOTSTRAP_PIPELINE/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/BOOTSTRAP_PIPELINE/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/BOOTSTRAP_PIPELINE/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/CORPUS_PIPELINE/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/CORPUS_PIPELINE/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/CORPUS_PIPELINE/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/DEPLOYMENT/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/DEPLOYMENT/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/DEPLOYMENT/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/EMBEDDING_RETRIEVAL/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/EMBEDDING_RETRIEVAL/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/EMBEDDING_RETRIEVAL/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/LLM_SERVICE_RUNTIME/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/LLM_SERVICE_RUNTIME/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/LLM_SERVICE_RUNTIME/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/ROADMAP/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/ROADMAP/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/ROADMAP/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/SCRIPTS/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/SCRIPTS/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/SCRIPTS/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/developer/WORKFLOW/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/developer/WORKFLOW/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/developer/WORKFLOW/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/ideas/CORE_ANNOTATION_BOOTSTRAP/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/ideas/CORE_ANNOTATION_BOOTSTRAP/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/ideas/CORE_ANNOTATION_BOOTSTRAP/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/ideas/PROMPT_AS_PARAMETER/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/ideas/PROMPT_AS_PARAMETER/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/ideas/PROMPT_AS_PARAMETER/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/ideas/RESEARCH_CLAIMS/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/ideas/RESEARCH_CLAIMS/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/ideas/RESEARCH_CLAIMS/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/user/PROMPT_COMPOSITION/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/user/PROMPT_COMPOSITION/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/user/PROMPT_COMPOSITION/"/>
+    </url>
+    <url>
+        <loc>https://hy-liyihan.github.io/rosetta/en/user/TUTORIAL/</loc>
+        <lastmod>2026-05-07</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://hy-liyihan.github.io/rosetta/en/user/TUTORIAL/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://hy-liyihan.github.io/rosetta/user/TUTORIAL/"/>
+    </url>
+</urlset>
