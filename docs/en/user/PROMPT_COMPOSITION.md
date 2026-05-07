@@ -4,12 +4,9 @@ Last updated: 2026-05-08
 
 This page explains what the LLM receives during annotation calls.
 
-## Boundary
+## Language
 
-1. The documentation site has a language switcher.
-2. The Streamlit app has `中文 / English` buttons for main UI labels.
-3. User input, task text, labels, model output, logs, database content, and export filenames are not automatically translated.
-4. The runtime annotation prompt builder supports `zh-CN` and `en-US` templates. The default workflow still uses `zh-CN` unless the caller explicitly passes `prompt_language="en-US"`.
+Rosetta can use Chinese or English control templates for model-facing annotation prompts. Interface language, user input language, and model output language are separate: changing the interface language does not translate your definitions, task text, labels, model outputs, logs, or export filenames.
 
 ## Runtime Annotation Prompt
 
@@ -31,7 +28,7 @@ The user prompt has six sections:
 | 5 | `待标注文本` | `Text to annotate` |
 | 6 | `任务强调` | `Task emphasis` |
 
-## Frozen Output Protocol
+## Output Format
 
 For ordinary span annotation, Rosetta asks the model to return JSON whose `annotation` field uses `[span]{Term}`:
 
@@ -43,21 +40,9 @@ For ordinary span annotation, Rosetta asks the model to return JSON whose `annot
 }
 ```
 
-The optimizer does not edit:
+Definition optimization changes the concept definition, boundary rules, exclusion rules, and abstract failure patterns. Rosetta keeps the response format stable:
 
 1. JSON fields: `text / annotation / explanation`.
 2. Label names such as `Term`.
 3. `[span]{Term}` markup or full `AnnotationDoc` structure.
-4. Parser rules.
-5. Format repair rules.
-
-The optimizer edits only the concept definition, boundary rules, exclusion rules, and abstract failure patterns.
-
-## Source Of Truth
-
-The runtime prompt contract is defined in:
-
-1. `app/services/annotation_service.py::ANNOTATION_ASSISTANT_SYSTEM_PROMPTS`
-2. `app/services/annotation_service.py::RUNTIME_PROMPT_SECTION_ORDER`
-3. `app/services/annotation_service.py::RUNTIME_PROMPT_SECTION_LABELS`
-4. `app/services/annotation_service.py::build_runtime_annotation_prompt()`
+4. Format checks such as valid JSON, unchanged source text, valid labels, and locatable spans.

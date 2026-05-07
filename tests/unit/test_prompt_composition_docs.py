@@ -21,10 +21,8 @@ class TestPromptCompositionDocs(unittest.TestCase):
                 for section_key in RUNTIME_PROMPT_SECTION_ORDER:
                     self.assertIn(labels[section_key], content)
 
-        self.assertIn("build_runtime_annotation_prompt()", content)
-        self.assertIn("build_protocol_instruction()", content)
         self.assertIn("ConceptPromptSpec", content)
-        self.assertIn("Frozen OutputProtocolSpec", content)
+        self.assertIn("输出格式", content)
 
 
 if __name__ == "__main__":

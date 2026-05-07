@@ -7,7 +7,7 @@ Last updated: 2026-05-08
 | Entry | URL | Purpose |
 | --- | --- | --- |
 | Documentation site | [https://hy-liyihan.github.io/rosetta/](https://hy-liyihan.github.io/rosetta/) | Public documentation for users and maintainers |
-| Demo page | [https://rosetta-stone.xyz/](https://rosetta-stone.xyz/) | Demo page, not the documentation site |
+| Demo page | [https://rosetta-stone.xyz/](https://rosetta-stone.xyz/) | Interactive demo for trying Rosetta in the browser |
 | GitHub repository | [https://github.com/HY-LiYihan/rosetta](https://github.com/HY-LiYihan/rosetta) | Source code, issues, deployment files, and project history |
 
 ## What Rosetta Is
@@ -24,9 +24,9 @@ The 15 gold examples used in the default workflow are for startup, calibration, 
 
 “Local-first” means project data, runtime records, exports, and debug artifacts are written to the local runtime directory or your own deployment directory first. It does not mean Rosetta is offline by default. If you choose a real LLM provider, prompts and task text are sent according to that provider configuration.
 
-## English Pages
+## Documentation Map
 
-The English pages mirror every current documentation interface. They use a separate English navigation bar, so English readers see `Home / Quickstart / Research Claims / Workflows / Annotation Formats / Developer / Deployment / Changelog` instead of translated content under Chinese navigation labels.
+Use the pages below to find user guides, research notes, developer references, deployment guidance, and release history.
 
 | Need | English page |
 | --- | --- |
@@ -35,15 +35,12 @@ The English pages mirror every current documentation interface. They use a separ
 | Research claim | [LLM Agent vs PLM](./ideas/RESEARCH_CLAIMS.md) |
 | Prompt-as-Parameter | [Prompt-as-Parameter](./ideas/PROMPT_AS_PARAMETER.md) |
 | Core idea | [Core Annotation Bootstrap](./ideas/CORE_ANNOTATION_BOOTSTRAP.md) |
-| Documentation review | [Documentation Review Iterations](./developer/DOCS_REVIEW_ITERATIONS.md) |
 | Guideline bootstrap workflow | [Guideline Bootstrap](./developer/BOOTSTRAP_PIPELINE.md) |
 | Bootstrap experiments | [Bootstrap Experiments](./developer/BOOTSTRAP_EXPERIMENTS.md) |
-| Legacy research pipeline | [Legacy Research Pipeline](./developer/RESEARCH_PIPELINE.md) |
 | Corpus builder | [Corpus Builder](./developer/CORPUS_PIPELINE.md) |
 | Runtime annotation format | [Annotation Format](./developer/ANNOTATION_FORMAT.md) |
 | JSONL storage format | [Annotation JSONL Format](./developer/ANNOTATION_JSONL_FORMAT.md) |
 | Developer overview | [Developer Overview](./developer/README.md) |
-| Agent onboarding | [Agent Onboarding](./developer/AGENT_ONBOARDING.md) |
 | Architecture | [Architecture](./developer/ARCHITECTURE.md) |
 | LLM runtime | [LLM Service Runtime](./developer/LLM_SERVICE_RUNTIME.md) |
 | Embedding retrieval | [Embedding Retrieval](./developer/EMBEDDING_RETRIEVAL.md) |
@@ -53,8 +50,8 @@ The English pages mirror every current documentation interface. They use a separ
 | Deployment | [Deployment](./developer/DEPLOYMENT.md) |
 | Changelog | [Changelog](./CHANGELOG.md) |
 
-## Language Boundary
+## Language
 
-The documentation site has a top language switcher. It uses page-level alternates: when a matching page exists, switching language keeps you on the same topic instead of sending you back to the homepage.
+Use the language switcher to open the same topic in English or Chinese when both versions are available.
 
-The Streamlit app also has `中文 / English` buttons in the sidebar. Those buttons switch the main navigation and primary fixed UI labels. They do not automatically translate user input, task text, model output, labels, logs, database content, or export filenames.
+In the Streamlit app, the language buttons change interface labels only. Project content, task text, labels, model outputs, logs, and exports remain in the language you entered or selected for the task.

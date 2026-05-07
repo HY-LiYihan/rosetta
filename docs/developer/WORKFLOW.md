@@ -33,8 +33,6 @@ for f in $(find scripts -type f -name '*.sh'); do bash -n "$f"; done
 2. PLM 研究者：能否看出实验主张、基线、指标和 Rosetta 不夸大的边界。
 3. Rosetta 开发者：能否看出代码落点、数据流、runtime 产物和 legacy 边界。
 
-完整评审记录见 [Documentation Review Iterations](./DOCS_REVIEW_ITERATIONS.md)。
-
 ## 4. 提交检查清单
 
 1. [CHANGELOG.md](../../docs/CHANGELOG.md) 是否更新。

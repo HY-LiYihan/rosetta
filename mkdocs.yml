@@ -7,12 +7,18 @@ edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
 use_directory_urls: true
+exclude_docs: |
+  developer/DOCS_REVIEW_ITERATIONS.md
+  developer/AGENT_ONBOARDING.md
+  developer/RESEARCH_PIPELINE.md
+  en/developer/DOCS_REVIEW_ITERATIONS.md
+  en/developer/AGENT_ONBOARDING.md
+  en/developer/RESEARCH_PIPELINE.md
 
 theme:
   name: material
   language: zh
   features:
-    - content.action.edit
     - content.code.copy
     - navigation.indexes
     - navigation.sections
@@ -74,18 +80,15 @@ plugins:
                 - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
                 - Prompt-as-Parameter: ideas/PROMPT_AS_PARAMETER.md
                 - 核心想法: ideas/CORE_ANNOTATION_BOOTSTRAP.md
-                - 文档评审迭代: developer/DOCS_REVIEW_ITERATIONS.md
             - 工作流:
                 - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
                 - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
-                - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md
                 - Corpus Builder: developer/CORPUS_PIPELINE.md
             - 标注格式:
                 - 运行时标注格式: developer/ANNOTATION_FORMAT.md
                 - JSONL 存储格式: developer/ANNOTATION_JSONL_FORMAT.md
             - 开发维护:
                 - 开发者概览: developer/README.md
-                - Agent 快速接手: developer/AGENT_ONBOARDING.md
                 - 架构总览: developer/ARCHITECTURE.md
                 - LLM 服务运行时: developer/LLM_SERVICE_RUNTIME.md
                 - Embedding 检索: developer/EMBEDDING_RETRIEVAL.md
@@ -108,18 +111,15 @@ plugins:
                 - LLM Agent vs PLM: ideas/RESEARCH_CLAIMS.md
                 - Prompt-as-Parameter: ideas/PROMPT_AS_PARAMETER.md
                 - Core Idea: ideas/CORE_ANNOTATION_BOOTSTRAP.md
-                - Documentation Review Iterations: developer/DOCS_REVIEW_ITERATIONS.md
             - Workflows:
                 - Guideline Bootstrap: developer/BOOTSTRAP_PIPELINE.md
                 - Bootstrap Experiments: developer/BOOTSTRAP_EXPERIMENTS.md
-                - Legacy Research Pipeline: developer/RESEARCH_PIPELINE.md
                 - Corpus Builder: developer/CORPUS_PIPELINE.md
             - Annotation Formats:
                 - Runtime Annotation Format: developer/ANNOTATION_FORMAT.md
                 - JSONL Storage Format: developer/ANNOTATION_JSONL_FORMAT.md
             - Developer:
                 - Developer Overview: developer/README.md
-                - Agent Onboarding: developer/AGENT_ONBOARDING.md
                 - Architecture: developer/ARCHITECTURE.md
                 - LLM Service Runtime: developer/LLM_SERVICE_RUNTIME.md
                 - Embedding Retrieval: developer/EMBEDDING_RETRIEVAL.md

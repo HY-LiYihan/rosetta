@@ -11,6 +11,4 @@ New implementation work should follow the current architecture boundaries:
 5. `app/runtime`: SQLite store, paths, runs, artifacts, and traces.
 6. `app/infrastructure`: LLM providers, embeddings, config, and debug tooling.
 
-Legacy `app/research` and `app/corpusgen` remain for compatibility and migration reference.
-
 Canonical Chinese reference: [Developer Overview](../../developer/README.md).

@@ -26,8 +26,8 @@ Local simulation only checks the UI, queue, review, and export flow. It does not
 | Concept interpretation | The operational definition of what should and should not be annotated |
 | Gold examples | Human-confirmed examples used to validate and optimize the definition |
 | Prompt validation | Local format checks and LLM-based checks against gold examples |
-| Definition optimization | The page may say “prompt optimization”, but the optimized object is the definition text |
-| Frozen output protocol | JSON fields, labels, markup, parser, and format repair rules injected by Rosetta |
+| Definition optimization | Refining the annotation definition used by the model |
+| Output format | The JSON fields, labels, and markup Rosetta expects in model responses |
 
 ## Gold Example Format
 
@@ -42,6 +42,6 @@ The `text` field is the original sentence. The `annotation` field marks target s
 
 ## Language Notes
 
-The app sidebar provides `中文 / English` buttons. They switch main navigation and primary fixed UI labels only. They do not translate your concept definition, task text, labels, model outputs, logs, or export filenames.
+The app sidebar provides `中文 / English` buttons. They change interface labels only. Your definitions, task text, labels, model outputs, logs, and export filenames remain as entered.
 
 For the model-facing prompt structure, read [Prompt Composition](./PROMPT_COMPOSITION.md).

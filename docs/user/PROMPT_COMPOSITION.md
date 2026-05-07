@@ -2,25 +2,11 @@
 
 更新时间: 2026-05-08
 
-这页回答一个很具体的问题：Rosetta 调用大模型时，最终看到的提示词由哪些部分组成，中文界面和 English 界面各自对应什么。
+这页回答一个很具体的问题：Rosetta 调用大模型时，模型实际会看到哪些内容。
 
-先把边界说清楚：
+Rosetta 可以使用中文或 English 的模型控制模板。界面语言、用户输入语言和模型输出语言是三件不同的事：切换界面语言不会自动翻译你的概念阐释、任务文本、标签名、模型输出、日志或导出文件名。
 
-1. 侧栏 `中文 / English` 按钮切换的是应用主导航和主要固定界面文案。
-2. 用户输入的概念阐释、任务文本、标签名、模型输出、日志和导出文件名不会被自动翻译。
-3. 标注运行时 prompt builder 支持 `zh-CN` 和 `en-US` 两套同构模板；当前主流程仍默认使用 `zh-CN`，除非调用方显式传入 `prompt_language="en-US"`。
-4. 提示词优化的对象不是整段最终 prompt，而是“可优化定义”：任务定义、概念定义、边界规则和排除规则。标签、JSON 字段、markup、parser 和格式修复属于冻结输出协议。
-
-代码来源：
-
-| 内容 | 程序来源 |
-| --- | --- |
-| 标注助手 system prompt | `app/services/annotation_service.py::ANNOTATION_ASSISTANT_SYSTEM_PROMPTS` |
-| 标注 user prompt 段落顺序 | `app/services/annotation_service.py::RUNTIME_PROMPT_SECTION_ORDER` |
-| 中文 / English 段落标题 | `app/services/annotation_service.py::RUNTIME_PROMPT_SECTION_LABELS` |
-| 运行时 prompt 生成函数 | `app/services/annotation_service.py::build_runtime_annotation_prompt()` |
-| 冻结输出协议 | `app/services/annotation_service.py::build_protocol_instruction()` |
-| 可优化定义与冻结协议分离 | `app/workflows/bootstrap/prompt_spec.py` |
+提示词优化的对象是“可优化定义”：任务定义、概念定义、边界规则和排除规则。标签、JSON 字段、markup 和格式检查规则保持稳定，用来保证同一批样例上的比较条件一致。
 
 ## 一眼看懂
 
@@ -29,7 +15,7 @@
 | System prompt | Rosetta | 是 | 否 | 默认中文；程序也提供 English 版本供显式调用 |
 | 当前概念阐释 | 用户或定义优化结果 | 是 | 否 | 这是提示词优化真正会改的主体 |
 | 相似参考样例 | 本地检索 | 可选 | 否 | 只用于理解边界，不是当前文本答案 |
-| 标注格式 | Rosetta 冻结注入 | 是 | 按 prompt language 选择模板 | 规定 JSON 字段和 annotation 格式 |
+| 标注格式 | Rosetta 提供 | 是 | 按 prompt language 选择模板 | 规定 JSON 字段和 annotation 格式 |
 | 通用格式示例 | Rosetta 生成 | 是 | 按 prompt language 选择模板 | 只说明格式，不使用当前任务 gold |
 | 待标注文本 | 用户语料 | 是 | 否 | 必须原样返回在 JSON 的 `text` 字段 |
 | 任务强调 | Rosetta 或调用方 | 是 | 按调用方传入内容 | 例如只输出 JSON、不要额外字段 |
@@ -68,7 +54,7 @@
 {ReferenceExamples 或 无。}
 
 标注格式：
-{Frozen OutputProtocolSpec}
+{输出格式说明}
 
 通用格式示例（只说明输出格式，不代表当前任务概念）：
 {Concept-neutral JSON example}
@@ -92,7 +78,7 @@ Similar reference examples (optional; for boundary understanding only, not the a
 {ReferenceExamples or None.}
 
 Annotation format:
-{Frozen OutputProtocolSpec}
+{Output format instructions}
 
 Generic format example (format only; not the current task concept):
 {Concept-neutral JSON example}
@@ -104,7 +90,7 @@ Task emphasis:
 {task_emphasis}
 ```
 
-## 冻结输出协议
+## 输出格式
 
 普通 span 标注默认使用 JSON + `[span]{Term}`：
 
@@ -116,13 +102,12 @@ Task emphasis:
 }
 ```
 
-多层任务可以选择完整 `AnnotationDoc` JSON。无论哪种协议，以下内容都不是定义优化器的可编辑对象：
+多层任务可以选择完整 `AnnotationDoc` JSON。定义优化只调整概念语义，不调整以下格式要素：
 
 1. JSON 字段：`text / annotation / explanation`。
 2. 标签名，例如 `Term`。
 3. `[span]{Term}` markup 或完整 `AnnotationDoc` 结构。
-4. parser contract：严格 JSON、原文一致、标签合法、span 可定位。
-5. 格式修复规则。
+4. 格式检查规则：JSON 合法、原文一致、标签合法、span 可定位。
 
 ## 定义优化 Prompt
 
@@ -137,12 +122,3 @@ Task emphasis:
 | 遮挡梯度优化 / `mask_guided_optimization` | 当前定义片段、遮挡回测 loss、失败摘要 | 根据高影响片段改写后的候选定义 |
 
 训练反馈可以临时包含原文、gold annotation、模型回答和错误摘要，用来判断边界哪里不稳定；最终保存的定义不能复制原文、gold span、模型 span 或可识别答案片段。Rosetta 会用防背答案检查和去语料化修复把候选限制回抽象规则。
-
-## 维护同步规则
-
-1. 如果 `build_runtime_annotation_prompt()` 的段落顺序、标题或默认强调语变化，必须同步更新本页。
-2. 如果 `build_protocol_instruction()` 新增字段、协议或示例，必须同步更新“冻结输出协议”。
-3. 如果新增 prompt language，必须同时更新 `SUPPORTED_PROMPT_LANGUAGES`、`RUNTIME_PROMPT_SECTION_LABELS`、本页的对照表和单元测试。
-4. 如果定义优化器新增方法或改名，必须同步更新本页、用户教程和变更记录。
-
-单元测试会读取本页，并检查它是否包含程序中的中英文 system prompt 和运行时段落标题；这能避免最常见的“代码改了、文档忘了”的漂移。
